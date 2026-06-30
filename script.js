@@ -13,13 +13,13 @@ const surveyJson = {
     // Custom completion HTML (shown after a successful submit)
     completedHtml: `
         <div style="text-align:center;padding:48px 24px;">
-            <svg style="width:64px;height:64px;color:#1ab394;margin:0 auto 20px;display:block;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <svg style="width:64px;height:64px;color:#0B9218;margin:0 auto 20px;display:block;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-linecap="round" stroke-linejoin="round"/>
                 <polyline points="22 4 12 14.01 9 11.01" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <h2 style="font-size:22px;font-weight:700;color:#0a1650;margin-bottom:8px;font-family:'Poppins',sans-serif;">Walk-In Recorded Successfully</h2>
-            <p style="color:#64748b;font-size:14px;margin-bottom:28px;font-family:'DM Sans',sans-serif;">The record has been saved to the database.</p>
-            <button onclick="startNewWalkin()" style="background:#1ab394;color:#fff;border:none;border-radius:8px;padding:10px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+            <h2 style="font-size:22px;font-weight:700;color:#0a1650;margin-bottom:8px;font-family:'Inter',sans-serif;">Walk-In Recorded Successfully</h2>
+            <p style="color:#4A4646;font-size:14px;margin-bottom:28px;font-family:'Inter',sans-serif;">The record has been saved to the database.</p>
+            <button onclick="startNewWalkin()" style="background:#0a1650;color:#fff;border:none;border-radius:8px;padding:10px 28px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">
                 + Record Another Walk-In
             </button>
         </div>
@@ -62,25 +62,6 @@ const surveyJson = {
                         valueName: "value",
                         titleName: "text"
                     }
-                },
-                {
-                    type: "dropdown",
-                    name: "executive_id",
-                    title: "ATTENDING EXECUTIVE",
-                    placeholder: "Select operational executive...",
-                    isRequired: true,
-                    choicesByUrl: {
-                        url: "/api/executives",
-                        valueName: "value",
-                        titleName: "text"
-                    }
-                },
-                {
-                    type: "text",
-                    name: "executive_name",
-                    title: "EXECUTIVE DETAILS (AUTO-POPULATED)",
-                    placeholder: "Auto-populated upon select...",
-                    readOnly: true
                 }
             ]
         },
@@ -103,26 +84,40 @@ const surveyJson = {
                     name: "person_number",
                     title: "PHONE NUMBER",
                     inputType: "tel",
-                    placeholder: "+91 10-digit mobile number...",
-                    description: "10-digit primary mobile contact",
-                    isRequired: true
+                    placeholder: "10-digit mobile number",
+                    description: "Enter 10-digit number (without +91)",
+                    isRequired: true,
+                    validators: [
+                        {
+                            type: "regex",
+                            text: "Enter a valid 10-digit Indian mobile number",
+                            regex: "^(\\+91[\\s-]?)?[6-9][0-9]{9}$"
+                        }
+                    ]
                 },
                 {
                     type: "text",
                     name: "dl_number",
                     title: "DRIVING LICENSE NUMBER",
-                    placeholder: "e.g. TS09 20210045612...",
-                    description: "Provide full active Driving License number",
+                    placeholder: "e.g. TS09 20210045612",
+                    description: "Full active Driving License number",
                     isRequired: true
                 },
                 {
                     type: "text",
                     name: "aadhaar_number",
                     title: "AADHAAR CARD NUMBER",
-                    placeholder: "12-digit Aadhaar card number",
+                    placeholder: "12-digit Aadhaar number",
                     description: "12-digit number (Optional)",
                     isRequired: false,
-                    maxLength: 14
+                    inputMask: "9999 9999 9999",
+                    validators: [
+                        {
+                            type: "regex",
+                            text: "Aadhaar must be exactly 12 digits",
+                            regex: "^[0-9]{4}\\s?[0-9]{4}\\s?[0-9]{4}$"
+                        }
+                    ]
                 }
             ]
         },
@@ -134,12 +129,10 @@ const surveyJson = {
             startWithNewLine: false,
             elements: [
                 {
-                    type: "radiogroup",
+                    type: "text",
                     name: "visiting_reason",
                     title: "VISITING REASON",
-                    defaultValue: "Onboarding",
-                    choices: ["Onboarding", "Enquiry", "Support"],
-                    colCount: 3,
+                    placeholder: "e.g. Onboarding, Enquiry, Support, Vehicle issue...",
                     isRequired: true
                 },
                 {
@@ -165,14 +158,14 @@ const surveyJson = {
             type: "panel",
             name: "secure_document_uploads_panel",
             title: "3. SECURE DOCUMENT UPLOADS (OPTIONAL)",
-            description: "Please scan or upload candidate DL & Aadhaar copies for verified onboarding.",
+            description: "Scan or photograph the candidate's Aadhaar and Driving License.",
             width: "100%",
             elements: [
                 {
                     type: "file",
                     name: "aadhaar_image",
                     title: "AADHAAR CARD PHOTO",
-                    placeholder: "Scan or Upload Aadhaar Card Photo\nDrag image here or tap to launch camera",
+                    placeholder: "Upload or take photo of Aadhaar Card",
                     acceptedTypes: "image/*",
                     allowMultiple: false,
                     storeDataAsText: true,
@@ -184,7 +177,7 @@ const surveyJson = {
                     type: "file",
                     name: "dl_image",
                     title: "DRIVING LICENSE PHOTO",
-                    placeholder: "Scan or Upload Driving License Photo\nDrag image here or click to browse",
+                    placeholder: "Upload or take photo of Driving License",
                     acceptedTypes: "image/*",
                     allowMultiple: false,
                     storeDataAsText: true,
@@ -205,31 +198,9 @@ const survey = new Survey.Model(surveyJson);
 let walkinId = null; // null = new record, integer = editing existing
 
 
-
 // ─────────────────────────────────────────────────────────
-// Value change handlers
+// Value change handlers (none needed — executive auto from session)
 // ─────────────────────────────────────────────────────────
-survey.onValueChanged.add(function (sender, options) {
-    // Auto-populate executive name when executive_id changes
-    if (options.name === "executive_id") {
-        const uid = options.value;
-        if (uid) {
-            fetch("/api/executives/" + uid)
-                .then(function (r) {
-                    if (!r.ok) throw new Error("Not found");
-                    return r.json();
-                })
-                .then(function (data) {
-                    sender.setValue("executive_name", data.name + " · " + data.role);
-                })
-                .catch(function () {
-                    sender.setValue("executive_name", "Executive not found");
-                });
-        } else {
-            sender.setValue("executive_name", "");
-        }
-    }
-});
 
 // ─────────────────────────────────────────────────────────
 // Helpers
@@ -242,12 +213,10 @@ function loadWalkinIntoForm(id) {
         })
         .then(function (data) {
             walkinId = id;
-            // Compose survey data (file fields excluded — they start fresh on edit)
             var d = {
                 visitor_type:    data.visitor_type,
                 event_date:      data.event_date,
                 city:            data.city,
-                executive_id:    data.executive_id,
                 person_name:     data.person_name,
                 person_number:   data.person_number,
                 aadhaar_number:  data.aadhaar_number || "",
@@ -257,20 +226,6 @@ function loadWalkinIntoForm(id) {
                 remarks:         data.remarks || ""
             };
             survey.data = d;
-
-            // Fetch executive name separately (bulk set doesn't trigger onValueChanged)
-            if (data.executive_id) {
-                fetch("/api/executives/" + data.executive_id)
-                    .then(function (r) { return r.json(); })
-                    .then(function (exec) {
-                        survey.setValue("executive_name", exec.name + " · " + exec.role);
-                    })
-                    .catch(function () {
-                        if (data.executive_name) {
-                            survey.setValue("executive_name", data.executive_name);
-                        }
-                    });
-            }
 
             updateFormBanner(true, id);
             showTab("form");
@@ -324,12 +279,12 @@ function extractImage(val) {
 // ─────────────────────────────────────────────────────────
 survey.onComplete.add(function (sender) {
     var d = sender.data;
+    var token = localStorage.getItem('lr_token') || '';
 
     var payload = {
         visitor_type:    d.visitor_type,
         event_date:      d.event_date,
         city:            d.city,
-        executive_id:    d.executive_id,
         person_name:     d.person_name,
         person_number:   d.person_number,
         aadhaar_number:  d.aadhaar_number  || null,
@@ -346,7 +301,10 @@ survey.onComplete.add(function (sender) {
 
     fetch(url, {
         method: method,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
         body: JSON.stringify(payload)
     })
     .then(function (r) {
@@ -355,19 +313,16 @@ survey.onComplete.add(function (sender) {
     })
     .then(function (result) {
         if (result.success) {
-            // Refresh metrics and table in background
             loadMetrics();
             loadTable();
             walkinId = null;
             updateFormBanner(false, null);
-            // SurveyJS will show the completedHtml automatically
         } else {
             throw new Error("Server returned success=false");
         }
     })
     .catch(function (err) {
         alert("Failed to save record: " + err.message);
-        // Allow the user to try again — restart the survey
         survey.clear(true, true);
     });
 });

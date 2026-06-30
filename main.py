@@ -1,11 +1,13 @@
 import psycopg2
 from psycopg2 import pool
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, Union, Any
+from passlib.context import CryptContext
 import os
+import secrets
 
 app = FastAPI(title="LetzRyd Walk-In Registry API")
 
@@ -16,6 +18,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # ─────────────────────────────────────────────────────────
 # Connection Pool
@@ -95,7 +99,7 @@ def startup_event():
                 dl_number      VARCHAR(100),
                 aadhaar_image  TEXT,
                 dl_image       TEXT,
-                visiting_reason VARCHAR(50),
+                visiting_reason VARCHAR(255),
                 joined_status  VARCHAR(50),
                 remarks        TEXT,
                 created_at     TIMESTAMP DEFAULT NOW()
@@ -109,6 +113,9 @@ def startup_event():
             "created_at     TIMESTAMP DEFAULT NOW()",
         ]:
             cur.execute(f"ALTER TABLE walkins ADD COLUMN IF NOT EXISTS {col};")
+
+        # Widen visiting_reason if needed
+        cur.execute("ALTER TABLE walkins ALTER COLUMN visiting_reason TYPE VARCHAR(255);")
 
         # Seed walk-ins if empty
         cur.execute("SELECT COUNT(*) FROM walkins;")
@@ -158,6 +165,45 @@ def startup_event():
             """, records)
             print(f"[OK] Walk-in records seeded ({len(records)} records)")
 
+        # ── app_users (login accounts) ───────────────────
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS app_users (
+                id           SERIAL PRIMARY KEY,
+                username     VARCHAR(100) NOT NULL UNIQUE,
+                password_hash VARCHAR(255) NOT NULL,
+                executive_id INTEGER REFERENCES users(id),
+                created_at   TIMESTAMP DEFAULT NOW()
+            );
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS app_sessions (
+                token        VARCHAR(255) PRIMARY KEY,
+                user_id      INTEGER REFERENCES app_users(id),
+                created_at   TIMESTAMP DEFAULT NOW()
+            );
+        """)
+
+        # Seed login accounts — only if app_users is empty
+        cur.execute("SELECT COUNT(*) FROM app_users;")
+        if cur.fetchone()[0] == 0:
+            cur.execute("SELECT id, name FROM users ORDER BY id;")
+            exec_rows = cur.fetchall()
+            exec_map = {name: uid for uid, name in exec_rows}
+
+            default_password = pwd_context.hash("letzryd123")
+            login_accounts = [
+                ("dshiva",       default_password, exec_map.get("D Shiva")),
+                ("arshadkhan",   default_password, exec_map.get("Arshad Khan")),
+                ("priyasharma",  default_password, exec_map.get("Priya Sharma")),
+                ("rohanverma",   default_password, exec_map.get("Rohan Verma")),
+                ("snehareddy",   default_password, exec_map.get("Sneha Reddy")),
+            ]
+            cur.executemany(
+                "INSERT INTO app_users (username, password_hash, executive_id) VALUES (%s,%s,%s);",
+                login_accounts
+            )
+            print("[OK] Login accounts seeded (password: letzryd123)")
+
         conn.commit()
         cur.close()
         print("[OK] Database setup complete")
@@ -170,8 +216,38 @@ def startup_event():
 
 
 # ─────────────────────────────────────────────────────────
+# Auth helpers
+# ─────────────────────────────────────────────────────────
+def get_current_user(authorization: Optional[str] = Header(None)):
+    """Validate Bearer token and return (app_user_id, executive_id, name, role, username)."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    token = authorization.split(" ", 1)[1]
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT au.id, au.executive_id, u.name, COALESCE(u.role,'Executive'), au.username
+            FROM app_sessions s
+            JOIN app_users au ON au.id = s.user_id
+            LEFT JOIN users u ON u.id = au.executive_id
+            WHERE s.token = %s;
+        """, (token,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=401, detail="Invalid or expired session")
+        return {"user_id": row[0], "executive_id": row[1], "name": row[2], "role": row[3], "username": row[4]}
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+
+# ─────────────────────────────────────────────────────────
 # Models
 # ─────────────────────────────────────────────────────────
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
 class WalkinData(BaseModel):
     visitor_type:    Optional[str] = None
     event_date:      Optional[str] = None
@@ -199,6 +275,81 @@ def extract_image(val: Any) -> Optional[str]:
         return val
     return None
 
+
+# ─────────────────────────────────────────────────────────
+# Auth Endpoints
+# ─────────────────────────────────────────────────────────
+@app.post("/api/auth/login")
+def login(req: LoginRequest):
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT au.id, au.password_hash, au.executive_id, u.name, COALESCE(u.role,'Executive'), au.username
+            FROM app_users au
+            LEFT JOIN users u ON u.id = au.executive_id
+            WHERE au.username = %s;
+        """, (req.username.strip().lower(),))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=401, detail="Invalid username or password")
+        user_id, pw_hash, exec_id, name, role, username = row
+        if not pwd_context.verify(req.password, pw_hash):
+            raise HTTPException(status_code=401, detail="Invalid username or password")
+        # Create session token
+        token = secrets.token_urlsafe(32)
+        cur.execute(
+            "INSERT INTO app_sessions (token, user_id) VALUES (%s, %s);",
+            (token, user_id)
+        )
+        conn.commit()
+        return {
+            "token": token,
+            "user": {
+                "id": user_id,
+                "username": username,
+                "executive_id": exec_id,
+                "name": name,
+                "role": role,
+            }
+        }
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+
+@app.get("/api/auth/me")
+def get_me(authorization: Optional[str] = Header(None)):
+    user = get_current_user(authorization)
+    # Get executive id from users table for display
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM users WHERE id = %s;", (user["executive_id"],))
+        row = cur.fetchone()
+        exec_display_id = row[0] if row else None
+        return {
+            "user_id": user["user_id"],
+            "username": user["username"],
+            "executive_id": exec_display_id,
+            "name": user["name"],
+            "role": user["role"],
+        }
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+
+@app.post("/api/auth/logout")
+def logout(authorization: Optional[str] = Header(None)):
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ", 1)[1]
+        conn = postgreSQL_pool.getconn()
+        try:
+            cur = conn.cursor()
+            cur.execute("DELETE FROM app_sessions WHERE token = %s;", (token,))
+            conn.commit()
+        finally:
+            postgreSQL_pool.putconn(conn)
+    return {"success": True}
 
 
 # ─────────────────────────────────────────────────────────
@@ -355,7 +506,18 @@ def get_walkin(walkin_id: int):
 # Walk-ins — Create
 # ─────────────────────────────────────────────────────────
 @app.post("/api/walkins")
-def create_walkin(data: WalkinData):
+def create_walkin(data: WalkinData, authorization: Optional[str] = Header(None)):
+    # Get executive_id from session if available
+    exec_id_from_session = None
+    if authorization and authorization.startswith("Bearer "):
+        try:
+            user = get_current_user(authorization)
+            exec_id_from_session = user.get("executive_id")
+        except Exception:
+            pass
+
+    final_exec_id = exec_id_from_session or (int(data.executive_id) if data.executive_id else None)
+
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
@@ -370,7 +532,7 @@ def create_walkin(data: WalkinData):
             data.visitor_type,
             data.event_date,
             str(data.city) if data.city is not None else None,
-            int(data.executive_id) if data.executive_id else None,
+            final_exec_id,
             data.person_name,
             str(data.person_number) if data.person_number else None,
             data.aadhaar_number,
@@ -392,7 +554,17 @@ def create_walkin(data: WalkinData):
 # Walk-ins — Update
 # ─────────────────────────────────────────────────────────
 @app.put("/api/walkins/{walkin_id}")
-def update_walkin(walkin_id: int, data: WalkinData):
+def update_walkin(walkin_id: int, data: WalkinData, authorization: Optional[str] = Header(None)):
+    exec_id_from_session = None
+    if authorization and authorization.startswith("Bearer "):
+        try:
+            user = get_current_user(authorization)
+            exec_id_from_session = user.get("executive_id")
+        except Exception:
+            pass
+
+    final_exec_id = exec_id_from_session or (int(data.executive_id) if data.executive_id else None)
+
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
@@ -414,7 +586,7 @@ def update_walkin(walkin_id: int, data: WalkinData):
             data.visitor_type,
             data.event_date,
             str(data.city) if data.city is not None else None,
-            int(data.executive_id) if data.executive_id else None,
+            final_exec_id,
             data.person_name,
             str(data.person_number) if data.person_number else None,
             data.aadhaar_number,
