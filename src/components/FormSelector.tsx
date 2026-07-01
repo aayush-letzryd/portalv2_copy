@@ -1,9 +1,9 @@
-import { ClipboardList, UserCheck, Settings, Key, LogOut } from "lucide-react";
+import { ClipboardList, UserCheck, Settings, Key, LogOut, Truck, AlertTriangle } from "lucide-react";
 import { User } from "../types";
 
 interface FormSelectorProps {
   user: User;
-  onSelectForm: (form: "walkin" | "onboarding") => void;
+  onSelectForm: (form: "walkin" | "onboarding" | "adjustment" | "allocation" | "expenses") => void;
   onLogout: () => void;
 }
 
@@ -18,7 +18,7 @@ export default function FormSelector({ user, onSelectForm, onLogout }: FormSelec
     .toUpperCase();
 
   return (
-    <div className="min-h-screen flex flex-col bg-bg">
+    <div className="min-h-screen flex flex-col bg-bg text-text">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-white shadow-xs">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -100,26 +100,74 @@ export default function FormSelector({ user, onSelectForm, onLogout }: FormSelec
             </span>
           </button>
 
-          {/* Adjustment Form (Disabled Card) */}
-          <div className="relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white/60 p-6 opacity-60">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-light text-amber-600">
+          {/* Adjustment Form (Active Card) */}
+          <button
+            onClick={() => onSelectForm("adjustment")}
+            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-amber-500 hover:shadow-md transition-all duration-200 cursor-pointer"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-light text-amber-600 group-hover:scale-105 transition-transform duration-200">
               <Settings className="h-6 w-6" />
             </div>
-            <div>
+            <div className="flex-grow">
               <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Adjustment Form</h3>
+            </div>
+            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
+              Live
+            </span>
+          </button>
+
+          {/* Allocation Form (Active Card) */}
+          <button
+            onClick={() => onSelectForm("allocation")}
+            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-primary hover:shadow-md transition-all duration-200 cursor-pointer"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-primary group-hover:scale-105 transition-transform duration-200">
+              <Key className="h-6 w-6" />
+            </div>
+            <div className="flex-grow">
+              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Allocation Form</h3>
+            </div>
+            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
+              Live
+            </span>
+          </button>
+
+          {/* Expenses Form (Active Card) */}
+          <button
+            onClick={() => onSelectForm("expenses")}
+            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-rose-500 hover:shadow-md transition-all duration-200 cursor-pointer"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-50 text-red-600 group-hover:scale-105 transition-transform duration-200">
+              <ClipboardList className="h-6 w-6" />
+            </div>
+            <div className="flex-grow">
+              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Expenses Form</h3>
+            </div>
+            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
+              Live
+            </span>
+          </button>
+
+          {/* Vehicle Onboarding Form (Disabled Card) */}
+          <div className="relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white/60 p-6 opacity-60">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+              <Truck className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Vehicle Onboarding</h3>
             </div>
             <span className="absolute top-4 right-4 rounded-md bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-text-muted uppercase tracking-wider">
               Coming Soon
             </span>
           </div>
 
-          {/* Allocation Form (Disabled Card) */}
+          {/* Accidents Form (Disabled Card) */}
           <div className="relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white/60 p-6 opacity-60">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
-              <Key className="h-6 w-6" />
+              <AlertTriangle className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Allocation Form</h3>
+              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Accidents Form</h3>
             </div>
             <span className="absolute top-4 right-4 rounded-md bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-text-muted uppercase tracking-wider">
               Coming Soon

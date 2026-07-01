@@ -54,6 +54,64 @@ export interface OnboardingRecord {
   created_at: string;
 }
 
+export interface AdjustmentRecord {
+  id: number;
+  partner_name: string;
+  partner_code: string;
+  driver_id?: string;
+  partner_number: string;
+  vehicle_number?: string;
+  city_name: string;
+  partner_type: "Individual" | "Fleet" | "Rental";
+  adjustment_type: "Credit" | "Debit" | "Waiver";
+  adjustment_date: string;
+  enter_amount: string;
+  remittance_towards?: string;
+  adjustment_related_to?: string;
+  remarks?: string;
+  first_level_approval_by?: string;
+  finance_team_status: "Approved" | "Pending" | "Rejected";
+  finance_team_remarks?: string;
+  final_level_approval_by?: string;
+  status: "Completed" | "Hold" | "Declined";
+  photo?: string;
+  created_at: string;
+}
+
+export interface AllocationRecord {
+  id: number;
+  allocation_date: string;
+  allocation_type: "New Allocation" | "Car Swap" | "Reallocation";
+  city_name: string;
+  driver_id: string;
+  driver_name: string;
+  driver_phone: string;
+  driver_plan?: string;
+  type_of_plan?: string;
+  car_model?: string;
+  vehicle_number: string;
+  old_vehicle_number?: string;
+  dropoff_odometer?: string;
+  dropoff_remarks?: string;
+  dropoff_photo?: string;
+  is_migrated?: boolean;
+  created_at: string;
+}
+
+export interface ExpenseRecord {
+  id: number;
+  expense_date: string;
+  driver_name: string;
+  phone_number: string;
+  vehicle_number: string;
+  expenses_type: string;
+  amount_paid: string;
+  reference_photo?: string;
+  is_migrated?: boolean;
+  created_at: string;
+}
+
+
 export interface User {
   username: string;
   name: string;

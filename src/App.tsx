@@ -3,13 +3,16 @@ import Login from "./components/Login";
 import FormSelector from "./components/FormSelector";
 import WalkInForm from "./components/WalkInForm";
 import OnboardingForm from "./components/OnboardingForm";
+import AdjustmentForm from "./components/AdjustmentForm";
+import AllocationForm from "./components/AllocationForm";
+import ExpensesForm from "./components/ExpensesForm";
 import { User } from "./types";
 
 const LOCAL_STORAGE_TOKEN_KEY = "lr_token";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
-  const [screen, setScreen] = useState<"login" | "selector" | "walkin" | "onboarding">("login");
+  const [screen, setScreen] = useState<"login" | "selector" | "walkin" | "onboarding" | "adjustment" | "allocation" | "expenses">("login");
   const [isInitializing, setIsInitializing] = useState(true);
 
   // Load user session from API using token on startup
@@ -17,11 +20,13 @@ export default function App() {
     const token = localStorage.getItem(LOCAL_STORAGE_TOKEN_KEY);
     if (token) {
       fetch("/api/auth/me", {
-        headers: { "Authorization": `Bearer ${token}` }
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
       })
       .then(res => {
-        if (!res.ok) throw new Error("Invalid session");
-        return res.json();
+        if (res.ok) return res.json();
+        throw new Error("Invalid token");
       })
       .then(data => {
         setUser(data);
@@ -38,26 +43,23 @@ export default function App() {
     }
   }, []);
 
-  const handleLoginSuccess = (loggedInUser: User) => {
-    setUser(loggedInUser);
+  const handleLoginSuccess = (userSession: User) => {
+    setUser(userSession);
     setScreen("selector");
   };
 
   const handleLogout = () => {
-    const token = localStorage.getItem(LOCAL_STORAGE_TOKEN_KEY);
-    if (token) {
-      fetch("/api/auth/logout", {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${token}` }
-      }).catch(console.error);
-    }
-    setUser(null);
     localStorage.removeItem(LOCAL_STORAGE_TOKEN_KEY);
+    setUser(null);
     setScreen("login");
   };
 
   if (isInitializing) {
-    return <div className="min-h-screen bg-bg flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-bg">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
   }
 
   return (
@@ -68,8 +70,8 @@ export default function App() {
       {screen === "selector" && user && (
         <FormSelector 
           user={user} 
-          onSelectForm={(form) => setScreen(form)} 
-          onLogout={handleLogout} 
+          onSelectForm={(formType) => setScreen(formType as any)} 
+          onLogout={handleLogout}
         />
       )}
       {screen === "walkin" && user && (
@@ -81,6 +83,27 @@ export default function App() {
       )}
       {screen === "onboarding" && user && (
         <OnboardingForm 
+          user={user} 
+          onBackToSelector={() => setScreen("selector")} 
+          onLogout={handleLogout} 
+        />
+      )}
+      {screen === "adjustment" && user && (
+        <AdjustmentForm 
+          user={user} 
+          onBackToSelector={() => setScreen("selector")} 
+          onLogout={handleLogout} 
+        />
+      )}
+      {screen === "allocation" && user && (
+        <AllocationForm 
+          user={user} 
+          onBackToSelector={() => setScreen("selector")} 
+          onLogout={handleLogout} 
+        />
+      )}
+      {screen === "expenses" && user && (
+        <ExpensesForm 
           user={user} 
           onBackToSelector={() => setScreen("selector")} 
           onLogout={handleLogout} 

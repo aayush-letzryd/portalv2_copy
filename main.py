@@ -210,6 +210,185 @@ def startup_event():
         cur.execute("ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS ifsc_code VARCHAR(50);")
         cur.execute("ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS upi_id VARCHAR(100);")
 
+        # ── partner_adjustment ───────────────────────────
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS partner_adjustment (
+                id SERIAL PRIMARY KEY,
+                partner_name VARCHAR(255),
+                partner_code VARCHAR(100),
+                driver_id VARCHAR(50),
+                partner_number VARCHAR(50),
+                vehicle_number VARCHAR(100),
+                city_name VARCHAR(100),
+                partner_type VARCHAR(50),
+                adjustment_type VARCHAR(50),
+                adjustment_date VARCHAR(50),
+                enter_amount VARCHAR(50),
+                remittance_towards TEXT,
+                adjustment_related_to TEXT,
+                remarks TEXT,
+                first_level_approval_by VARCHAR(255),
+                finance_team_status VARCHAR(50),
+                finance_team_remarks TEXT,
+                final_level_approval_by VARCHAR(255),
+                status VARCHAR(50),
+                photo TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+        """)
+        
+        # Run migrations for partner_adjustment table columns
+        for col in [
+            "driver_id VARCHAR(50)",
+            "vehicle_number VARCHAR(100)",
+            "photo TEXT",
+            "first_level_approval_by VARCHAR(255)",
+            "finance_team_status VARCHAR(50)",
+            "finance_team_remarks TEXT",
+            "final_level_approval_by VARCHAR(255)",
+            "status VARCHAR(50)"
+        ]:
+            cur.execute(f"ALTER TABLE partner_adjustment ADD COLUMN IF NOT EXISTS {col};")
+        
+        cur.execute("SELECT COUNT(*) FROM partner_adjustment;")
+        if cur.fetchone()[0] == 0:
+            adj_sql = """
+                INSERT INTO partner_adjustment (
+                    partner_name, partner_code, driver_id, partner_number, vehicle_number, city_name, 
+                    partner_type, adjustment_type, adjustment_date, enter_amount, 
+                    remittance_towards, adjustment_related_to, remarks, first_level_approval_by, 
+                    finance_team_status, finance_team_remarks, final_level_approval_by, status
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
+            """
+            adj_records = [
+                ("Vijay Mallya", "P-1001", "1", "9000000001", "TS09 EA 1111", "Hyderabad", "Individual", "Credit", "2026-06-25", "5000", "Rent Deposit refund", "Rentals", "Refunding security deposit", "Finance Desk", "Approved", "Verified", "Ops Manager", "Completed"),
+                ("Sachin Tendulkar", "P-1002", "2", "9000000002", "MH01 AB 2222", "Mumbai", "Fleet", "Debit", "2026-06-26", "2500", "Vehicle Damage", "Maintenance", "Charging for side mirror repair", "Finance Desk", "Approved", "Charged", "Ops Manager", "Completed"),
+                ("Rahul Dravid", "P-1003", None, "9000000003", None, "Bangalore", "Rental", "Waiver", "2026-06-27", "1000", "Late fee waiver", "Penalty", "Waived late fee due to health issue", "Finance Desk", "Approved", "Waived", "Ops Manager", "Completed"),
+                ("Sourav Ganguly", "P-1004", "3", "9000000004", "WB02 CD 4444", "Chennai", "Individual", "Credit", "2026-06-27", "1500", "Referral bonus", "Referral", "Successful onboarding referral", "Finance Desk", "Approved", "Credited", "Ops Manager", "Completed"),
+                ("MS Dhoni", "P-1005", "4", "9000000005", "JH01 EF 5555", "Chennai", "Individual", "Debit", "2026-06-28", "800", "Challan reimbursement deduction", "Challan", "Speeding ticket penalty offset", "Finance Desk", "Approved", "Deducted", "Ops Manager", "Completed"),
+                ("Virat Kohli", "P-1006", "5", "9000000006", "DL01 GH 6666", "Delhi", "Fleet", "Credit", "2026-06-29", "12000", "Incentive bonus", "Incentives", "Completed 150 rides milestone", "Finance Desk", "Approved", "Milestone reached", "Ops Manager", "Completed"),
+                ("Rohit Sharma", "P-1007", "6", "9000000007", "MH02 IJ 7777", "Mumbai", "Individual", "Debit", "2026-06-29", "450", "Toll charges adjustment", "Tolls", "Sea link toll duplicate entry", "Finance Desk", "Approved", "Adjusted", "Ops Manager", "Completed"),
+                ("Jasprit Bumrah", "P-1008", "7", "9000000008", "GJ01 KL 8888", "Hyderabad", "Rental", "Waiver", "2026-06-30", "600", "Device deposit discount", "Deposit", "Waiving device deposit partially", "Finance Desk", "Approved", "Discounted", "Ops Manager", "Completed"),
+                ("Hardik Pandya", "P-1009", "8", "9000000009", "GJ03 MN 9999", "Bangalore", "Fleet", "Credit", "2026-06-30", "4500", "Battery swap compensation", "Fuel", "Electric swap cost offset", "Finance Desk", "Approved", "Compensated", "Ops Manager", "Completed"),
+                ("KL Rahul", "P-1010", None, "9000000010", None, "Bangalore", "Rental", "Debit", "2026-06-30", "1500", "Excess mileage fee", "Rental Fee", "150km beyond weekly limit", "Finance Desk", "Approved", "Charged excess", "Ops Manager", "Completed")
+            ]
+            for r in adj_records:
+                cur.execute(adj_sql, r)
+            print("[OK] Partner adjustments seeded")
+
+        # ── vehicle_allocation ───────────────────────────
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS vehicle_allocation (
+                id SERIAL PRIMARY KEY,
+                allocation_date VARCHAR(50),
+                allocation_type VARCHAR(50),
+                city_name VARCHAR(100),
+                driver_id VARCHAR(50),
+                driver_name VARCHAR(255),
+                driver_phone VARCHAR(50),
+                driver_plan VARCHAR(100),
+                type_of_plan VARCHAR(100),
+                car_model VARCHAR(100),
+                vehicle_number VARCHAR(100),
+                old_vehicle_number VARCHAR(100),
+                dropoff_odometer VARCHAR(50),
+                dropoff_remarks TEXT,
+                dropoff_photo TEXT,
+                is_migrated BOOLEAN NULL,
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+        """)
+        
+        # Run migrations for vehicle_allocation table columns
+        for col in [
+            "driver_plan VARCHAR(100)",
+            "type_of_plan VARCHAR(100)",
+            "car_model VARCHAR(100)",
+            "old_vehicle_number VARCHAR(100)",
+            "dropoff_odometer VARCHAR(50)",
+            "dropoff_remarks TEXT",
+            "dropoff_photo TEXT"
+        ]:
+            cur.execute(f"ALTER TABLE vehicle_allocation ADD COLUMN IF NOT EXISTS {col};")
+
+        cur.execute("SELECT COUNT(*) FROM vehicle_allocation;")
+        if cur.fetchone()[0] == 0:
+            alloc_sql = """
+                INSERT INTO vehicle_allocation (
+                    allocation_date, allocation_type, city_name, driver_id, driver_name, 
+                    driver_phone, driver_plan, type_of_plan, car_model, vehicle_number, 
+                    old_vehicle_number, dropoff_odometer, dropoff_remarks
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
+            """
+            alloc_records = [
+                ("2026-06-25", "New Allocation", "Hyderabad", "D-5001", "Amit Kumar", "9848022338", "Subscription", "Bronze", "Tata Nexon EV", "TS09 EA 4444", None, None, None),
+                ("2026-06-26", "Car Swap", "Mumbai", "D-5002", "Rajesh Patel", "9820098200", "Lease", "Silver", "MG ZS EV", "MH01 AB 5555", "MH01 AB 2222", "45000", "Returned with clean battery state"),
+                ("2026-06-27", "Reallocation", "Bangalore", "D-5003", "Karthik Raja", "9900990099", "Lease", "Gold", "Hyundai Kona", "KA03 CD 6666", "KA03 CD 1111", "62000", "Scratches on rear left bumper"),
+                ("2026-06-27", "New Allocation", "Chennai", "D-5004", "Senthil Kumar", "9444094440", "Subscription", "Bronze", "BYD Atto 3", "TN07 EF 7777", None, None, None),
+                ("2026-06-28", "Car Swap", "Delhi", "D-5005", "Harpreet Singh", "9810098100", "Subscription", "Silver", "Tata Tigor EV", "DL01 GH 8888", "DL01 GH 3333", "28000", "No issues reported on swap"),
+                ("2026-06-29", "New Allocation", "Hyderabad", "D-5006", "Vikram Reddy", "9000190001", "Lease", "Gold", "Tata Nexon EV", "TS09 EA 9999", None, None, None),
+                ("2026-06-29", "Reallocation", "Mumbai", "D-5007", "Sunil Gavaskar", "9821098210", "Lease", "Silver", "MG ZS EV", "MH02 IJ 1234", "MH02 IJ 7777", "18000", "Dropoff clean"),
+                ("2026-06-30", "New Allocation", "Bangalore", "D-5008", "Anil Kumble", "9845098450", "Subscription", "Bronze", "Hyundai Kona", "KA03 CD 5555", None, None, None),
+                ("2026-06-30", "Car Swap", "Hyderabad", "D-5009", "Suresh Raina", "9989099890", "Subscription", "Gold", "BYD Atto 3", "TS09 EA 6666", "TS09 EA 1111", "34500", "Minor dent on front door"),
+                ("2026-06-30", "New Allocation", "Delhi", "D-5010", "Kapil Dev", "9811098110", "Lease", "Gold", "Tata Tigor EV", "DL02 IJ 7777", None, None, None)
+            ]
+            for r in alloc_records:
+                cur.execute(alloc_sql, r)
+            print("[OK] Vehicle allocations seeded")
+
+        # ── partner_expenses ───────────────────────────
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS partner_expenses (
+                id SERIAL PRIMARY KEY,
+                expense_date VARCHAR(50),
+                driver_name VARCHAR(255),
+                phone_number VARCHAR(50),
+                vehicle_number VARCHAR(100),
+                expenses_type VARCHAR(100),
+                amount_paid VARCHAR(50),
+                reference_photo TEXT,
+                is_migrated BOOLEAN NULL,
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+        """)
+        
+        # Run migrations for partner_expenses table columns
+        for col in [
+            "expense_date VARCHAR(50)",
+            "driver_name VARCHAR(255)",
+            "phone_number VARCHAR(50)",
+            "vehicle_number VARCHAR(100)",
+            "expenses_type VARCHAR(100)",
+            "amount_paid VARCHAR(50)",
+            "reference_photo TEXT"
+        ]:
+            cur.execute(f"ALTER TABLE partner_expenses ADD COLUMN IF NOT EXISTS {col};")
+
+        cur.execute("SELECT COUNT(*) FROM partner_expenses;")
+        if cur.fetchone()[0] == 0:
+            exp_sql = """
+                INSERT INTO partner_expenses (
+                    expense_date, driver_name, phone_number, vehicle_number, 
+                    expenses_type, amount_paid, reference_photo
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s);
+            """
+            exp_records = [
+                ("2026-06-25", "Amit Kumar", "9848022338", "TS09 EA 4444", "CNG", "1200", None),
+                ("2026-06-26", "Rajesh Patel", "9820098200", "MH01 AB 5555", "Toll", "350", None),
+                ("2026-06-27", "Karthik Raja", "9900990099", "KA03 CD 6666", "OLA - CL Balance", "850", None),
+                ("2026-06-27", "Senthil Kumar", "9444094440", "TN07 EF 7777", "Paid to Company", "5000", None),
+                ("2026-06-28", "Harpreet Singh", "9810098100", "DL01 GH 8888", "CNG", "950", None),
+                ("2026-06-29", "Vikram Reddy", "9000190001", "TS09 EA 9999", "Toll", "120", None),
+                ("2026-06-29", "Sunil Gavaskar", "9821098210", "MH02 IJ 1234", "Paid to Company", "4500", None),
+                ("2026-06-30", "Anil Kumble", "9845098450", "KA03 CD 5555", "CNG", "1100", None),
+                ("2026-06-30", "Suresh Raina", "9989099890", "TS09 EA 6666", "Toll", "280", None),
+                ("2026-06-30", "Kapil Dev", "9811098110", "DL02 IJ 7777", "OLA - CL Balance", "600", None)
+            ]
+            for r in exp_records:
+                cur.execute(exp_sql, r)
+            print("[OK] Partner expenses seeded")
+
+
         # Seed walk-ins if empty
         cur.execute("SELECT COUNT(*) FROM walkins;")
         if cur.fetchone()[0] == 0:
@@ -436,6 +615,55 @@ class OnboardingData(BaseModel):
     account_number: Optional[str] = None
     ifsc_code: Optional[str] = None
     upi_id: Optional[str] = None
+
+class AdjustmentData(BaseModel):
+    partner_name: str
+    partner_code: str
+    driver_id: Optional[str] = None
+    partner_number: str
+    vehicle_number: Optional[str] = None
+    city_name: str
+    partner_type: str
+    adjustment_type: str
+    adjustment_date: str
+    enter_amount: str
+    remittance_towards: Optional[str] = None
+    adjustment_related_to: Optional[str] = None
+    remarks: Optional[str] = None
+    first_level_approval_by: Optional[str] = None
+    finance_team_status: str
+    finance_team_remarks: Optional[str] = None
+    final_level_approval_by: Optional[str] = None
+    status: str
+    photo: Optional[Any] = None
+
+class AllocationData(BaseModel):
+    allocation_date: str
+    allocation_type: str
+    city_name: str
+    driver_id: str
+    driver_name: str
+    driver_phone: str
+    driver_plan: Optional[str] = None
+    type_of_plan: Optional[str] = None
+    car_model: Optional[str] = None
+    vehicle_number: str
+    old_vehicle_number: Optional[str] = None
+    dropoff_odometer: Optional[str] = None
+    dropoff_remarks: Optional[str] = None
+    dropoff_photo: Optional[Any] = None
+
+
+class ExpenseData(BaseModel):
+    expense_date: str
+    driver_name: str
+    phone_number: str
+    vehicle_number: str
+    expenses_type: str
+    amount_paid: str
+    reference_photo: Optional[Any] = None
+
+
 
 
 def extract_image(val: Any) -> Optional[str]:
@@ -1080,6 +1308,463 @@ def delete_onboarding(id: int):
         deleted = cur.fetchone()
         if not deleted:
             raise HTTPException(status_code=404, detail="Record not found")
+        conn.commit()
+        return {"success": True}
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+
+
+# ─────────────────────────────────────────────────────────
+# Partner Adjustment Endpoints
+# ─────────────────────────────────────────────────────────
+@app.get("/api/adjustment")
+def get_adjustments(
+    query: Optional[str] = None,
+    city: Optional[str] = None,
+    adj_type: Optional[str] = None,
+    status: Optional[str] = None
+):
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        base_query = "SELECT * FROM partner_adjustment WHERE 1=1"
+        params = []
+        
+        if query:
+            base_query += """ AND (
+                LOWER(partner_name) LIKE %s OR 
+                LOWER(partner_code) LIKE %s OR 
+                LOWER(driver_id) LIKE %s OR 
+                partner_number LIKE %s OR 
+                LOWER(vehicle_number) LIKE %s
+            )"""
+            q = f"%{query.lower()}%"
+            params.extend([q, q, q, q, q])
+            
+        if city and city != "all":
+            base_query += " AND city_name = %s"
+            params.append(city)
+            
+        if adj_type and adj_type != "all":
+            base_query += " AND adjustment_type = %s"
+            params.append(adj_type)
+            
+        if status and status != "all":
+            base_query += " AND status = %s"
+            params.append(status)
+            
+        base_query += " ORDER BY id DESC"
+        cur.execute(base_query, params)
+        cols = [d[0] for d in cur.description]
+        return [dict(zip(cols, row)) for row in cur.fetchall()]
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.get("/api/adjustment/stats")
+def get_adjustment_stats():
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        
+        # Total count
+        cur.execute("SELECT COUNT(*) FROM partner_adjustment;")
+        total = cur.fetchone()[0]
+        
+        # Total Amount (sum of casted float)
+        cur.execute("""
+            SELECT COALESCE(SUM(CASE 
+                WHEN enter_amount ~ '^[0-9]+(\\.[0-9]+)?$' THEN CAST(enter_amount AS DOUBLE PRECISION)
+                ELSE 0 
+            END), 0) FROM partner_adjustment;
+        """)
+        total_amount = cur.fetchone()[0]
+        
+        # Approved count
+        cur.execute("SELECT COUNT(*) FROM partner_adjustment WHERE finance_team_status = 'Approved';")
+        approved = cur.fetchone()[0]
+        
+        # Completed count
+        cur.execute("SELECT COUNT(*) FROM partner_adjustment WHERE status = 'Completed';")
+        completed = cur.fetchone()[0]
+        
+        return {
+            "total_adjustments": total,
+            "total_amount": round(total_amount, 2),
+            "approved_count": approved,
+            "completed_count": completed
+        }
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.get("/api/adjustment/{id}")
+def get_adjustment(id: int):
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM partner_adjustment WHERE id = %s;", (id,))
+        r = cur.fetchone()
+        if not r:
+            raise HTTPException(status_code=404, detail="Adjustment record not found")
+        cols = [d[0] for d in cur.description]
+        return dict(zip(cols, r))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.post("/api/adjustment")
+def create_adjustment(data: AdjustmentData):
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO partner_adjustment (
+                partner_name, partner_code, driver_id, partner_number, vehicle_number, city_name, 
+                partner_type, adjustment_type, adjustment_date, enter_amount, 
+                remittance_towards, adjustment_related_to, remarks, first_level_approval_by, 
+                finance_team_status, finance_team_remarks, final_level_approval_by, status, photo
+            ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            RETURNING id;
+        """, (
+            data.partner_name, data.partner_code, data.driver_id, data.partner_number, data.vehicle_number, data.city_name,
+            data.partner_type, data.adjustment_type, data.adjustment_date, data.enter_amount,
+            data.remittance_towards, data.adjustment_related_to, data.remarks, data.first_level_approval_by,
+            data.finance_team_status, data.finance_team_remarks, data.final_level_approval_by, data.status,
+            extract_image(data.photo)
+        ))
+        new_id = cur.fetchone()[0]
+        conn.commit()
+        return {"success": True, "id": new_id}
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.put("/api/adjustment/{id}")
+def update_adjustment(id: int, data: AdjustmentData):
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE partner_adjustment SET
+                partner_name=%s, partner_code=%s, driver_id=%s, partner_number=%s, vehicle_number=%s, city_name=%s, 
+                partner_type=%s, adjustment_type=%s, adjustment_date=%s, enter_amount=%s, 
+                remittance_towards=%s, adjustment_related_to=%s, remarks=%s, first_level_approval_by=%s, 
+                finance_team_status=%s, finance_team_remarks=%s, final_level_approval_by=%s, status=%s, photo=%s
+            WHERE id=%s RETURNING id;
+        """, (
+            data.partner_name, data.partner_code, data.driver_id, data.partner_number, data.vehicle_number, data.city_name,
+            data.partner_type, data.adjustment_type, data.adjustment_date, data.enter_amount,
+            data.remittance_towards, data.adjustment_related_to, data.remarks, data.first_level_approval_by,
+            data.finance_team_status, data.finance_team_remarks, data.final_level_approval_by, data.status,
+            extract_image(data.photo),
+            id
+        ))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Adjustment record not found")
+        conn.commit()
+        return {"success": True, "id": id}
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.delete("/api/adjustment/{id}")
+def delete_adjustment(id: int):
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM partner_adjustment WHERE id = %s RETURNING id;", (id,))
+        deleted = cur.fetchone()
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Adjustment record not found")
+        conn.commit()
+        return {"success": True}
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+
+
+# ─────────────────────────────────────────────────────────
+# Vehicle Allocation Endpoints
+# ─────────────────────────────────────────────────────────
+@app.get("/api/allocation")
+def get_allocations(
+    query: Optional[str] = None,
+    city: Optional[str] = None,
+    alloc_type: Optional[str] = None
+):
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        base_query = "SELECT * FROM vehicle_allocation WHERE 1=1"
+        params = []
+        
+        if query:
+            base_query += """ AND (
+                LOWER(driver_name) LIKE %s OR 
+                LOWER(driver_id) LIKE %s OR 
+                driver_phone LIKE %s OR 
+                LOWER(vehicle_number) LIKE %s OR 
+                LOWER(old_vehicle_number) LIKE %s
+            )"""
+            q = f"%{query.lower()}%"
+            params.extend([q, q, q, q, q])
+            
+        if city and city != "all":
+            base_query += " AND city_name = %s"
+            params.append(city)
+            
+        if alloc_type and alloc_type != "all":
+            base_query += " AND allocation_type = %s"
+            params.append(alloc_type)
+            
+        base_query += " ORDER BY id DESC"
+        cur.execute(base_query, params)
+        cols = [d[0] for d in cur.description]
+        return [dict(zip(cols, row)) for row in cur.fetchall()]
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.get("/api/allocation/stats")
+def get_allocation_stats():
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        
+        # Total
+        cur.execute("SELECT COUNT(*) FROM vehicle_allocation;")
+        total = cur.fetchone()[0]
+        
+        # New Allocation
+        cur.execute("SELECT COUNT(*) FROM vehicle_allocation WHERE allocation_type = 'New Allocation';")
+        new_alloc = cur.fetchone()[0]
+        
+        # Car Swap
+        cur.execute("SELECT COUNT(*) FROM vehicle_allocation WHERE allocation_type = 'Car Swap';")
+        swap_alloc = cur.fetchone()[0]
+        
+        # Reallocation
+        cur.execute("SELECT COUNT(*) FROM vehicle_allocation WHERE allocation_type = 'Reallocation';")
+        realloc = cur.fetchone()[0]
+        
+        return {
+            "total_allocations": total,
+            "new_allocations": new_alloc,
+            "car_swaps": swap_alloc,
+            "reallocations": realloc
+        }
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.get("/api/allocation/{id}")
+def get_allocation_record(id: int):
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM vehicle_allocation WHERE id = %s;", (id,))
+        r = cur.fetchone()
+        if not r:
+            raise HTTPException(status_code=404, detail="Allocation record not found")
+        cols = [d[0] for d in cur.description]
+        return dict(zip(cols, r))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.post("/api/allocation")
+def create_allocation_record(data: AllocationData):
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO vehicle_allocation (
+                allocation_date, allocation_type, city_name, driver_id, driver_name, 
+                driver_phone, driver_plan, type_of_plan, car_model, vehicle_number, 
+                old_vehicle_number, dropoff_odometer, dropoff_remarks, dropoff_photo
+            ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            RETURNING id;
+        """, (
+            data.allocation_date, data.allocation_type, data.city_name, data.driver_id, data.driver_name,
+            data.driver_phone, data.driver_plan, data.type_of_plan, data.car_model, data.vehicle_number,
+            data.old_vehicle_number, data.dropoff_odometer, data.dropoff_remarks,
+            extract_image(data.dropoff_photo)
+        ))
+        new_id = cur.fetchone()[0]
+        conn.commit()
+        return {"success": True, "id": new_id}
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.put("/api/allocation/{id}")
+def update_allocation_record(id: int, data: AllocationData):
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE vehicle_allocation SET
+                allocation_date=%s, allocation_type=%s, city_name=%s, driver_id=%s, driver_name=%s, 
+                driver_phone=%s, driver_plan=%s, type_of_plan=%s, car_model=%s, vehicle_number=%s, 
+                old_vehicle_number=%s, dropoff_odometer=%s, dropoff_remarks=%s, dropoff_photo=%s
+            WHERE id=%s RETURNING id;
+        """, (
+            data.allocation_date, data.allocation_type, data.city_name, data.driver_id, data.driver_name,
+            data.driver_phone, data.driver_plan, data.type_of_plan, data.car_model, data.vehicle_number,
+            data.old_vehicle_number, data.dropoff_odometer, data.dropoff_remarks,
+            extract_image(data.dropoff_photo),
+            id
+        ))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Allocation record not found")
+        conn.commit()
+        return {"success": True, "id": id}
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.delete("/api/allocation/{id}")
+def delete_allocation_record(id: int):
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM vehicle_allocation WHERE id = %s RETURNING id;", (id,))
+        deleted = cur.fetchone()
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Allocation record not found")
+        conn.commit()
+        return {"success": True}
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+
+
+# ─────────────────────────────────────────────────────────
+# Partner Expenses Endpoints
+# ─────────────────────────────────────────────────────────
+@app.get("/api/expense")
+def get_expenses(
+    query: Optional[str] = None,
+    exp_type: Optional[str] = None
+):
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        base_query = "SELECT * FROM partner_expenses WHERE 1=1"
+        params = []
+        
+        if query:
+            base_query += """ AND (
+                LOWER(driver_name) LIKE %s OR 
+                phone_number LIKE %s OR 
+                LOWER(vehicle_number) LIKE %s
+            )"""
+            q = f"%{query.lower()}%"
+            params.extend([q, q, q])
+            
+        if exp_type and exp_type != "all":
+            base_query += " AND expenses_type = %s"
+            params.append(exp_type)
+            
+        base_query += " ORDER BY id DESC"
+        cur.execute(base_query, params)
+        cols = [d[0] for d in cur.description]
+        return [dict(zip(cols, row)) for row in cur.fetchall()]
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.get("/api/expense/stats")
+def get_expense_stats():
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        
+        # Total overall expenses
+        cur.execute("SELECT amount_paid FROM partner_expenses;")
+        total = sum(float(r[0]) for r in cur.fetchall() if r[0] and r[0].replace('.', '', 1).isdigit())
+        
+        # CNG
+        cur.execute("SELECT amount_paid FROM partner_expenses WHERE expenses_type = 'CNG';")
+        cng = sum(float(r[0]) for r in cur.fetchall() if r[0] and r[0].replace('.', '', 1).isdigit())
+        
+        # Toll
+        cur.execute("SELECT amount_paid FROM partner_expenses WHERE expenses_type = 'Toll';")
+        toll = sum(float(r[0]) for r in cur.fetchall() if r[0] and r[0].replace('.', '', 1).isdigit())
+        
+        # Other (OLA + Paid to Company)
+        cur.execute("SELECT amount_paid FROM partner_expenses WHERE expenses_type IN ('OLA - CL Balance', 'Paid to Company');")
+        other = sum(float(r[0]) for r in cur.fetchall() if r[0] and r[0].replace('.', '', 1).isdigit())
+        
+        return {
+            "total_expenses": total,
+            "cng_total": cng,
+            "toll_total": toll,
+            "other_total": other
+        }
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.get("/api/expense/{id}")
+def get_expense_record(id: int):
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM partner_expenses WHERE id = %s;", (id,))
+        r = cur.fetchone()
+        if not r:
+            raise HTTPException(status_code=404, detail="Expense record not found")
+        cols = [d[0] for d in cur.description]
+        return dict(zip(cols, r))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.post("/api/expense")
+def create_expense_record(data: ExpenseData):
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO partner_expenses (
+                expense_date, driver_name, phone_number, vehicle_number, 
+                expenses_type, amount_paid, reference_photo
+            ) VALUES (%s,%s,%s,%s,%s,%s,%s)
+            RETURNING id;
+        """, (
+            data.expense_date, data.driver_name, data.phone_number, data.vehicle_number,
+            data.expenses_type, data.amount_paid, extract_image(data.reference_photo)
+        ))
+        new_id = cur.fetchone()[0]
+        conn.commit()
+        return {"success": True, "id": new_id}
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.put("/api/expense/{id}")
+def update_expense_record(id: int, data: ExpenseData):
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE partner_expenses SET
+                expense_date=%s, driver_name=%s, phone_number=%s, vehicle_number=%s, 
+                expenses_type=%s, amount_paid=%s, reference_photo=%s
+            WHERE id=%s RETURNING id;
+        """, (
+            data.expense_date, data.driver_name, data.phone_number, data.vehicle_number,
+            data.expenses_type, data.amount_paid, extract_image(data.reference_photo),
+            id
+        ))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Expense record not found")
+        conn.commit()
+        return {"success": True, "id": id}
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.delete("/api/expense/{id}")
+def delete_expense_record(id: int):
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM partner_expenses WHERE id = %s RETURNING id;", (id,))
+        deleted = cur.fetchone()
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Expense record not found")
         conn.commit()
         return {"success": True}
     finally:
