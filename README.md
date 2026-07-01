@@ -1,22 +1,20 @@
-# LetzRyd Walk-In Registry
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
+</div>
 
-Built using HTML, CSS, JavaScript (SurveyJS), FastAPI (Python), and PostgreSQL.
-**Repository**: [https://github.com/aayush-letzryd/walkin](https://github.com/aayush-letzryd/walkin)
-**Website**: [https://walkin-32fc.onrender.com/](https://walkin-32fc.onrender.com/)
+# Run and deploy your AI Studio app
 
-## Project Structure
-- **index.html & index.css** – UI layout and styling.
-- **script.js** – SurveyJS form fields, validation, and frontend logic.
-- **main.py** – FastAPI backend that connects to PostgreSQL using environment variables.
+This contains everything you need to run your app locally.
 
-## Creating New Forms
-- Modify the frontend files to add new form fields and configure their layout.
-- Update the CSS file to change the visual styling of the new fields.
-- Update the backend files if the new fields require database changes.
+View your app in AI Studio: https://ai.studio/apps/e6b7539e-96c4-43a3-9b8f-9b7265ad9456
 
-## Deploying on Render
-- Upload the codebase to a GitHub repository.
-- Create a new Web Service on Render and connect your GitHub repository.
-- Configure the runtime environment to Python.
-- Set the appropriate commands in Render to install dependencies and start the server.
-- Add the necessary database environment variables in the Render dashboard.
+## Run Locally
+
+**Prerequisites:**  Node.js
+
+
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`

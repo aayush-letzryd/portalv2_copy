@@ -105,7 +105,6 @@ def startup_event():
                 created_at     TIMESTAMP DEFAULT NOW()
             );
         """)
-        # Add columns for existing deployments
         for col in [
             "aadhaar_number VARCHAR(20)",
             "aadhaar_image  TEXT",
@@ -114,12 +113,154 @@ def startup_event():
         ]:
             cur.execute(f"ALTER TABLE walkins ADD COLUMN IF NOT EXISTS {col};")
 
-        # Widen visiting_reason if needed
-        cur.execute("ALTER TABLE walkins ALTER COLUMN visiting_reason TYPE VARCHAR(255);")
+        # ── driver_onboarding ───────────────────────────
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS driver_onboarding (
+                id SERIAL PRIMARY KEY,
+                driver_name VARCHAR(255),
+                phone_number VARCHAR(50),
+                whatsapp_number VARCHAR(50),
+                dob VARCHAR(20),
+                city VARCHAR(100),
+                present_address TEXT,
+                emergency_name VARCHAR(255),
+                emergency_phone VARCHAR(50),
+                dl_number VARCHAR(100),
+                dl_expiry_date VARCHAR(20),
+                driver_plan VARCHAR(50),
+                lead_source VARCHAR(100),
+                pan_number VARCHAR(50),
+                aadhaar_number VARCHAR(50),
+                pan_aadhaar_linked VARCHAR(50),
+                selfie_photo TEXT,
+                dl_front TEXT,
+                dl_back TEXT,
+                pan_card_photo TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+        """)
+
+        # ── walkin_onboarding_links ──────────────────────
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS walkin_onboarding_links (
+                id SERIAL PRIMARY KEY,
+                walkin_id INTEGER REFERENCES walkins(id),
+                onboarding_id INTEGER REFERENCES driver_onboarding(id),
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+        """)
+
+        # ── form_onboarding ───────────────────────────
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS form_onboarding (
+                id SERIAL PRIMARY KEY,
+                driver_name VARCHAR(255),
+                phone_number VARCHAR(50),
+                whatsapp_number VARCHAR(50),
+                dob VARCHAR(20),
+                city VARCHAR(100),
+                operating_place VARCHAR(255),
+                present_address TEXT,
+                permanent_address TEXT,
+                emergency_name VARCHAR(255),
+                emergency_phone VARCHAR(50),
+                dl_number VARCHAR(100),
+                dl_expiry_date VARCHAR(20),
+                lead_source VARCHAR(100),
+                pan_number VARCHAR(50),
+                aadhaar_number VARCHAR(50),
+                pan_aadhaar_linked VARCHAR(50),
+                selfie_photo TEXT,
+                dl_front TEXT,
+                dl_back TEXT,
+                pan_card_photo TEXT,
+                vendor_name VARCHAR(255),
+                vendor_id VARCHAR(50),
+                aadhaar_card_photo TEXT,
+                father_name VARCHAR(255),
+                bank_name VARCHAR(255),
+                other_bank_name VARCHAR(255),
+                account_number VARCHAR(100),
+                ifsc_code VARCHAR(50),
+                upi_id VARCHAR(100),
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+        """)
+
+        # ── walkin_form_links ──────────────────────
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS walkin_form_links (
+                id SERIAL PRIMARY KEY,
+                walkin_id INTEGER REFERENCES walkins(id),
+                onboarding_id INTEGER REFERENCES form_onboarding(id),
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+        """)
+
+        # Add operating_place & vendor & aadhaar photo fields gracefully
+        cur.execute("ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS operating_place VARCHAR(255);")
+        cur.execute("ALTER TABLE walkins ADD COLUMN IF NOT EXISTS operating_place VARCHAR(255);")
+        cur.execute("ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS vendor_name VARCHAR(255);")
+        cur.execute("ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS vendor_id VARCHAR(50);")
+        cur.execute("ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS aadhaar_card_photo TEXT;")
+        cur.execute("ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS father_name VARCHAR(255);")
+        cur.execute("ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS bank_name VARCHAR(255);")
+        cur.execute("ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS other_bank_name VARCHAR(255);")
+        cur.execute("ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS account_number VARCHAR(100);")
+        cur.execute("ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS ifsc_code VARCHAR(50);")
+        cur.execute("ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS upi_id VARCHAR(100);")
 
         # Seed walk-ins if empty
         cur.execute("SELECT COUNT(*) FROM walkins;")
         if cur.fetchone()[0] == 0:
+            cur.execute("SELECT id, name FROM cities ORDER BY id;")
+            city_map = {n: i for i, n in cur.fetchall()}
+            
+            w_sql = """
+                INSERT INTO walkins (visitor_type, event_date, city, person_name, person_number, dl_number, visiting_reason, joined_status, executive_name, executive_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id;
+            """
+            cur.execute(w_sql, ("Partner", "2026-06-24", "Mumbai", "Deepak Mehta", "+91 98001 55667", "MH01 20100098765", "Enquiry", "Not Interested", "Neha Sharma", 18))
+            cur.execute(w_sql, ("Driver", "2026-06-25", "Bangalore", "Ravi Shankar", "+91 91000 44556", "KA03 20210056789", "Onboarding", "Pending", "Sandeep", 7))
+            cur.execute(w_sql, ("Driver", "2026-06-26", "Hyderabad", "Ajay Deshmukh", "+91 99888 33221", "TS02 20200765432", "Support", "Joined", "SHAIK ABDULLA", 5))
+            cur.execute(w_sql, ("Partner", "2026-06-26", "Hyderabad", "Kavitha Nair", "+91 90123 45678", "TS06 20181234567", "Enquiry", "Onboarded", "Ayush Mahendru", 13))
+
+        # Clean seed 10 onboarding records if empty or < 5
+        cur.execute("SELECT COUNT(*) FROM form_onboarding;")
+        if cur.fetchone()[0] < 5:
+            cur.execute("DELETE FROM walkin_form_links;")
+            cur.execute("DELETE FROM form_onboarding;")
+            
+            onboarding_records = [
+                ("Kavitha Nair", "9012345678", "1992-05-15", "Hyderabad", "Banjara Hills", "123 Street, Hyderabad", "123 Street, Hyderabad", "Rahul Nair", "9876543210", "TS0620181234567", "ABCDE1234F", "123456789012", "Yes", "FastFleet Logistics", "V-9901", "Gopal Nair"),
+                ("Ravi Shankar", "9100044556", "1994-08-22", "Bangalore", "Indiranagar", "456 Avenue, Bangalore", "456 Avenue, Bangalore", "Saraswathi", "9900088220", "KA0320210056789", "BCDEF2345G", "234567890123", "Yes", "FastFleet Logistics", "V-9901", "Shiva Shankar"),
+                ("Ajay Deshmukh", "9988833221", "1990-12-05", "Hyderabad", "Gachibowli", "789 Lane, Hyderabad", "789 Lane, Hyderabad", "Seema Deshmukh", "9988833200", "TS0220200765432", "CDEFG3456H", "345678901234", "Yes", "Self-Employed", "", "Anand Deshmukh"),
+                ("Deepak Mehta", "9800155667", "1988-03-30", "Mumbai", "Bandra", "101 Sea Road, Mumbai", "101 Sea Road, Mumbai", "Karan Mehta", "9800155660", "MH0120100098765", "DEFGH4567I", "456789012345", "Yes", "Alpha Cabs", "V-8802", "Suresh Mehta"),
+                ("Amit Patel", "9876543210", "1991-07-14", "Mumbai", "Andheri", "202 Park Plaza, Mumbai", "202 Park Plaza, Mumbai", "Jaya Patel", "9876543200", "MH0220150012345", "EFGHI5678J", "567890123456", "No", "Alpha Cabs", "V-8802", "Dinesh Patel"),
+                ("Priya Sharma", "9911223344", "1995-11-20", "Hyderabad", "Begumpet", "505 Metro Heights, Hyderabad", "505 Metro Heights, Hyderabad", "Vijay Sharma", "9911223340", "TS0920190012345", "FGHIJ6789K", "678901234567", "Yes", "Self-Employed", "", "Rajendra Sharma"),
+                ("Rajesh Kumar", "9811223344", "1989-02-18", "Bangalore", "Koramangala", "303 Block B, Bangalore", "303 Block B, Bangalore", "Sunita Kumar", "9811223340", "KA0120180098765", "GHIJK7890L", "789012345678", "Yes", "FastFleet Logistics", "V-9901", "Ramesh Kumar"),
+                ("Sunita Rao", "9711223344", "1993-06-25", "Hyderabad", "Madhapur", "404 Cyber Towers, Hyderabad", "404 Cyber Towers, Hyderabad", "Krishna Rao", "9711223340", "TS0520211234567", "HIJKL8901M", "890123456789", "No", "Self-Employed", "", "Hanumantha Rao"),
+                ("Vinod Khanna", "9611223344", "1992-09-02", "Mumbai", "Thane", "707 West End, Mumbai", "707 West End, Mumbai", "Asha Khanna", "9611223340", "MH0420160054321", "IJKLM9012N", "901234567890", "Yes", "Alpha Cabs", "V-8802", "Prem Khanna"),
+                ("Meera Sen", "9511223344", "1994-04-10", "Bangalore", "Whitefield", "808 Silicon Valley, Bangalore", "808 Silicon Valley, Bangalore", "Anoop Sen", "9511223340", "KA0420220011223", "JKLMN0123O", "012345678901", "Yes", "Direct Partner", "", "Bimal Sen")
+            ]
+            
+            for item in onboarding_records:
+                cur.execute("""
+                    INSERT INTO form_onboarding (
+                        driver_name, phone_number, dob, city, operating_place, 
+                        present_address, permanent_address, emergency_name, emergency_phone, 
+                        dl_number, pan_number, aadhaar_number, pan_aadhaar_linked, vendor_name, vendor_id, father_name
+                    ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id;
+                """, item)
+                onb_id = cur.fetchone()[0]
+                
+                # Link this onboarding record to a walkin if the name matches
+                cur.execute("SELECT id FROM walkins WHERE LOWER(person_name) = LOWER(%s) LIMIT 1;", (item[0],))
+                walkin_row = cur.fetchone()
+                if walkin_row:
+                    walkin_id = walkin_row[0]
+                    cur.execute("INSERT INTO walkin_form_links (walkin_id, onboarding_id) VALUES (%s, %s);", (walkin_id, onb_id))
+                    cur.execute("UPDATE walkins SET joined_status = 'Onboarded' WHERE id = %s;", (walkin_id,))
             cur.execute("SELECT id, name FROM cities ORDER BY id;")
             city_map = {n: i for i, n in cur.fetchall()}
 
@@ -252,6 +393,7 @@ class WalkinData(BaseModel):
     visitor_type:    Optional[str] = None
     event_date:      Optional[str] = None
     city:            Union[str, int, None] = None
+    operating_place: Optional[str] = None
     executive_id:    Union[str, int, None] = None
     person_name:     Optional[str] = None
     person_number:   Union[str, int, None] = None
@@ -262,6 +404,38 @@ class WalkinData(BaseModel):
     visiting_reason: Optional[str] = None
     joined_status:   Optional[str] = None
     remarks:         Optional[str] = None
+
+class OnboardingData(BaseModel):
+    driver_name: str
+    phone_number: str
+    whatsapp_number: Optional[str] = None
+    dob: str
+    city: str
+    operating_place: Optional[str] = None
+    present_address: str
+    permanent_address: str
+    emergency_name: str
+    emergency_phone: str
+    dl_number: Optional[str] = None
+    dl_expiry_date: Optional[str] = None
+    lead_source: Optional[str] = None
+    pan_number: str
+    aadhaar_number: str
+    pan_aadhaar_linked: Optional[str] = None
+    selfie_photo: Optional[Any] = None
+    dl_front: Optional[Any] = None
+    dl_back: Optional[Any] = None
+    pan_card_photo: Optional[Any] = None
+    walkin_id: Optional[int] = None
+    vendor_name: Optional[str] = None
+    vendor_id: Optional[str] = None
+    aadhaar_card_photo: Optional[Any] = None
+    father_name: str
+    bank_name: Optional[str] = None
+    other_bank_name: Optional[str] = None
+    account_number: Optional[str] = None
+    ifsc_code: Optional[str] = None
+    upi_id: Optional[str] = None
 
 
 def extract_image(val: Any) -> Optional[str]:
@@ -433,11 +607,18 @@ def get_stats():
 # Walk-ins — List
 # ─────────────────────────────────────────────────────────
 @app.get("/api/walkins")
-def get_all_walkins():
+def get_all_walkins(
+    search: Optional[str] = None,
+    city: Optional[str] = "all",
+    visitor_type: Optional[str] = "all",
+    status: Optional[str] = "all",
+    limit: Optional[int] = 10
+):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("""
+        
+        base_query = """
             SELECT
                 w.id,
                 w.visitor_type,
@@ -456,8 +637,42 @@ def get_all_walkins():
             FROM walkins w
             LEFT JOIN cities c ON c.id::text = w.city::text
             LEFT JOIN users  u ON u.id = w.executive_id
-            ORDER BY w.id DESC;
-        """)
+            WHERE 1=1
+        """
+        
+        params = []
+        
+        if search:
+            base_query += """
+                AND (
+                    w.person_name ILIKE %s
+                    OR w.person_number ILIKE %s
+                    OR w.dl_number ILIKE %s
+                    OR w.aadhaar_number ILIKE %s
+                    OR w.id::text ILIKE %s
+                )
+            """
+            search_pattern = f"%{search}%"
+            params.extend([search_pattern] * 5)
+            # When searching, we want more results
+            limit = max(limit, 50)
+            
+        if city and city != "all":
+            base_query += " AND COALESCE(c.name, w.city) = %s"
+            params.append(city)
+            
+        if visitor_type and visitor_type != "all":
+            base_query += " AND w.visitor_type = %s"
+            params.append(visitor_type)
+            
+        if status and status != "all":
+            base_query += " AND w.joined_status = %s"
+            params.append(status)
+            
+        base_query += " ORDER BY w.id DESC LIMIT %s;"
+        params.append(limit)
+        
+        cur.execute(base_query, params)
         cols = [d[0] for d in cur.description]
         result = []
         for row in cur.fetchall():
@@ -465,6 +680,30 @@ def get_all_walkins():
             if d.get("created_at"):
                 d["created_at"] = str(d["created_at"])
             result.append(d)
+        return result
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+
+# ─────────────────────────────────────────────────────────
+# Walk-ins — Search for Linking
+# ─────────────────────────────────────────────────────────
+@app.get("/api/walkins/search")
+def search_walkins(q: str):
+    """Search for walk-ins by ID, phone, or DL to prepopulate Onboarding."""
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        search_pattern = f"%{q}%"
+        cur.execute("""
+            SELECT id, person_name, person_number, city, dl_number, aadhaar_number
+            FROM walkins
+            WHERE id::text = %s OR person_number ILIKE %s OR dl_number ILIKE %s
+            ORDER BY id DESC LIMIT 5;
+        """, (q, search_pattern, search_pattern))
+        
+        cols = [d[0] for d in cur.description]
+        result = [dict(zip(cols, row)) for row in cur.fetchall()]
         return result
     finally:
         postgreSQL_pool.putconn(conn)
@@ -480,7 +719,7 @@ def get_walkin(walkin_id: int):
         cur = conn.cursor()
         cur.execute("""
             SELECT
-                w.visitor_type, w.event_date, w.city, w.executive_id,
+                w.visitor_type, w.event_date, w.city, w.operating_place, w.executive_id,
                 w.person_name, w.person_number, w.aadhaar_number, w.dl_number,
                 w.visiting_reason, w.joined_status, w.remarks,
                 COALESCE(u.name, '') AS executive_name
@@ -491,11 +730,11 @@ def get_walkin(walkin_id: int):
         r = cur.fetchone()
         if r:
             return {
-                "visitor_type": r[0], "event_date": r[1], "city": r[2],
-                "executive_id": r[3], "person_name": r[4], "person_number": r[5],
-                "aadhaar_number": r[6], "dl_number": r[7],
-                "visiting_reason": r[8], "joined_status": r[9], "remarks": r[10],
-                "executive_name": r[11],
+                "visitor_type": r[0], "event_date": r[1], "city": r[2], "operating_place": r[3],
+                "executive_id": r[4], "person_name": r[5], "person_number": r[6],
+                "aadhaar_number": r[7], "dl_number": r[8],
+                "visiting_reason": r[9], "joined_status": r[10], "remarks": r[11],
+                "executive_name": r[12],
             }
         raise HTTPException(status_code=404, detail="Walkin not found")
     finally:
@@ -523,15 +762,16 @@ def create_walkin(data: WalkinData, authorization: Optional[str] = Header(None))
         cur = conn.cursor()
         cur.execute("""
             INSERT INTO walkins
-              (visitor_type, event_date, city, executive_id, person_name,
+              (visitor_type, event_date, city, operating_place, executive_id, person_name,
                person_number, aadhaar_number, dl_number, aadhaar_image,
                dl_image, visiting_reason, joined_status, remarks)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             RETURNING id;
         """, (
             data.visitor_type,
             data.event_date,
             str(data.city) if data.city is not None else None,
+            data.operating_place,
             final_exec_id,
             data.person_name,
             str(data.person_number) if data.person_number else None,
@@ -548,6 +788,9 @@ def create_walkin(data: WalkinData, authorization: Optional[str] = Header(None))
         return {"success": True, "walkin_id": walkin_id}
     finally:
         postgreSQL_pool.putconn(conn)
+
+
+
 
 
 # ─────────────────────────────────────────────────────────
@@ -578,7 +821,7 @@ def update_walkin(walkin_id: int, data: WalkinData, authorization: Optional[str]
 
         cur.execute("""
             UPDATE walkins SET
-                visitor_type=%s, event_date=%s, city=%s, executive_id=%s,
+                visitor_type=%s, event_date=%s, city=%s, operating_place=%s, executive_id=%s,
                 person_name=%s, person_number=%s, aadhaar_number=%s, dl_number=%s,
                 visiting_reason=%s, joined_status=%s, remarks=%s
             WHERE id=%s;
@@ -586,6 +829,7 @@ def update_walkin(walkin_id: int, data: WalkinData, authorization: Optional[str]
             data.visitor_type,
             data.event_date,
             str(data.city) if data.city is not None else None,
+            data.operating_place,
             final_exec_id,
             data.person_name,
             str(data.person_number) if data.person_number else None,
@@ -621,6 +865,228 @@ def delete_walkin(walkin_id: int):
 
 
 # ─────────────────────────────────────────────────────────
+# Onboarding API
+# ─────────────────────────────────────────────────────────
+@app.get("/api/onboarding")
+def get_all_onboarding(search: Optional[str] = None, city: Optional[str] = None, limit: Optional[int] = 10):
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        base_query = "SELECT * FROM form_onboarding WHERE 1=1"
+        params = []
+        if search:
+            base_query += """
+                AND (
+                    driver_name ILIKE %s OR phone_number ILIKE %s 
+                    OR dl_number ILIKE %s OR aadhaar_number ILIKE %s
+                )
+            """
+            search_pattern = f"%{search}%"
+            params.extend([search_pattern] * 4)
+            limit = max(limit, 50)
+            
+        if city and city != "all":
+            base_query += " AND city = %s"
+            params.append(city)
+            
+        base_query += " ORDER BY id DESC LIMIT %s;"
+        params.append(limit)
+        
+        cur.execute(base_query, params)
+        cols = [d[0] for d in cur.description]
+        return [dict(zip(cols, row)) for row in cur.fetchall()]
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.post("/api/onboarding")
+def create_onboarding(data: OnboardingData):
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO form_onboarding (
+                driver_name, phone_number, whatsapp_number, dob, city, operating_place,
+                present_address, permanent_address, emergency_name, emergency_phone, 
+                dl_number, dl_expiry_date, lead_source, 
+                pan_number, aadhaar_number, pan_aadhaar_linked, 
+                selfie_photo, dl_front, dl_back, pan_card_photo,
+                vendor_name, vendor_id, aadhaar_card_photo,
+                father_name, bank_name, other_bank_name,
+                account_number, ifsc_code, upi_id
+            ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            RETURNING id;
+        """, (
+            data.driver_name, data.phone_number, data.whatsapp_number, data.dob, data.city, data.operating_place,
+            data.present_address, data.permanent_address, data.emergency_name, data.emergency_phone,
+            data.dl_number, data.dl_expiry_date, data.lead_source,
+            data.pan_number, data.aadhaar_number, data.pan_aadhaar_linked,
+            extract_image(data.selfie_photo), extract_image(data.dl_front), 
+            extract_image(data.dl_back), extract_image(data.pan_card_photo),
+            data.vendor_name, data.vendor_id, extract_image(data.aadhaar_card_photo),
+            data.father_name, data.bank_name, data.other_bank_name,
+            data.account_number, data.ifsc_code, data.upi_id
+        ))
+        new_id = cur.fetchone()[0]
+        
+        # Link to walk-in if provided
+        if data.walkin_id:
+            cur.execute("""
+                INSERT INTO walkin_form_links (walkin_id, onboarding_id)
+                VALUES (%s, %s);
+            """, (data.walkin_id, new_id))
+            
+            cur.execute("""
+                UPDATE walkins SET joined_status = 'Onboarded' WHERE id = %s;
+            """, (data.walkin_id,))
+
+        conn.commit()
+        return {"success": True, "id": new_id}
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.get("/api/onboarding/{id}")
+def get_onboarding(id: int):
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT
+                driver_name, phone_number, whatsapp_number, dob, city, operating_place,
+                present_address, permanent_address, emergency_name, emergency_phone,
+                dl_number, dl_expiry_date, lead_source,
+                pan_number, aadhaar_number, pan_aadhaar_linked,
+                vendor_name, vendor_id, aadhaar_card_photo,
+                father_name, bank_name, other_bank_name,
+                account_number, ifsc_code, upi_id,
+                selfie_photo, dl_front, dl_back, pan_card_photo
+            FROM form_onboarding
+            WHERE id = %s;
+        """, (id,))
+        r = cur.fetchone()
+        if r:
+            return {
+                "id": id, "driver_name": r[0], "phone_number": r[1],
+                "whatsapp_number": r[2], "dob": r[3], "city": r[4], "operating_place": r[5],
+                "present_address": r[6], "permanent_address": r[7],
+                "emergency_name": r[8], "emergency_phone": r[9],
+                "dl_number": r[10], "dl_expiry_date": r[11],
+                "lead_source": r[12], "pan_number": r[13],
+                "aadhaar_number": r[14], "pan_aadhaar_linked": r[15],
+                "vendor_name": r[16], "vendor_id": r[17],
+                "aadhaar_card_photo": r[18],
+                "father_name": r[19], "bank_name": r[20], "other_bank_name": r[21],
+                "account_number": r[22], "ifsc_code": r[23], "upi_id": r[24],
+                "selfie_photo": r[25], "dl_front": r[26], "dl_back": r[27], "pan_card_photo": r[28]
+            }
+        raise HTTPException(status_code=404, detail="Onboarding record not found")
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.put("/api/onboarding/{id}")
+def update_onboarding(id: int, data: OnboardingData):
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM form_onboarding WHERE id = %s;", (id,))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="Onboarding record not found")
+            
+        cur.execute("""
+            UPDATE form_onboarding SET
+                driver_name=%s, phone_number=%s, whatsapp_number=%s, dob=%s, city=%s, operating_place=%s,
+                present_address=%s, permanent_address=%s, emergency_name=%s, emergency_phone=%s, 
+                dl_number=%s, dl_expiry_date=%s, lead_source=%s, 
+                pan_number=%s, aadhaar_number=%s, pan_aadhaar_linked=%s,
+                vendor_name=%s, vendor_id=%s,
+                father_name=%s, bank_name=%s, other_bank_name=%s,
+                account_number=%s, ifsc_code=%s, upi_id=%s
+            WHERE id=%s;
+        """, (
+            data.driver_name, data.phone_number, data.whatsapp_number, data.dob, data.city, data.operating_place,
+            data.present_address, data.permanent_address, data.emergency_name, data.emergency_phone,
+            data.dl_number, data.dl_expiry_date, data.lead_source,
+            data.pan_number, data.aadhaar_number, data.pan_aadhaar_linked,
+            data.vendor_name, data.vendor_id,
+            data.father_name, data.bank_name, data.other_bank_name,
+            data.account_number, data.ifsc_code, data.upi_id,
+            id
+        ))
+        
+        # Update images conditionally
+        new_selfie = extract_image(data.selfie_photo)
+        new_dl_front = extract_image(data.dl_front)
+        new_dl_back = extract_image(data.dl_back)
+        new_pan = extract_image(data.pan_card_photo)
+        new_aadhaar_img = extract_image(data.aadhaar_card_photo)
+        
+        if new_selfie:
+            cur.execute("UPDATE form_onboarding SET selfie_photo=%s WHERE id=%s;", (new_selfie, id))
+        if new_dl_front:
+            cur.execute("UPDATE form_onboarding SET dl_front=%s WHERE id=%s;", (new_dl_front, id))
+        if new_dl_back:
+            cur.execute("UPDATE form_onboarding SET dl_back=%s WHERE id=%s;", (new_dl_back, id))
+        if new_pan:
+            cur.execute("UPDATE form_onboarding SET pan_card_photo=%s WHERE id=%s;", (new_pan, id))
+        if new_aadhaar_img:
+            cur.execute("UPDATE form_onboarding SET aadhaar_card_photo=%s WHERE id=%s;", (new_aadhaar_img, id))
+            
+        if data.walkin_id:
+            cur.execute("DELETE FROM walkin_form_links WHERE onboarding_id = %s;", (id,))
+            cur.execute("INSERT INTO walkin_form_links (walkin_id, onboarding_id) VALUES (%s, %s);", (data.walkin_id, id))
+            cur.execute("UPDATE walkins SET joined_status = 'Onboarded' WHERE id = %s;", (data.walkin_id,))
+            
+        conn.commit()
+        return {"success": True}
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.get("/api/stats/onboarding")
+def get_onboarding_stats():
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        
+        cur.execute("SELECT COUNT(*) FROM form_onboarding;")
+        total_onboarded = cur.fetchone()[0]
+        
+        cur.execute("SELECT COUNT(DISTINCT vendor_id) FROM form_onboarding WHERE vendor_id IS NOT NULL AND vendor_id <> '';")
+        vendor_count = cur.fetchone()[0]
+        
+        cur.execute("SELECT MAX(created_at) FROM form_onboarding;")
+        latest_time = cur.fetchone()[0]
+        if latest_time:
+            latest_str = latest_time.strftime("%d-%m-%Y")
+        else:
+            latest_str = "-"
+            
+        cur.execute("SELECT COUNT(*) FROM form_onboarding WHERE created_at >= NOW() - INTERVAL '7 days';")
+        last_7_days_count = cur.fetchone()[0]
+            
+        return {
+            "total_onboarded": total_onboarded,
+            "vendor_count": vendor_count,
+            "latest_onboarding": latest_str,
+            "last_7_days_count": last_7_days_count
+        }
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.delete("/api/onboarding/{id}")
+def delete_onboarding(id: int):
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM form_onboarding WHERE id = %s RETURNING id;", (id,))
+        deleted = cur.fetchone()
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Record not found")
+        conn.commit()
+        return {"success": True}
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+
+# ─────────────────────────────────────────────────────────
 # Static files — must be last
 # ─────────────────────────────────────────────────────────
-app.mount("/", StaticFiles(directory=".", html=True), name="static")
+app.mount("/", StaticFiles(directory="dist", html=True), name="static")
