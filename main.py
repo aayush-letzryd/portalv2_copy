@@ -21,17 +21,27 @@ app.add_middleware(
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+# Load local .env file if it exists
+if os.path.exists(".env"):
+    with open(".env") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                if "=" in line:
+                    key, val = line.split("=", 1)
+                    os.environ[key.strip()] = val.strip()
+
 # ─────────────────────────────────────────────────────────
 # Connection Pool
 # ─────────────────────────────────────────────────────────
 try:
     postgreSQL_pool = psycopg2.pool.SimpleConnectionPool(
         1, 20,
-        user=os.environ.get("DB_USER", "postgres"),
-        password=os.environ.get("DB_PASS", r"8S5]U3@L^Xz)\FH}"),
-        host=os.environ.get("DB_HOST", "35.200.196.113"),
+        user=os.environ.get("DB_USER"),
+        password=os.environ.get("DB_PASS"),
+        host=os.environ.get("DB_HOST"),
         port=os.environ.get("DB_PORT", "5432"),
-        database=os.environ.get("DB_NAME", "postgres")
+        database=os.environ.get("DB_NAME")
     )
     if postgreSQL_pool:
         print("[OK] Connection pool created successfully")
