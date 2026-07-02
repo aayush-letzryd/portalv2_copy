@@ -88,7 +88,7 @@ export default function VehicleOnboardingForm({
   const [engineCompartmentImg, setEngineCompartmentImg] = useState<string | null>(null);
   const [fastTagImg, setFastTagImg] = useState<string | null>(null);
   const [musicSystemImg, setMusicSystemImg] = useState<string | null>(null);
-  const [keyQuantityImg, setKeyQuantityImg] = useState<string | null>(null);
+  const [keyQuantity, setKeyQuantity] = useState<number | "">("");
   const [rhFrTyreImg, setRhFrTyreImg] = useState<string | null>(null);
   const [lhFrTyreImg, setLhFrTyreImg] = useState<string | null>(null);
   const [rhRearTyreImg, setRhRearTyreImg] = useState<string | null>(null);
@@ -174,7 +174,6 @@ export default function VehicleOnboardingForm({
       engine_compartment_img: setEngineCompartmentImg,
       fast_tag_img: setFastTagImg,
       music_system_img: setMusicSystemImg,
-      key_quantity_img: setKeyQuantityImg,
       rh_fr_tyre_img: setRhFrTyreImg,
       lh_fr_tyre_img: setLhFrTyreImg,
       rh_rear_tyre_img: setRhRearTyreImg,
@@ -203,7 +202,6 @@ export default function VehicleOnboardingForm({
             engine_compartment_img: setEngineCompartmentImg,
             fast_tag_img: setFastTagImg,
             music_system_img: setMusicSystemImg,
-            key_quantity_img: setKeyQuantityImg,
             rh_fr_tyre_img: setRhFrTyreImg,
             lh_fr_tyre_img: setLhFrTyreImg,
             rh_rear_tyre_img: setRhRearTyreImg,
@@ -273,7 +271,7 @@ export default function VehicleOnboardingForm({
       setEngineCompartmentImg(data.engine_compartment_img || null);
       setFastTagImg(data.fast_tag_img || null);
       setMusicSystemImg(data.music_system_img || null);
-      setKeyQuantityImg(data.key_quantity_img || null);
+      setKeyQuantity(data.key_quantity || "");
       setRhFrTyreImg(data.rh_fr_tyre_img || null);
       setLhFrTyreImg(data.lh_fr_tyre_img || null);
       setRhRearTyreImg(data.rh_rear_tyre_img || null);
@@ -337,7 +335,7 @@ export default function VehicleOnboardingForm({
     setEngineCompartmentImg(null);
     setFastTagImg(null);
     setMusicSystemImg(null);
-    setKeyQuantityImg(null);
+    setKeyQuantity("");
     setRhFrTyreImg(null);
     setLhFrTyreImg(null);
     setRhRearTyreImg(null);
@@ -396,7 +394,7 @@ export default function VehicleOnboardingForm({
       engine_compartment_img: engineCompartmentImg || undefined,
       fast_tag_img: fastTagImg || undefined,
       music_system_img: musicSystemImg || undefined,
-      key_quantity_img: keyQuantityImg || undefined,
+      key_quantity: typeof keyQuantity === "number" ? keyQuantity : undefined,
       rh_fr_tyre_img: rhFrTyreImg || undefined,
       lh_fr_tyre_img: lhFrTyreImg || undefined,
       rh_rear_tyre_img: rhRearTyreImg || undefined,

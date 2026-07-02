@@ -61,7 +61,7 @@ export default function InspectionForm({
   const [photoEngineCompartment, setPhotoEngineCompartment] = useState<string | null>(null);
   const [photoFastTag, setPhotoFastTag] = useState<string | null>(null);
   const [photoMusicSystem, setPhotoMusicSystem] = useState<string | null>(null);
-  const [photoKeys, setPhotoKeys] = useState<string | null>(null);
+  const [keyQuantity, setKeyQuantity] = useState<number | "">("");
   const [photoTyreRhFr, setPhotoTyreRhFr] = useState<string | null>(null);
   const [photoTyreLhFr, setPhotoTyreLhFr] = useState<string | null>(null);
   const [photoTyreRhRe, setPhotoTyreRhRe] = useState<string | null>(null);
@@ -141,7 +141,6 @@ export default function InspectionForm({
     else if (field === "engine_compartment") setPhotoEngineCompartment(val);
     else if (field === "fast_tag") setPhotoFastTag(val);
     else if (field === "music_system") setPhotoMusicSystem(val);
-    else if (field === "keys") setPhotoKeys(val);
     else if (field === "tyre_rh_fr") setPhotoTyreRhFr(val);
     else if (field === "tyre_lh_fr") setPhotoTyreLhFr(val);
     else if (field === "tyre_rh_re") setPhotoTyreRhFr(val); // mapping check
@@ -181,7 +180,7 @@ export default function InspectionForm({
       setPhotoEngineCompartment(data.photo_engine_compartment || null);
       setPhotoFastTag(data.photo_fast_tag || null);
       setPhotoMusicSystem(data.photo_music_system || null);
-      setPhotoKeys(data.photo_keys || null);
+      setKeyQuantity(data.key_quantity || "");
       setPhotoTyreRhFr(data.photo_tyre_rh_fr || null);
       setPhotoTyreLhFr(data.photo_tyre_lh_fr || null);
       setPhotoTyreRhRe(data.photo_tyre_rh_re || null);
@@ -219,7 +218,7 @@ export default function InspectionForm({
     setPhotoEngineCompartment(null);
     setPhotoFastTag(null);
     setPhotoMusicSystem(null);
-    setPhotoKeys(null);
+    setKeyQuantity("");
     setPhotoTyreRhFr(null);
     setPhotoTyreLhFr(null);
     setPhotoTyreRhRe(null);
@@ -255,7 +254,7 @@ export default function InspectionForm({
       photo_engine_compartment: photoEngineCompartment,
       photo_fast_tag: photoFastTag,
       photo_music_system: photoMusicSystem,
-      photo_keys: photoKeys,
+      key_quantity: typeof keyQuantity === "number" ? keyQuantity : undefined,
       photo_tyre_rh_fr: photoTyreRhFr,
       photo_tyre_lh_fr: photoTyreLhFr,
       photo_tyre_rh_re: photoTyreRhRe,
@@ -680,7 +679,18 @@ export default function InspectionForm({
                       {renderChecklistOption("Parking Triangle", parkingTriangle, setParkingTriangle)}
                       {renderChecklistOption("Fire Extinguisher", fireExtinguishers, setFireExtinguishers)}
                       {renderChecklistOption("Seat Covers", seatCover, setSeatCover)}
-                      {renderChecklistOption("Floor Carpets", floorCarpet, setFloorCarpet)}
+                      {renderChecklistOption("Floor Carpet", floorCarpet, setFloorCarpet)}
+                      <div className="flex items-center justify-between border border-border bg-slate-50/50 p-2.5 rounded-xl shadow-xs">
+                        <span className="font-sans text-sm font-semibold text-text-muted">Key Quantity</span>
+                        <input
+                          type="number"
+                          min="1"
+                          value={keyQuantity}
+                          onChange={(e) => setKeyQuantity(parseInt(e.target.value) || 0)}
+                          className="w-24 rounded-lg border border-border bg-white px-2 py-1.5 font-sans text-sm text-center outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-xs"
+                          placeholder="e.g. 2"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -703,7 +713,6 @@ export default function InspectionForm({
                     {renderPhotoCard("Engine Compartment", "engine_compartment", photoEngineCompartment)}
                     {renderPhotoCard("Fast Tag", "fast_tag", photoFastTag)}
                     {renderPhotoCard("Music System", "music_system", photoMusicSystem)}
-                    {renderPhotoCard("Key Quantity", "keys", photoKeys)}
                     {renderPhotoCard("RH Front Tyre", "tyre_rh_fr", photoTyreRhFr)}
                     {renderPhotoCard("LH Front Tyre", "tyre_lh_fr", photoTyreLhFr)}
                     {renderPhotoCard("RH Rear Tyre", "tyre_rh_re", photoTyreRhRe)}

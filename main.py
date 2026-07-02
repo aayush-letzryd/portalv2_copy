@@ -957,7 +957,7 @@ def startup_event():
                 photo_engine_compartment TEXT,
                 photo_fast_tag TEXT,
                 photo_music_system TEXT,
-                photo_keys TEXT,
+                key_quantity INTEGER,
                 photo_tyre_rh_fr TEXT,
                 photo_tyre_lh_fr TEXT,
                 photo_tyre_rh_re TEXT,
@@ -972,7 +972,7 @@ def startup_event():
         new_cols = [
             "photo_lh", "photo_rh", "photo_engine_chassis", "photo_battery", 
             "photo_engine_compartment", "photo_fast_tag", "photo_music_system", 
-            "photo_keys", "photo_tyre_rh_fr", "photo_tyre_lh_fr", 
+            "key_quantity", "photo_tyre_rh_fr", "photo_tyre_lh_fr", 
             "photo_tyre_rh_re", "photo_tyre_lh_re", "photo_tyre_spare"
         ]
         for col in new_cols:
@@ -1183,7 +1183,7 @@ class VehicleOnboardingData(BaseModel):
     engine_compartment_img: Optional[Any] = None
     fast_tag_img: Optional[Any] = None
     music_system_img: Optional[Any] = None
-    key_quantity_img: Optional[Any] = None
+    key_quantity: Optional[int] = None
     rh_fr_tyre_img: Optional[Any] = None
     lh_fr_tyre_img: Optional[Any] = None
     rh_rear_tyre_img: Optional[Any] = None
@@ -1287,7 +1287,7 @@ class InspectionData(BaseModel):
     photo_engine_compartment: Optional[Any] = None
     photo_fast_tag: Optional[Any] = None
     photo_music_system: Optional[Any] = None
-    photo_keys: Optional[Any] = None
+    key_quantity: Optional[int] = None
     photo_tyre_rh_fr: Optional[Any] = None
     photo_tyre_lh_fr: Optional[Any] = None
     photo_tyre_rh_re: Optional[Any] = None
@@ -2526,21 +2526,21 @@ def create_vehicle_record(data: VehicleOnboardingData, authorization: Optional[s
             INSERT INTO vehicle_onboarding (
                 vehicle_number, letzryd_unique_no, city_name, model, received_allocated, delivery_month,
                 registration_date, rto_tax_validity, permit_validity, fitness_validity, pollution_validity, insurance_validity, authorization_certificate, insurance_mapping,
-                kms_reading, tracking_device_vendor, tracking_device_type, cng_installed, cng_plate, cng_installation_date, jack, jack_rod, spanner, parking_triangle, fire_extinguishers, seat_cover, floor_carpet,
-                image_front, image_lh, image_back, image_rh, engine_chasis_no_img, battery_sl_no_img, engine_compartment_img, fast_tag_img, music_system_img, key_quantity_img, rh_fr_tyre_img, lh_fr_tyre_img, rh_rear_tyre_img, lh_rear_tyre_img, spare_wheel_img
+                kms_reading, tracking_device_vendor, tracking_device_type, cng_installed, cng_plate, cng_installation_date, jack, jack_rod, spanner, parking_triangle, fire_extinguishers, seat_cover, floor_carpet, key_quantity,
+                image_front, image_lh, image_back, image_rh, engine_chasis_no_img, battery_sl_no_img, engine_compartment_img, fast_tag_img, music_system_img, rh_fr_tyre_img, lh_fr_tyre_img, rh_rear_tyre_img, lh_rear_tyre_img, spare_wheel_img
             ) VALUES (
                 %s,%s,%s,%s,%s,%s,
                 %s,%s,%s,%s,%s,%s,%s,%s,
-                %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
-                %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s
+                %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
+                %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s
             ) RETURNING id;
         """, (
             data.vehicle_number, data.letzryd_unique_no, data.city_name, data.model, data.received_allocated, data.delivery_month,
             data.registration_date, data.rto_tax_validity, data.permit_validity, data.fitness_validity, data.pollution_validity, data.insurance_validity, data.authorization_certificate, data.insurance_mapping,
-            data.kms_reading, data.tracking_device_vendor, data.tracking_device_type, data.cng_installed, data.cng_plate, data.cng_installation_date, data.jack, data.jack_rod, data.spanner, data.parking_triangle, data.fire_extinguishers, data.seat_cover, data.floor_carpet,
+            data.kms_reading, data.tracking_device_vendor, data.tracking_device_type, data.cng_installed, data.cng_plate, data.cng_installation_date, data.jack, data.jack_rod, data.spanner, data.parking_triangle, data.fire_extinguishers, data.seat_cover, data.floor_carpet, data.key_quantity,
             extract_image(data.image_front), extract_image(data.image_lh), extract_image(data.image_back), extract_image(data.image_rh),
             extract_image(data.engine_chasis_no_img), extract_image(data.battery_sl_no_img), extract_image(data.engine_compartment_img), extract_image(data.fast_tag_img),
-            extract_image(data.music_system_img), extract_image(data.key_quantity_img), extract_image(data.rh_fr_tyre_img), extract_image(data.lh_fr_tyre_img),
+            extract_image(data.music_system_img), extract_image(data.rh_fr_tyre_img), extract_image(data.lh_fr_tyre_img),
             extract_image(data.rh_rear_tyre_img), extract_image(data.lh_rear_tyre_img), extract_image(data.spare_wheel_img)
         ))
         new_id = cur.fetchone()[0]
@@ -2559,16 +2559,16 @@ def update_vehicle_record(id: int, data: VehicleOnboardingData, authorization: O
             UPDATE vehicle_onboarding SET
                 vehicle_number=%s, letzryd_unique_no=%s, city_name=%s, model=%s, received_allocated=%s, delivery_month=%s,
                 registration_date=%s, rto_tax_validity=%s, permit_validity=%s, fitness_validity=%s, pollution_validity=%s, insurance_validity=%s, authorization_certificate=%s, insurance_mapping=%s,
-                kms_reading=%s, tracking_device_vendor=%s, tracking_device_type=%s, cng_installed=%s, cng_plate=%s, cng_installation_date=%s, jack=%s, jack_rod=%s, spanner=%s, parking_triangle=%s, fire_extinguishers=%s, seat_cover=%s, floor_carpet=%s,
-                image_front=%s, image_lh=%s, image_back=%s, image_rh=%s, engine_chasis_no_img=%s, battery_sl_no_img=%s, engine_compartment_img=%s, fast_tag_img=%s, music_system_img=%s, key_quantity_img=%s, rh_fr_tyre_img=%s, lh_fr_tyre_img=%s, rh_rear_tyre_img=%s, lh_rear_tyre_img=%s, spare_wheel_img=%s
+                kms_reading=%s, tracking_device_vendor=%s, tracking_device_type=%s, cng_installed=%s, cng_plate=%s, cng_installation_date=%s, jack=%s, jack_rod=%s, spanner=%s, parking_triangle=%s, fire_extinguishers=%s, seat_cover=%s, floor_carpet=%s, key_quantity=%s,
+                image_front=%s, image_lh=%s, image_back=%s, image_rh=%s, engine_chasis_no_img=%s, battery_sl_no_img=%s, engine_compartment_img=%s, fast_tag_img=%s, music_system_img=%s, rh_fr_tyre_img=%s, lh_fr_tyre_img=%s, rh_rear_tyre_img=%s, lh_rear_tyre_img=%s, spare_wheel_img=%s
             WHERE id=%s RETURNING id;
         """, (
             data.vehicle_number, data.letzryd_unique_no, data.city_name, data.model, data.received_allocated, data.delivery_month,
             data.registration_date, data.rto_tax_validity, data.permit_validity, data.fitness_validity, data.pollution_validity, data.insurance_validity, data.authorization_certificate, data.insurance_mapping,
-            data.kms_reading, data.tracking_device_vendor, data.tracking_device_type, data.cng_installed, data.cng_plate, data.cng_installation_date, data.jack, data.jack_rod, data.spanner, data.parking_triangle, data.fire_extinguishers, data.seat_cover, data.floor_carpet,
+            data.kms_reading, data.tracking_device_vendor, data.tracking_device_type, data.cng_installed, data.cng_plate, data.cng_installation_date, data.jack, data.jack_rod, data.spanner, data.parking_triangle, data.fire_extinguishers, data.seat_cover, data.floor_carpet, data.key_quantity,
             extract_image(data.image_front), extract_image(data.image_lh), extract_image(data.image_back), extract_image(data.image_rh),
             extract_image(data.engine_chasis_no_img), extract_image(data.battery_sl_no_img), extract_image(data.engine_compartment_img), extract_image(data.fast_tag_img),
-            extract_image(data.music_system_img), extract_image(data.key_quantity_img), extract_image(data.rh_fr_tyre_img), extract_image(data.lh_fr_tyre_img),
+            extract_image(data.music_system_img), extract_image(data.rh_fr_tyre_img), extract_image(data.lh_fr_tyre_img),
             extract_image(data.rh_rear_tyre_img), extract_image(data.lh_rear_tyre_img), extract_image(data.spare_wheel_img),
             id
         ))
@@ -3182,18 +3182,18 @@ def create_inspection(data: InspectionData, authorization: Optional[str] = Heade
         cur.execute("""
             INSERT INTO inspections (
                 vehicle_number, inspection_date, odometer_reading, jack, jack_rod, spanner, 
-                parking_triangle, fire_extinguishers, seat_cover, floor_carpet, 
+                parking_triangle, fire_extinguishers, seat_cover, floor_carpet, key_quantity,
                 photo_front, photo_back, photo_lh, photo_rh, photo_engine_chassis, photo_battery, 
-                photo_engine_compartment, photo_fast_tag, photo_music_system, photo_keys, 
+                photo_engine_compartment, photo_fast_tag, photo_music_system, 
                 photo_tyre_rh_fr, photo_tyre_lh_fr, photo_tyre_rh_re, photo_tyre_lh_re, photo_tyre_spare, 
                 remarks
             ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id;
         """, (
             data.vehicle_number, data.inspection_date, data.odometer_reading, data.jack, data.jack_rod, data.spanner,
-            data.parking_triangle, data.fire_extinguishers, data.seat_cover, data.floor_carpet, 
+            data.parking_triangle, data.fire_extinguishers, data.seat_cover, data.floor_carpet, data.key_quantity,
             extract_image(data.photo_front), extract_image(data.photo_back), extract_image(data.photo_lh), extract_image(data.photo_rh),
             extract_image(data.photo_engine_chassis), extract_image(data.photo_battery), extract_image(data.photo_engine_compartment),
-            extract_image(data.photo_fast_tag), extract_image(data.photo_music_system), extract_image(data.photo_keys),
+            extract_image(data.photo_fast_tag), extract_image(data.photo_music_system), 
             extract_image(data.photo_tyre_rh_fr), extract_image(data.photo_tyre_lh_fr), extract_image(data.photo_tyre_rh_re),
             extract_image(data.photo_tyre_lh_re), extract_image(data.photo_tyre_spare),
             data.remarks
@@ -3216,18 +3216,18 @@ def update_inspection(id: int, data: InspectionData, authorization: Optional[str
         cur.execute("""
             UPDATE inspections SET 
                 vehicle_number=%s, inspection_date=%s, odometer_reading=%s, jack=%s, jack_rod=%s, spanner=%s, 
-                parking_triangle=%s, fire_extinguishers=%s, seat_cover=%s, floor_carpet=%s, 
+                parking_triangle=%s, fire_extinguishers=%s, seat_cover=%s, floor_carpet=%s, key_quantity=%s,
                 photo_front=%s, photo_back=%s, photo_lh=%s, photo_rh=%s, photo_engine_chassis=%s, photo_battery=%s, 
-                photo_engine_compartment=%s, photo_fast_tag=%s, photo_music_system=%s, photo_keys=%s, 
+                photo_engine_compartment=%s, photo_fast_tag=%s, photo_music_system=%s, 
                 photo_tyre_rh_fr=%s, photo_tyre_lh_fr=%s, photo_tyre_rh_re=%s, photo_tyre_lh_re=%s, photo_tyre_spare=%s, 
                 remarks=%s
             WHERE id=%s RETURNING id;
         """, (
             data.vehicle_number, data.inspection_date, data.odometer_reading, data.jack, data.jack_rod, data.spanner,
-            data.parking_triangle, data.fire_extinguishers, data.seat_cover, data.floor_carpet, 
+            data.parking_triangle, data.fire_extinguishers, data.seat_cover, data.floor_carpet, data.key_quantity,
             extract_image(data.photo_front), extract_image(data.photo_back), extract_image(data.photo_lh), extract_image(data.photo_rh),
             extract_image(data.photo_engine_chassis), extract_image(data.photo_battery), extract_image(data.photo_engine_compartment),
-            extract_image(data.photo_fast_tag), extract_image(data.photo_music_system), extract_image(data.photo_keys),
+            extract_image(data.photo_fast_tag), extract_image(data.photo_music_system), 
             extract_image(data.photo_tyre_rh_fr), extract_image(data.photo_tyre_lh_fr), extract_image(data.photo_tyre_rh_re),
             extract_image(data.photo_tyre_lh_re), extract_image(data.photo_tyre_spare),
             data.remarks, id
