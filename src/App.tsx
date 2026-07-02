@@ -15,17 +15,33 @@ import AccidentsForm from "./components/AccidentsForm";
 import InspectionForm from "./components/InspectionForm";
 import UsersForm from "./components/UsersForm";
 import VehicleModelsForm from "./components/VehicleModelsForm";
-import { User } from "./types";
+import CitiesForm from "./components/CitiesForm";
+import { User, CITIES } from "./types";
 
 const LOCAL_STORAGE_TOKEN_KEY = "lr_token";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
-  const [screen, setScreen] = useState<"login" | "selector" | "walkin" | "onboarding" | "operator_onboarding" | "adjustment" | "allocation" | "expenses" | "vehicle_onboarding" | "workshops" | "hubs_parking" | "rents" | "accident" | "inspection" | "users" | "vehicle_models">("login");
+  const [screen, setScreen] = useState<"login" | "selector" | "walkin" | "onboarding" | "operator_onboarding" | "adjustment" | "allocation" | "expenses" | "vehicle_onboarding" | "workshops" | "hubs_parking" | "rents" | "accident" | "inspection" | "users" | "vehicle_models" | "cities">("login");
   const [isInitializing, setIsInitializing] = useState(true);
 
   // Load user session from API using token on startup
   useEffect(() => {
+    // Dynamically fetch operational cities and mutate CITIES in-place
+    fetch("/api/cities")
+      .then(res => {
+        if (res.ok) return res.json();
+        throw new Error("Failed to load cities");
+      })
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          CITIES.splice(0, CITIES.length, ...data.map(c => ({ value: c.value, text: c.text })));
+        }
+      })
+      .catch(err => {
+        console.error("Cities loading failed, falling back to default.", err);
+      });
+
     const token = localStorage.getItem(LOCAL_STORAGE_TOKEN_KEY);
     if (token) {
       fetch("/api/auth/me", {
@@ -176,6 +192,13 @@ export default function App() {
       )}
       {screen === "vehicle_models" && user && (
         <VehicleModelsForm 
+          user={user} 
+          onBackToSelector={() => setScreen("selector")} 
+          onLogout={handleLogout} 
+        />
+      )}
+      {screen === "cities" && user && (
+        <CitiesForm 
           user={user} 
           onBackToSelector={() => setScreen("selector")} 
           onLogout={handleLogout} 

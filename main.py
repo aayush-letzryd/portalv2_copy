@@ -682,6 +682,31 @@ def startup_event():
             )
             print("[OK] Vehicle models seeded")
 
+        # ── operating_cities ───────────────────────────────
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS operating_cities (
+                id         SERIAL PRIMARY KEY,
+                name       VARCHAR(255) UNIQUE NOT NULL,
+                state      VARCHAR(255) NOT NULL,
+                status     VARCHAR(50) DEFAULT 'Active',
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+        """)
+
+        # Seed cities if table is empty
+        cur.execute("SELECT COUNT(*) FROM operating_cities;")
+        if cur.fetchone()[0] == 0:
+            cities_to_seed = [
+                ("Hyderabad", "Telangana", "Active"),
+                ("Bangalore", "Karnataka", "Active"),
+                ("Mumbai", "Maharashtra", "Active")
+            ]
+            cur.executemany(
+                "INSERT INTO operating_cities (name, state, status) VALUES (%s,%s,%s);",
+                cities_to_seed
+            )
+            print("[OK] Operating cities seeded")
+
         # ── Drop existing tables for demo schema changes ──────
         cur.execute("DROP TABLE IF EXISTS vehicle_onboarding CASCADE;")
         cur.execute("DROP TABLE IF EXISTS workshop_vendors CASCADE;")
@@ -1690,15 +1715,60 @@ def get_executive(user_id: int):
 
 
 # ─────────────────────────────────────────────────────────
-# Cities
-# ─────────────────────────────────────────────────────────
+class CityData(BaseModel):
+    name: str
+
 @app.get("/api/cities")
 def get_all_cities():
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
         cur.execute("SELECT id, name FROM cities ORDER BY id;")
-        return [{"value": r[0], "text": r[1]} for r in cur.fetchall()]
+        return [{"value": r[1], "text": r[1], "id": r[0]} for r in cur.fetchall()]
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.post("/api/cities")
+def create_city(req: CityData, authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    name_cleaned = req.name.strip()
+    if not name_cleaned:
+        raise HTTPException(status_code=400, detail="City name is required")
+        
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM cities WHERE name = %s;", (name_cleaned,))
+        if cur.fetchone():
+            raise HTTPException(status_code=400, detail="City already exists")
+            
+        cur.execute("INSERT INTO cities (name) VALUES (%s) RETURNING id;", (name_cleaned,))
+        city_id = cur.fetchone()[0]
+        conn.commit()
+        return {"success": True, "id": city_id}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.delete("/api/cities/{id}")
+def delete_city(id: int, authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM cities WHERE id = %s RETURNING id;", (id,))
+        deleted = cur.fetchone()
+        if not deleted:
+            raise HTTPException(status_code=404, detail="City not found")
+        conn.commit()
+        return {"success": True}
+    except Exception as e:
+        conn.rollback()
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         postgreSQL_pool.putconn(conn)
 

@@ -292,6 +292,22 @@ export default function FormSelector({ user, onSelectForm, onLogout }: FormSelec
             </span>
           </button>
 
+          {/* Cities Form (Active Card) */}
+          <button
+            onClick={() => onSelectForm("cities")}
+            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-sky-500 hover:shadow-md transition-all duration-200 cursor-pointer"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-50 text-sky-600 group-hover:scale-105 transition-transform duration-200">
+              <MapPin className="h-6 w-6" />
+            </div>
+            <div className="flex-grow">
+              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Operating Cities Desk</h3>
+            </div>
+            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
+              Live
+            </span>
+          </button>
+
         </div>
       </main>
 
