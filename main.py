@@ -34,19 +34,27 @@ if os.path.exists(".env"):
 # ─────────────────────────────────────────────────────────
 # Connection Pool
 # ─────────────────────────────────────────────────────────
+postgreSQL_pool = None
+
 try:
-    postgreSQL_pool = psycopg2.pool.SimpleConnectionPool(
-        1, 20,
-        user=os.environ.get("DB_USER"),
-        password=os.environ.get("DB_PASS"),
-        host=os.environ.get("DB_HOST"),
-        port=os.environ.get("DB_PORT", "5432"),
-        database=os.environ.get("DB_NAME")
-    )
+    db_url = os.environ.get("DATABASE_URL")
+    if db_url:
+        postgreSQL_pool = psycopg2.pool.SimpleConnectionPool(1, 20, dsn=db_url)
+    else:
+        postgreSQL_pool = psycopg2.pool.SimpleConnectionPool(
+            1, 20,
+            user=os.environ.get("DB_USER"),
+            password=os.environ.get("DB_PASS"),
+            host=os.environ.get("DB_HOST"),
+            port=os.environ.get("DB_PORT", "5432"),
+            database=os.environ.get("DB_NAME")
+        )
     if postgreSQL_pool:
         print("[OK] Connection pool created successfully")
 except (Exception, psycopg2.DatabaseError) as error:
     print("[ERROR] Error connecting to PostgreSQL:", error)
+    if not postgreSQL_pool:
+        raise RuntimeError("Failed to initialize PostgreSQL connection pool") from error
 
 
 # ─────────────────────────────────────────────────────────
