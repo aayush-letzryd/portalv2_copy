@@ -1096,13 +1096,13 @@ class OnboardingData(BaseModel):
     operator_drivers: Optional[list[dict]] = None
 
 class AdjustmentData(BaseModel):
-    partner_name: str
-    partner_code: str
+    partner_name: Optional[str] = None
+    partner_code: Optional[str] = None
     driver_id: Optional[str] = None
-    partner_number: str
+    partner_number: Optional[str] = None
     vehicle_number: Optional[str] = None
-    city_name: str
-    partner_type: str
+    city_name: Optional[str] = None
+    partner_type: Optional[str] = None
     adjustment_level: Optional[str] = None
     adjustment_nature: Optional[str] = None
     time_duration: Optional[str] = None

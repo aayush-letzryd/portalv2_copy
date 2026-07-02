@@ -51,7 +51,7 @@ export default function AdjustmentForm({
   const [timeDuration, setTimeDuration] = useState("");
   const [customTimeDuration, setCustomTimeDuration] = useState("");
 
-  const [adjustmentType, setAdjustmentType] = useState<"Credit" | "Debit" | "Waiver">("Credit");
+  const [adjustmentType, setAdjustmentType] = useState<"Credit" | "Debit">("Credit");
   const [adjustmentDate, setAdjustmentDate] = useState(new Date().toISOString().split("T")[0]);
   const [enterAmount, setEnterAmount] = useState("");
   const [remittanceTowards, setRemittanceTowards] = useState("");
@@ -231,9 +231,21 @@ export default function AdjustmentForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!partnerName.trim()) return alert("Partner Name is required");
-    if (!partnerCode.trim()) return alert("Partner Code is required");
-    if (!partnerNumber.trim()) return alert("Partner Number is required");
+    if ((adjustmentLevel === "Operator" || adjustmentLevel === "Operator+Driver") && (!partnerName.trim() || !partnerCode.trim() || !partnerNumber.trim())) {
+      return alert("Partner Name, Code, and Number are required for this adjustment level");
+    }
+    if ((adjustmentLevel === "Individual" || adjustmentLevel === "Operator+Driver") && !driverId.trim()) {
+      return alert("Driver ID is required for this adjustment level");
+    }
+    if (adjustmentLevel === "Individual" && !partnerNumber.trim()) {
+      return alert("Contact Number is required");
+    }
+    if (adjustmentLevel === "Vehicle" && !vehicleNumber.trim()) {
+      return alert("Vehicle Number is required for this adjustment level");
+    }
+    if (adjustmentLevel === "Vehicle" && !partnerNumber.trim()) {
+      return alert("Contact Number is required");
+    }
     if (adjustmentNature === "Monetary" && (!enterAmount || parseFloat(enterAmount) <= 0)) {
       return alert("Please enter a valid Amount");
     }
@@ -528,73 +540,110 @@ export default function AdjustmentForm({
               {/* Form Content */}
               <form onSubmit={handleSubmit} className="p-8 space-y-10">
                 
-                {/* 3 COLUMN DETAILS GRID */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                {/* 2 COLUMN GRID */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                   
-                  {/* COLUMN 1: PARTNER DETAILS */}
+                  {/* COLUMN 1: TARGET DETAILS */}
                   <div className="space-y-6">
                     <div className="border-b border-border pb-3">
                       <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">1</span>
-                        Partner Details
+                        Target Details
                       </h3>
                     </div>
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Partner Name <span className="text-red-500">*</span></label>
-                        <input 
-                          type="text" 
-                          placeholder="Enter full name..."
-                          value={partnerName}
-                          onChange={(e) => setPartnerName(e.target.value)}
-                          required
-                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
-                        />
+                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Adjustment Level <span className="text-red-500">*</span></label>
+                        <select 
+                          value={adjustmentLevel}
+                          onChange={(e) => setAdjustmentLevel(e.target.value as any)}
+                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:outline-none transition-all shadow-2xs cursor-pointer"
+                        >
+                          <option value="Vehicle">Vehicle</option>
+                          <option value="Operator">Operator</option>
+                          <option value="Operator+Driver">Operator + Driver</option>
+                          <option value="Individual">Individual</option>
+                        </select>
                       </div>
 
-                      <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Partner Code <span className="text-red-500">*</span></label>
-                        <input 
-                          type="text" 
-                          placeholder="Unique LetzRyd ID..."
-                          value={partnerCode}
-                          onChange={(e) => setPartnerCode(e.target.value)}
-                          required
-                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
-                        />
-                      </div>
+                      {/* CONDITIONAL FIELDS BASED ON ADJUSTMENT LEVEL */}
+                      {(adjustmentLevel === "Operator" || adjustmentLevel === "Operator+Driver") && (
+                        <>
+                          <div>
+                            <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Partner Name <span className="text-red-500">*</span></label>
+                            <input 
+                              type="text" 
+                              placeholder="Enter full name..."
+                              value={partnerName}
+                              onChange={(e) => setPartnerName(e.target.value)}
+                              className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Partner Code <span className="text-red-500">*</span></label>
+                            <input 
+                              type="text" 
+                              placeholder="Unique LetzRyd ID..."
+                              value={partnerCode}
+                              onChange={(e) => setPartnerCode(e.target.value)}
+                              className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Partner Type <span className="text-red-500">*</span></label>
+                            <div className="flex gap-4">
+                              {["Individual", "Fleet", "Rental"].map((type) => (
+                                <label key={type} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-bold hover:bg-bg cursor-pointer transition-all shadow-2xs">
+                                  <input 
+                                    type="radio" 
+                                    name="partnerType" 
+                                    checked={partnerType === type}
+                                    onChange={() => setPartnerType(type as any)}
+                                    className="text-primary focus:ring-primary cursor-pointer"
+                                  />
+                                  {type}
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {(adjustmentLevel === "Operator+Driver" || adjustmentLevel === "Individual") && (
+                        <div>
+                          <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Driver ID <span className="text-red-500">*</span></label>
+                          <input 
+                            type="text" 
+                            placeholder="Enter Driver ID..."
+                            value={driverId}
+                            onChange={(e) => setDriverId(e.target.value)}
+                            className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
+                          />
+                        </div>
+                      )}
+
+                      {adjustmentLevel === "Vehicle" && (
+                        <div>
+                          <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Vehicle Number <span className="text-red-500">*</span></label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. TS09 EA 1234..."
+                            value={vehicleNumber}
+                            onChange={(e) => setVehicleNumber(e.target.value)}
+                            className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
+                          />
+                        </div>
+                      )}
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Driver ID (Optional)</label>
-                        <input 
-                          type="text" 
-                          placeholder="Enter Driver ID if applicable..."
-                          value={driverId}
-                          onChange={(e) => setDriverId(e.target.value)}
-                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Partner Number <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Contact Number <span className="text-red-500">*</span></label>
                         <input 
                           type="tel" 
                           placeholder="+91 10-digit mobile..."
                           value={partnerNumber}
                           onChange={(e) => setPartnerNumber(e.target.value)}
                           required
-                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Vehicle Number (Optional)</label>
-                        <input 
-                          type="text" 
-                          placeholder="e.g. TS09 EA 1234..."
-                          value={vehicleNumber}
-                          onChange={(e) => setVehicleNumber(e.target.value)}
                           className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                         />
                       </div>
@@ -614,24 +663,6 @@ export default function AdjustmentForm({
                           <option value="Delhi">Delhi</option>
                         </select>
                       </div>
-
-                      <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Partner Type <span className="text-red-500">*</span></label>
-                        <div className="flex gap-4">
-                          {["Individual", "Fleet", "Rental"].map((type) => (
-                            <label key={type} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-bold hover:bg-bg cursor-pointer transition-all shadow-2xs">
-                              <input 
-                                type="radio" 
-                                name="partnerType" 
-                                checked={partnerType === type}
-                                onChange={() => setPartnerType(type as any)}
-                                className="text-primary focus:ring-primary cursor-pointer"
-                              />
-                              {type}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
                     </div>
                   </div>
 
@@ -645,19 +676,6 @@ export default function AdjustmentForm({
                     </div>
 
                     <div className="space-y-4">
-                      <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Adjustment Level <span className="text-red-500">*</span></label>
-                        <select 
-                          value={adjustmentLevel}
-                          onChange={(e) => setAdjustmentLevel(e.target.value as any)}
-                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:outline-none transition-all shadow-2xs cursor-pointer"
-                        >
-                          <option value="Vehicle">Vehicle Level</option>
-                          <option value="Operator">Operator Level (No Specific Driver)</option>
-                          <option value="Operator+Driver">Operator Level (Specific Driver)</option>
-                          <option value="Individual">Individual Level</option>
-                        </select>
-                      </div>
 
                       <div>
                         <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Adjustment Nature <span className="text-red-500">*</span></label>
@@ -713,7 +731,7 @@ export default function AdjustmentForm({
                       <div>
                         <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Adjustment Type <span className="text-red-500">*</span></label>
                         <div className="flex gap-4">
-                          {["Credit", "Debit", "Waiver"].map((type) => (
+                          {["Credit", "Debit"].map((type) => (
                             <label key={type} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-bold hover:bg-bg cursor-pointer transition-all shadow-2xs">
                               <input 
                                 type="radio" 
