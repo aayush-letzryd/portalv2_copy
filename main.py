@@ -610,6 +610,29 @@ def startup_event():
             """, records)
             print(f"[OK] Walk-in records seeded ({len(records)} records)")
 
+        # ── roles and permissions ────────────────────────
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS app_roles (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL UNIQUE,
+                description TEXT
+            );
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS app_permissions (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL UNIQUE,
+                description TEXT
+            );
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS app_role_permissions (
+                role_id INTEGER REFERENCES app_roles(id) ON DELETE CASCADE,
+                permission_id INTEGER REFERENCES app_permissions(id) ON DELETE CASCADE,
+                PRIMARY KEY (role_id, permission_id)
+            );
+        """)
+
         # ── app_users (login accounts) ───────────────────
         cur.execute("""
             CREATE TABLE IF NOT EXISTS app_users (
@@ -617,10 +640,12 @@ def startup_event():
                 username     VARCHAR(100) NOT NULL UNIQUE,
                 password_hash VARCHAR(255) NOT NULL,
                 executive_id INTEGER REFERENCES users(id),
+                role_id      INTEGER REFERENCES app_roles(id),
                 created_at   TIMESTAMP DEFAULT NOW()
             );
         """)
         cur.execute("ALTER TABLE app_users ADD COLUMN IF NOT EXISTS raw_password VARCHAR(255);")
+        cur.execute("ALTER TABLE app_users ADD COLUMN IF NOT EXISTS role_id INTEGER REFERENCES app_roles(id);")
         cur.execute("UPDATE app_users SET raw_password = 'letzryd123' WHERE raw_password IS NULL;")
         
         cur.execute("""
@@ -631,6 +656,16 @@ def startup_event():
             );
         """)
 
+        # Seed roles
+        cur.execute("SELECT COUNT(*) FROM app_roles;")
+        if cur.fetchone()[0] == 0:
+            cur.execute("INSERT INTO app_roles (name, description) VALUES ('Admin', 'Full Access'), ('Viewer', 'Read Only') RETURNING id;")
+            admin_role_id = cur.fetchone()[0]
+        else:
+            cur.execute("SELECT id FROM app_roles WHERE name = 'Admin';")
+            r = cur.fetchone()
+            admin_role_id = r[0] if r else None
+
         # Seed login accounts — only if app_users is empty
         cur.execute("SELECT COUNT(*) FROM app_users;")
         if cur.fetchone()[0] == 0:
@@ -640,14 +675,14 @@ def startup_event():
 
             default_password_hash = pwd_context.hash("letzryd123")
             login_accounts = [
-                ("dshiva",       default_password_hash, exec_map.get("D Shiva"), 'letzryd123'),
-                ("arshadkhan",   default_password_hash, exec_map.get("Arshad Khan"), 'letzryd123'),
-                ("priyasharma",  default_password_hash, exec_map.get("Priya Sharma"), 'letzryd123'),
-                ("rohanverma",   default_password_hash, exec_map.get("Rohan Verma"), 'letzryd123'),
-                ("snehareddy",   default_password_hash, exec_map.get("Sneha Reddy"), 'letzryd123'),
+                ("dshiva",       default_password_hash, exec_map.get("D Shiva"), 'letzryd123', admin_role_id),
+                ("arshadkhan",   default_password_hash, exec_map.get("Arshad Khan"), 'letzryd123', admin_role_id),
+                ("priyasharma",  default_password_hash, exec_map.get("Priya Sharma"), 'letzryd123', admin_role_id),
+                ("rohanverma",   default_password_hash, exec_map.get("Rohan Verma"), 'letzryd123', admin_role_id),
+                ("snehareddy",   default_password_hash, exec_map.get("Sneha Reddy"), 'letzryd123', admin_role_id),
             ]
             cur.executemany(
-                "INSERT INTO app_users (username, password_hash, executive_id, raw_password) VALUES (%s,%s,%s,%s);",
+                "INSERT INTO app_users (username, password_hash, executive_id, raw_password, role_id) VALUES (%s,%s,%s,%s,%s);",
                 login_accounts
             )
             print("[OK] Login accounts seeded (password: letzryd123)")
@@ -706,6 +741,22 @@ def startup_event():
                 cities_to_seed
             )
             print("[OK] Operating cities seeded")
+
+        # ── tickets ───────────────────────────────────────
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS tickets (
+                id SERIAL PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                description TEXT NOT NULL,
+                source VARCHAR(50),
+                status VARCHAR(50) DEFAULT 'Open',
+                created_by_name VARCHAR(255),
+                assigned_to INTEGER REFERENCES app_users(id),
+                created_at TIMESTAMP DEFAULT NOW(),
+                resolved_at TIMESTAMP,
+                resolution_notes TEXT
+            );
+        """)
 
         # ── Drop existing tables for demo schema changes ──────
         cur.execute("DROP TABLE IF EXISTS vehicle_onboarding CASCADE;")
@@ -1072,7 +1123,7 @@ def startup_event():
 # Auth helpers
 # ─────────────────────────────────────────────────────────
 def get_current_user(authorization: Optional[str] = Header(None)):
-    """Validate Bearer token and return (app_user_id, executive_id, name, role, username)."""
+    """Validate Bearer token and return (app_user_id, executive_id, name, role, username, role_id, permissions)."""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Not authenticated")
     token = authorization.split(" ", 1)[1]
@@ -1080,16 +1131,37 @@ def get_current_user(authorization: Optional[str] = Header(None)):
     try:
         cur = conn.cursor()
         cur.execute("""
-            SELECT au.id, au.executive_id, u.name, COALESCE(u.role,'Executive'), au.username
+            SELECT au.id, au.executive_id, u.name, COALESCE(ar.name, u.role, 'Executive'), au.username, au.role_id
             FROM app_sessions s
             JOIN app_users au ON au.id = s.user_id
             LEFT JOIN users u ON u.id = au.executive_id
+            LEFT JOIN app_roles ar ON ar.id = au.role_id
             WHERE s.token = %s;
         """, (token,))
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=401, detail="Invalid or expired session")
-        return {"user_id": row[0], "executive_id": row[1], "name": row[2], "role": row[3], "username": row[4]}
+        user_id, exec_id, name, role, username, role_id = row
+        
+        permissions = []
+        if role_id:
+            cur.execute("""
+                SELECT p.name 
+                FROM app_role_permissions arp
+                JOIN app_permissions p ON p.id = arp.permission_id
+                WHERE arp.role_id = %s;
+            """, (role_id,))
+            permissions = [r[0] for r in cur.fetchall()]
+
+        return {
+            "user_id": user_id, 
+            "executive_id": exec_id, 
+            "name": name, 
+            "role": role, 
+            "username": username,
+            "role_id": role_id,
+            "permissions": permissions
+        }
     finally:
         postgreSQL_pool.putconn(conn)
 
@@ -1381,23 +1453,36 @@ def login(req: LoginRequest):
     try:
         cur = conn.cursor()
         cur.execute("""
-            SELECT au.id, au.password_hash, au.executive_id, u.name, COALESCE(u.role,'Executive'), au.username
+            SELECT au.id, au.password_hash, au.executive_id, u.name, COALESCE(ar.name, u.role, 'Executive'), au.username, au.role_id
             FROM app_users au
             LEFT JOIN users u ON u.id = au.executive_id
+            LEFT JOIN app_roles ar ON ar.id = au.role_id
             WHERE au.username = %s;
         """, (req.username.strip().lower(),))
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=401, detail="Invalid username or password")
-        user_id, pw_hash, exec_id, name, role, username = row
+        user_id, pw_hash, exec_id, name, role, username, role_id = row
         if not pwd_context.verify(req.password, pw_hash):
             raise HTTPException(status_code=401, detail="Invalid username or password")
+        
         # Create session token
         token = secrets.token_urlsafe(32)
         cur.execute(
             "INSERT INTO app_sessions (token, user_id) VALUES (%s, %s);",
             (token, user_id)
         )
+        
+        permissions = []
+        if role_id:
+            cur.execute("""
+                SELECT p.name 
+                FROM app_role_permissions arp
+                JOIN app_permissions p ON p.id = arp.permission_id
+                WHERE arp.role_id = %s;
+            """, (role_id,))
+            permissions = [r[0] for r in cur.fetchall()]
+            
         conn.commit()
         return {
             "token": token,
@@ -1407,6 +1492,8 @@ def login(req: LoginRequest):
                 "executive_id": exec_id,
                 "name": name,
                 "role": role,
+                "role_id": role_id,
+                "permissions": permissions
             }
         }
     finally:
@@ -1429,6 +1516,8 @@ def get_me(authorization: Optional[str] = Header(None)):
             "executive_id": exec_display_id,
             "name": user["name"],
             "role": user["role"],
+            "role_id": user["role_id"],
+            "permissions": user["permissions"]
         }
     finally:
         postgreSQL_pool.putconn(conn)
@@ -1453,12 +1542,14 @@ class AppUserData(BaseModel):
     role: str
     username: str
     password: str
+    role_id: Optional[int] = None
 
 class AppUserUpdateData(BaseModel):
     name: str
     role: str
     username: str
     password: Optional[str] = None
+    role_id: Optional[int] = None
 
 @app.get("/api/users")
 def list_app_users(authorization: Optional[str] = Header(None)):
@@ -1467,9 +1558,10 @@ def list_app_users(authorization: Optional[str] = Header(None)):
     try:
         cur = conn.cursor()
         cur.execute("""
-            SELECT au.id, au.username, u.name, u.role, au.created_at, au.raw_password
+            SELECT au.id, au.username, u.name, u.role, au.created_at, au.raw_password, au.role_id, ar.name
             FROM app_users au
             JOIN users u ON u.id = au.executive_id
+            LEFT JOIN app_roles ar ON ar.id = au.role_id
             ORDER BY au.id DESC;
         """)
         rows = cur.fetchall()
@@ -1481,7 +1573,9 @@ def list_app_users(authorization: Optional[str] = Header(None)):
                 "name": r[2],
                 "role": r[3],
                 "created_at": r[4].isoformat() if r[4] else None,
-                "raw_password": r[5] or "letzryd123"
+                "raw_password": r[5] or "letzryd123",
+                "role_id": r[6],
+                "role_name": r[7]
             })
         return result
     finally:
@@ -1509,8 +1603,8 @@ def create_app_user(req: AppUserData, authorization: Optional[str] = Header(None
         
         hashed_password = pwd_context.hash(req.password)
         cur.execute(
-            "INSERT INTO app_users (username, password_hash, executive_id, raw_password) VALUES (%s, %s, %s, %s) RETURNING id;",
-            (username_cleaned, hashed_password, executive_id, req.password)
+            "INSERT INTO app_users (username, password_hash, executive_id, raw_password, role_id) VALUES (%s, %s, %s, %s, %s) RETURNING id;",
+            (username_cleaned, hashed_password, executive_id, req.password, req.role_id)
         )
         user_id = cur.fetchone()[0]
         
@@ -1551,17 +1645,17 @@ def update_app_user(id: int, req: AppUserUpdateData, authorization: Optional[str
             (req.name.strip(), req.role.strip(), exec_id)
         )
         
-        # Update app_users table (username)
+        # Update app_users table (username, role_id)
         if req.password:
             hashed_password = pwd_context.hash(req.password)
             cur.execute(
-                "UPDATE app_users SET username = %s, password_hash = %s, raw_password = %s WHERE id = %s;",
-                (username_cleaned, hashed_password, req.password, id)
+                "UPDATE app_users SET username = %s, password_hash = %s, raw_password = %s, role_id = %s WHERE id = %s;",
+                (username_cleaned, hashed_password, req.password, req.role_id, id)
             )
         else:
             cur.execute(
-                "UPDATE app_users SET username = %s WHERE id = %s;",
-                (username_cleaned, id)
+                "UPDATE app_users SET username = %s, role_id = %s WHERE id = %s;",
+                (username_cleaned, req.role_id, id)
             )
             
         conn.commit()
@@ -3598,6 +3692,155 @@ def delete_inspection(id: int, authorization: Optional[str] = Header(None)):
     finally:
         postgreSQL_pool.putconn(conn)
 
+
+# ─────────────────────────────────────────────────────────
+# Roles & Permissions
+# ─────────────────────────────────────────────────────────
+
+class RoleData(BaseModel):
+    name: str
+    description: Optional[str] = None
+    permissions: List[str] = []
+
+@app.get("/api/roles")
+def get_roles(authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id, name, description FROM app_roles ORDER BY id;")
+        roles = []
+        for r in cur.fetchall():
+            cur.execute("""
+                SELECT p.name FROM app_role_permissions arp
+                JOIN app_permissions p ON p.id = arp.permission_id
+                WHERE arp.role_id = %s;
+            """, (r[0],))
+            permissions = [p[0] for p in cur.fetchall()]
+            roles.append({"id": r[0], "name": r[1], "description": r[2], "permissions": permissions})
+        return roles
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.post("/api/roles")
+def create_or_update_role(req: RoleData, authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        
+        # Upsert Role
+        cur.execute("SELECT id FROM app_roles WHERE name = %s;", (req.name,))
+        row = cur.fetchone()
+        if row:
+            role_id = row[0]
+            cur.execute("UPDATE app_roles SET description = %s WHERE id = %s;", (req.description, role_id))
+        else:
+            cur.execute("INSERT INTO app_roles (name, description) VALUES (%s, %s) RETURNING id;", (req.name, req.description))
+            role_id = cur.fetchone()[0]
+            
+        # Update Permissions
+        cur.execute("DELETE FROM app_role_permissions WHERE role_id = %s;", (role_id,))
+        for perm in req.permissions:
+            # Ensure permission exists
+            cur.execute("INSERT INTO app_permissions (name) VALUES (%s) ON CONFLICT (name) DO NOTHING;", (perm,))
+            cur.execute("SELECT id FROM app_permissions WHERE name = %s;", (perm,))
+            perm_id = cur.fetchone()[0]
+            cur.execute("INSERT INTO app_role_permissions (role_id, permission_id) VALUES (%s, %s);", (role_id, perm_id))
+            
+        conn.commit()
+        return {"success": True, "role_id": role_id}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.delete("/api/roles/{id}")
+def delete_role(id: int, authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM app_roles WHERE id = %s RETURNING id;", (id,))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="Role not found")
+        conn.commit()
+        return {"success": True}
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+# ─────────────────────────────────────────────────────────
+# Tickets
+# ─────────────────────────────────────────────────────────
+
+class TicketData(BaseModel):
+    title: str
+    description: str
+    source: str
+    status: Optional[str] = "Open"
+    assigned_to: Optional[int] = None
+
+@app.get("/api/tickets")
+def get_tickets(authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT t.id, t.title, t.description, t.source, t.status, 
+                   t.created_by_name, t.assigned_to, u.name as assignee_name, 
+                   t.created_at, t.resolved_at, t.resolution_notes
+            FROM tickets t
+            LEFT JOIN app_users au ON au.id = t.assigned_to
+            LEFT JOIN users u ON u.id = au.executive_id
+            ORDER BY t.created_at DESC;
+        """)
+        keys = ["id", "title", "description", "source", "status", "created_by_name", "assigned_to", "assignee_name", "created_at", "resolved_at", "resolution_notes"]
+        return [dict(zip(keys, row)) for row in cur.fetchall()]
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.post("/api/tickets")
+def create_ticket(req: TicketData, authorization: Optional[str] = Header(None)):
+    user = get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO tickets (title, description, source, status, created_by_name, assigned_to)
+            VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;
+        """, (req.title, req.description, req.source, req.status, user["name"], req.assigned_to))
+        ticket_id = cur.fetchone()[0]
+        conn.commit()
+        return {"success": True, "id": ticket_id}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.put("/api/tickets/{id}/resolve")
+def resolve_ticket(id: int, data: dict, authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    notes = data.get("resolution_notes", "")
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE tickets 
+            SET status = 'Resolved', resolved_at = NOW(), resolution_notes = %s 
+            WHERE id = %s RETURNING id;
+        """, (notes, id))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="Ticket not found")
+        conn.commit()
+        return {"success": True}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        postgreSQL_pool.putconn(conn)
 
 # ─────────────────────────────────────────────────────────
 # Static files — must be last

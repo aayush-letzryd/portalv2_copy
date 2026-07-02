@@ -1,9 +1,9 @@
-import { ClipboardList, UserCheck, Settings, Key, LogOut, Truck, AlertTriangle, Wrench, MapPin, IndianRupee, Users } from "lucide-react";
+import { ClipboardList, UserCheck, Settings, Key, LogOut, Truck, AlertTriangle, Wrench, MapPin, IndianRupee, Users, ShieldCheck, TicketIcon } from "lucide-react";
 import { User } from "../types";
 
 interface FormSelectorProps {
   user: User;
-  onSelectForm: (form: "walkin" | "onboarding" | "operator_onboarding" | "adjustment" | "allocation" | "expenses" | "vehicle_onboarding" | "workshops" | "hubs_parking" | "rents" | "accident" | "inspection" | "users" | "vehicle_models") => void;
+  onSelectForm: (form: "walkin" | "onboarding" | "operator_onboarding" | "adjustment" | "allocation" | "expenses" | "vehicle_onboarding" | "workshops" | "hubs_parking" | "rents" | "accident" | "inspection" | "users" | "vehicle_models" | "cities" | "roles" | "tickets") => void;
   onLogout: () => void;
 }
 
@@ -293,6 +293,7 @@ export default function FormSelector({ user, onSelectForm, onLogout }: FormSelec
           </button>
 
           {/* Cities Form (Active Card) */}
+          {/* Cities Form */}
           <button
             onClick={() => onSelectForm("cities")}
             className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-sky-500 hover:shadow-md transition-all duration-200 cursor-pointer"
@@ -302,6 +303,40 @@ export default function FormSelector({ user, onSelectForm, onLogout }: FormSelec
             </div>
             <div className="flex-grow">
               <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Operating Cities Desk</h3>
+            </div>
+            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
+              Live
+            </span>
+          </button>
+
+          {/* Roles & Permissions */}
+          <button
+            onClick={() => onSelectForm("roles")}
+            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-indigo-500 hover:shadow-md transition-all duration-200 cursor-pointer"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 group-hover:scale-105 transition-transform duration-200">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <div className="flex-grow">
+              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Roles & Permissions</h3>
+              <p className="font-sans text-xs text-gray-500">Control form access by role</p>
+            </div>
+            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
+              Live
+            </span>
+          </button>
+
+          {/* Tickets Desk */}
+          <button
+            onClick={() => onSelectForm("tickets")}
+            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-rose-500 hover:shadow-md transition-all duration-200 cursor-pointer"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-50 text-rose-600 group-hover:scale-105 transition-transform duration-200">
+              <TicketIcon className="h-6 w-6" />
+            </div>
+            <div className="flex-grow">
+              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Tickets Desk</h3>
+              <p className="font-sans text-xs text-gray-500">Driver, Operator, Vendor & Internal issues</p>
             </div>
             <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
               Live

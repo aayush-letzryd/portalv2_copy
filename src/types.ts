@@ -120,6 +120,8 @@ export interface User {
   name: string;
   role: string;
   executive_id: string;
+  role_id?: number;
+  permissions?: string[];
 }
 
 export interface CityOption {

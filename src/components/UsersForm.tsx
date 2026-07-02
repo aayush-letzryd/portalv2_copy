@@ -16,7 +16,13 @@ interface AppUser {
   username: string;
   name: string;
   role: string;
+  role_id: number | null;
   created_at: string | null;
+}
+
+interface AppRole {
+  id: number;
+  name: string;
 }
 
 export default function UsersForm({ 
@@ -48,6 +54,7 @@ export default function UsersForm({
   const [name, setName] = useState("");
   const [role, setRole] = useState("Executive");
   const [customRole, setCustomRole] = useState("");
+  const [roleId, setRoleId] = useState<number | "">("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,6 +62,7 @@ export default function UsersForm({
   // Registry Search & Filter State
   const [searchQuery, setSearchQuery] = useState("");
   const [records, setRecords] = useState<AppUser[]>([]);
+  const [availableRoles, setAvailableRoles] = useState<AppRole[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const displayName = user.name || user.username || "User";
@@ -83,6 +91,25 @@ export default function UsersForm({
     }
   };
 
+  const fetchRoles = async () => {
+    try {
+      const token = localStorage.getItem("lr_token");
+      const res = await fetch("/api/roles", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAvailableRoles(data);
+      }
+    } catch (err) {
+      console.error("Error fetching roles:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchRoles();
+  }, []);
+
   useEffect(() => {
     if (activeTab === "registry") {
       fetchRecords();
@@ -107,7 +134,8 @@ export default function UsersForm({
       const payload: any = {
         name: name.trim(),
         role: finalRole,
-        username: username.trim()
+        username: username.trim(),
+        role_id: roleId || null
       };
       if (password) {
         payload.password = password;
@@ -129,6 +157,7 @@ export default function UsersForm({
         setName("");
         setRole("Executive");
         setCustomRole("");
+        setRoleId("");
         setUsername("");
         setPassword("");
         setEditingId(null);
@@ -313,6 +342,25 @@ export default function UsersForm({
                   </div>
                 )}
               </div>
+
+              {/* Portal Role (Access Control) */}
+              <div>
+                <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                  Portal Access Role
+                  <span className="ml-2 text-[10px] font-normal text-text-muted normal-case tracking-normal">(Controls which sections this user can access)</span>
+                </label>
+                <select
+                  value={roleId}
+                  onChange={(e) => setRoleId(e.target.value ? Number(e.target.value) : "")}
+                  className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none transition-all shadow-2xs cursor-pointer"
+                >
+                  <option value="">— No Portal Role Assigned —</option>
+                  {availableRoles.map((r) => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
+                </select>
+              </div>
+
 
               <div className="border-t border-border/60 pt-6">
                 <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase mb-4 flex items-center gap-1.5">

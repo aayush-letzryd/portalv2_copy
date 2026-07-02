@@ -16,13 +16,15 @@ import InspectionForm from "./components/InspectionForm";
 import UsersForm from "./components/UsersForm";
 import VehicleModelsForm from "./components/VehicleModelsForm";
 import CitiesForm from "./components/CitiesForm";
+import RolesPermissionsForm from "./components/RolesPermissionsForm";
+import TicketsForm from "./components/TicketsForm";
 import { User, CITIES } from "./types";
 
 const LOCAL_STORAGE_TOKEN_KEY = "lr_token";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
-  const [screen, setScreen] = useState<"login" | "selector" | "walkin" | "onboarding" | "operator_onboarding" | "adjustment" | "allocation" | "expenses" | "vehicle_onboarding" | "workshops" | "hubs_parking" | "rents" | "accident" | "inspection" | "users" | "vehicle_models" | "cities">("login");
+  const [screen, setScreen] = useState<"login" | "selector" | "walkin" | "onboarding" | "operator_onboarding" | "adjustment" | "allocation" | "expenses" | "vehicle_onboarding" | "workshops" | "hubs_parking" | "rents" | "accident" | "inspection" | "users" | "vehicle_models" | "cities" | "roles" | "tickets">("login");
   const [isInitializing, setIsInitializing] = useState(true);
 
   // Load user session from API using token on startup
@@ -199,6 +201,20 @@ export default function App() {
       )}
       {screen === "cities" && user && (
         <CitiesForm 
+          user={user} 
+          onBackToSelector={() => setScreen("selector")} 
+          onLogout={handleLogout} 
+        />
+      )}
+      {screen === "roles" && user && (
+        <RolesPermissionsForm 
+          user={user} 
+          onBackToSelector={() => setScreen("selector")} 
+          onLogout={handleLogout} 
+        />
+      )}
+      {screen === "tickets" && user && (
+        <TicketsForm 
           user={user} 
           onBackToSelector={() => setScreen("selector")} 
           onLogout={handleLogout} 
