@@ -72,6 +72,12 @@ export default function VehicleOnboardingForm({
   const [seatCover, setSeatCover] = useState("Available");
   const [floorCarpet, setFloorCarpet] = useState("Available");
 
+  // Documents
+  const [rcDocument, setRcDocument] = useState<string | null>(null);
+  const [insuranceDocument, setInsuranceDocument] = useState<string | null>(null);
+  const [authorizationCertificateDoc, setAuthorizationCertificateDoc] = useState<string | null>(null);
+  const [rtoTaxReceipt, setRtoTaxReceipt] = useState<string | null>(null);
+
   // Panel 4: PDI Photographic Verification (15 Images)
   const [imageFront, setImageFront] = useState<string | null>(null);
   const [imageLh, setImageLh] = useState<string | null>(null);
@@ -202,7 +208,11 @@ export default function VehicleOnboardingForm({
             lh_fr_tyre_img: setLhFrTyreImg,
             rh_rear_tyre_img: setRhRearTyreImg,
             lh_rear_tyre_img: setLhRearTyreImg,
-            spare_wheel_img: setSpareWheelImg
+            spare_wheel_img: setSpareWheelImg,
+            rc_document: setRcDocument,
+            insurance_document: setInsuranceDocument,
+            authorization_certificate_doc: setAuthorizationCertificateDoc,
+            rto_tax_receipt: setRtoTaxReceipt
           };
           if (setters[field]) {
             setters[field](reader.result);
@@ -270,6 +280,12 @@ export default function VehicleOnboardingForm({
       setLhRearTyreImg(data.lh_rear_tyre_img || null);
       setSpareWheelImg(data.spare_wheel_img || null);
 
+      // Documents
+      setRcDocument(data.rc_document || null);
+      setInsuranceDocument(data.insurance_document || null);
+      setAuthorizationCertificateDoc(data.authorization_certificate_doc || null);
+      setRtoTaxReceipt(data.rto_tax_receipt || null);
+
       setActiveTab("form");
       setRetrieveIdInput("");
     } catch (err: any) {
@@ -327,6 +343,10 @@ export default function VehicleOnboardingForm({
     setRhRearTyreImg(null);
     setLhRearTyreImg(null);
     setSpareWheelImg(null);
+    setRcDocument(null);
+    setInsuranceDocument(null);
+    setAuthorizationCertificateDoc(null);
+    setRtoTaxReceipt(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -381,7 +401,11 @@ export default function VehicleOnboardingForm({
       lh_fr_tyre_img: lhFrTyreImg || undefined,
       rh_rear_tyre_img: rhRearTyreImg || undefined,
       lh_rear_tyre_img: lhRearTyreImg || undefined,
-      spare_wheel_img: spareWheelImg || undefined
+      spare_wheel_img: spareWheelImg || undefined,
+      rc_document: rcDocument || undefined,
+      insurance_document: insuranceDocument || undefined,
+      authorization_certificate_doc: authorizationCertificateDoc || undefined,
+      rto_tax_receipt: rtoTaxReceipt || undefined
     };
 
     try {
