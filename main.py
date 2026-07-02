@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException, Header
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional, Union, Any
+from typing import Optional, Union, Any, List
 from passlib.context import CryptContext
 import os
 import secrets
