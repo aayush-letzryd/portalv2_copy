@@ -652,6 +652,36 @@ def startup_event():
             )
             print("[OK] Login accounts seeded (password: letzryd123)")
 
+        # ── vehicle_models ─────────────────────────────────
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS vehicle_models (
+                id         SERIAL PRIMARY KEY,
+                brand      VARCHAR(255) NOT NULL,
+                model_name VARCHAR(255) NOT NULL,
+                variant    VARCHAR(100) NOT NULL,
+                fuel_type  VARCHAR(100) NOT NULL,
+                make_year  INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+        """)
+        
+        # Seed vehicle models if table is empty
+        cur.execute("SELECT COUNT(*) FROM vehicle_models;")
+        if cur.fetchone()[0] == 0:
+            models_to_seed = [
+                ("Maruti Suzuki", "WagonR", "VXI", "CNG", 2023),
+                ("Maruti Suzuki", "Ertiga", "ZXI", "CNG", 2022),
+                ("Hyundai", "Aura", "S", "CNG", 2023),
+                ("Tata", "Tigor", "XM", "EV", 2024),
+                ("Tata", "Nexon", "XZ+", "EV", 2023),
+                ("Hyundai", "Grand i10", "Sportz", "Petrol", 2022)
+            ]
+            cur.executemany(
+                "INSERT INTO vehicle_models (brand, model_name, variant, fuel_type, make_year) VALUES (%s,%s,%s,%s,%s);",
+                models_to_seed
+            )
+            print("[OK] Vehicle models seeded")
+
         # ── Drop existing tables for demo schema changes ──────
         cur.execute("DROP TABLE IF EXISTS vehicle_onboarding CASCADE;")
         cur.execute("DROP TABLE IF EXISTS workshop_vendors CASCADE;")
@@ -1545,6 +1575,80 @@ def delete_app_user(id: int, authorization: Optional[str] = Header(None)):
             cur.execute("DELETE FROM app_sessions WHERE user_id = %s;", (id,))
             cur.execute("DELETE FROM app_users WHERE id = %s;", (id,))
             
+        conn.commit()
+        return {"success": True}
+    except Exception as e:
+        conn.rollback()
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+
+class VehicleModelData(BaseModel):
+    brand: str
+    model_name: str
+    variant: str
+    fuel_type: str
+    make_year: int
+
+@app.get("/api/vehicle-models")
+def list_vehicle_models(authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT id, brand, model_name, variant, fuel_type, make_year, created_at
+            FROM vehicle_models
+            ORDER BY brand, model_name, variant, make_year DESC;
+        """)
+        rows = cur.fetchall()
+        result = []
+        for r in rows:
+            result.append({
+                "id": r[0],
+                "brand": r[1],
+                "model_name": r[2],
+                "variant": r[3],
+                "fuel_type": r[4],
+                "make_year": r[5],
+                "created_at": r[6].isoformat() if r[6] else None
+            })
+        return result
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.post("/api/vehicle-models")
+def create_vehicle_model(req: VehicleModelData, authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO vehicle_models (brand, model_name, variant, fuel_type, make_year) VALUES (%s, %s, %s, %s, %s) RETURNING id;",
+            (req.brand.strip(), req.model_name.strip(), req.variant.strip(), req.fuel_type.strip(), req.make_year)
+        )
+        model_id = cur.fetchone()[0]
+        conn.commit()
+        return {"success": True, "id": model_id}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.delete("/api/vehicle-models/{id}")
+def delete_vehicle_model(id: int, authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM vehicle_models WHERE id = %s RETURNING id;", (id,))
+        deleted = cur.fetchone()
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Vehicle model not found")
         conn.commit()
         return {"success": True}
     except Exception as e:

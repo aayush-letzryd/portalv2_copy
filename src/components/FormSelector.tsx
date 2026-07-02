@@ -3,7 +3,7 @@ import { User } from "../types";
 
 interface FormSelectorProps {
   user: User;
-  onSelectForm: (form: "walkin" | "onboarding" | "operator_onboarding" | "adjustment" | "allocation" | "expenses" | "vehicle_onboarding" | "workshops" | "hubs_parking" | "rents" | "accident" | "inspection" | "users") => void;
+  onSelectForm: (form: "walkin" | "onboarding" | "operator_onboarding" | "adjustment" | "allocation" | "expenses" | "vehicle_onboarding" | "workshops" | "hubs_parking" | "rents" | "accident" | "inspection" | "users" | "vehicle_models") => void;
   onLogout: () => void;
 }
 
@@ -270,6 +270,22 @@ export default function FormSelector({ user, onSelectForm, onLogout }: FormSelec
             </div>
             <div className="flex-grow">
               <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Portal Users Form</h3>
+            </div>
+            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
+              Live
+            </span>
+          </button>
+
+          {/* Vehicle Models Form (Active Card) */}
+          <button
+            onClick={() => onSelectForm("vehicle_models")}
+            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-emerald-500 hover:shadow-md transition-all duration-200 cursor-pointer"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 group-hover:scale-105 transition-transform duration-200">
+              <Truck className="h-6 w-6" />
+            </div>
+            <div className="flex-grow">
+              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Vehicle Models Desk</h3>
             </div>
             <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
               Live

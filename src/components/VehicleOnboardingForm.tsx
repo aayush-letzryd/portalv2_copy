@@ -95,6 +95,9 @@ export default function VehicleOnboardingForm({
   const [lhRearTyreImg, setLhRearTyreImg] = useState<string | null>(null);
   const [spareWheelImg, setSpareWheelImg] = useState<string | null>(null);
 
+  // Registered Models State
+  const [registeredModels, setRegisteredModels] = useState<{ id: number; brand: string; model_name: string; variant: string; fuel_type: string; make_year: number }[]>([]);
+
   // Camera State
   const [cameraActiveField, setCameraActiveField] = useState<string | null>(null);
 
@@ -157,9 +160,25 @@ export default function VehicleOnboardingForm({
     }
   };
 
+  const fetchModels = async () => {
+    try {
+      const token = localStorage.getItem("lr_token");
+      const res = await fetch("/api/vehicle-models", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRegisteredModels(data);
+      }
+    } catch (err) {
+      console.error("Error fetching vehicle models:", err);
+    }
+  };
+
   useEffect(() => {
     fetchStats();
     fetchRecords();
+    fetchModels();
   }, [searchQuery, filterCity, filterType]);
 
   const handlePhotoCaptured = (img: string) => {
@@ -688,14 +707,28 @@ export default function VehicleOnboardingForm({
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-text mb-1">Vehicle Model *</label>
-                      <input
-                        type="text"
+                      <select
                         required
                         value={model}
-                        onChange={(e) => setModel(e.target.value)}
-                        placeholder="e.g. Tata Nexon EV"
-                        className="w-full rounded-lg border border-border px-3 py-2 text-xs focus:border-primary focus:outline-hidden transition-colors"
-                      />
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setModel(val);
+                          // Auto set CNG Installed value if the model is CNG!
+                          const found = registeredModels.find(m => `${m.brand} ${m.model_name} ${m.variant} (${m.fuel_type} - ${m.make_year})` === val);
+                          if (found) {
+                            setCngInstalled(found.fuel_type === "CNG" ? "Yes" : "No");
+                          }
+                        }}
+                        className="w-full rounded-lg border border-border px-3 py-2 text-xs focus:border-primary focus:outline-hidden bg-white transition-colors cursor-pointer"
+                      >
+                        <option value="">-- Select Registered Model --</option>
+                        {registeredModels.map((m) => {
+                          const label = `${m.brand} ${m.model_name} ${m.variant} (${m.fuel_type} - ${m.make_year})`;
+                          return (
+                            <option key={m.id} value={label}>{label}</option>
+                          );
+                        })}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-text mb-1">Status Type *</label>
