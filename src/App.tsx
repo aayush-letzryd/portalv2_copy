@@ -3,16 +3,23 @@ import Login from "./components/Login";
 import FormSelector from "./components/FormSelector";
 import WalkInForm from "./components/WalkInForm";
 import OnboardingForm from "./components/OnboardingForm";
+import OperatorOnboardingForm from "./components/OperatorOnboardingForm";
 import AdjustmentForm from "./components/AdjustmentForm";
 import AllocationForm from "./components/AllocationForm";
 import ExpensesForm from "./components/ExpensesForm";
+import VehicleOnboardingForm from "./components/VehicleOnboardingForm";
+import WorkshopsForm from "./components/WorkshopsForm";
+import HubsParkingForm from "./components/HubsParkingForm";
+import RentForm from "./components/RentForm";
+import AccidentsForm from "./components/AccidentsForm";
+import InspectionForm from "./components/InspectionForm";
 import { User } from "./types";
 
 const LOCAL_STORAGE_TOKEN_KEY = "lr_token";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
-  const [screen, setScreen] = useState<"login" | "selector" | "walkin" | "onboarding" | "adjustment" | "allocation" | "expenses">("login");
+  const [screen, setScreen] = useState<"login" | "selector" | "walkin" | "onboarding" | "operator_onboarding" | "adjustment" | "allocation" | "expenses" | "vehicle_onboarding" | "workshops" | "hubs_parking" | "rents" | "accident" | "inspection">("login");
   const [isInitializing, setIsInitializing] = useState(true);
 
   // Load user session from API using token on startup
@@ -88,6 +95,13 @@ export default function App() {
           onLogout={handleLogout} 
         />
       )}
+      {screen === "operator_onboarding" && user && (
+        <OperatorOnboardingForm 
+          user={user} 
+          onBackToSelector={() => setScreen("selector")} 
+          onLogout={handleLogout} 
+        />
+      )}
       {screen === "adjustment" && user && (
         <AdjustmentForm 
           user={user} 
@@ -104,6 +118,48 @@ export default function App() {
       )}
       {screen === "expenses" && user && (
         <ExpensesForm 
+          user={user} 
+          onBackToSelector={() => setScreen("selector")} 
+          onLogout={handleLogout} 
+        />
+      )}
+      {screen === "vehicle_onboarding" && user && (
+        <VehicleOnboardingForm 
+          user={user} 
+          onBackToSelector={() => setScreen("selector")} 
+          onLogout={handleLogout} 
+        />
+      )}
+      {screen === "workshops" && user && (
+        <WorkshopsForm 
+          user={user} 
+          onBackToSelector={() => setScreen("selector")} 
+          onLogout={handleLogout} 
+        />
+      )}
+      {screen === "hubs_parking" && user && (
+        <HubsParkingForm 
+          user={user} 
+          onBackToSelector={() => setScreen("selector")} 
+          onLogout={handleLogout} 
+        />
+      )}
+      {screen === "rents" && user && (
+        <RentForm 
+          user={user} 
+          onBackToSelector={() => setScreen("selector")} 
+          onLogout={handleLogout} 
+        />
+      )}
+      {screen === "accident" && user && (
+        <AccidentsForm 
+          user={user} 
+          onBackToSelector={() => setScreen("selector")} 
+          onLogout={handleLogout} 
+        />
+      )}
+      {screen === "inspection" && user && (
+        <InspectionForm 
           user={user} 
           onBackToSelector={() => setScreen("selector")} 
           onLogout={handleLogout} 

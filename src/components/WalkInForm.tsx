@@ -38,7 +38,7 @@ export default function WalkInForm({
 
   // Form Fields State
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [visitorType, setVisitorType] = useState<VisitorType>("Driver");
+  const [visitorType, setVisitorType] = useState<VisitorType>("Individual");
   const [eventDate, setEventDate] = useState<string>(new Date().toISOString().split("T")[0]);
   const [city, setCity] = useState("Hyderabad");
   const [operatingPlace, setOperatingPlace] = useState("");
@@ -74,7 +74,7 @@ export default function WalkInForm({
     .toUpperCase();
 
   const [records, setRecords] = useState<WalkInRecord[]>([]);
-  const [metrics, setMetrics] = useState({ total: 0, joined: 0, pending: 0, drivers: 0, partners: 0, conversionRate: 0 });
+  const [metrics, setMetrics] = useState({ total: 0, joined: 0, pending: 0, individuals: 0, operators: 0, conversionRate: 0 });
 
   const fetchData = async () => {
     try {
@@ -100,8 +100,8 @@ export default function WalkInForm({
           total: s.total,
           joined: s.joined,
           pending: s.pending,
-          drivers: s.drivers,
-          partners: s.partners,
+          individuals: s.individuals,
+          operators: s.operators,
           conversionRate: s.conversion_rate
         });
       }
@@ -193,7 +193,7 @@ export default function WalkInForm({
 
   const resetForm = () => {
     setEditingId(null);
-    setVisitorType("Driver");
+    setVisitorType("Individual");
     setEventDate(new Date().toISOString().split("T")[0]);
     setCity("Hyderabad");
     setOperatingPlace("");
@@ -483,25 +483,25 @@ export default function WalkInForm({
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         type="button"
-                        onClick={() => setVisitorType("Driver")}
+                        onClick={() => setVisitorType("Individual")}
                         className={`flex h-11 items-center justify-center rounded-lg border font-sans text-xs font-semibold transition-all cursor-pointer ${
-                          visitorType === "Driver"
+                          visitorType === "Individual"
                             ? "border-green bg-green-light/40 text-green"
                             : "border-border hover:bg-slate-50 text-text-muted"
                         }`}
                       >
-                        Driver Walk-In
+                        Individual Walk-In
                       </button>
                       <button
                         type="button"
-                        onClick={() => setVisitorType("Partner")}
+                        onClick={() => setVisitorType("Operator")}
                         className={`flex h-11 items-center justify-center rounded-lg border font-sans text-xs font-semibold transition-all cursor-pointer ${
-                          visitorType === "Partner"
+                          visitorType === "Operator"
                             ? "border-primary bg-primary/5 text-primary"
                             : "border-border hover:bg-slate-50 text-text-muted"
                         }`}
                       >
-                        Partner Walk-In
+                        Operator Walk-In
                       </button>
                     </div>
                   </div>
@@ -600,22 +600,23 @@ export default function WalkInForm({
                     <span className="text-[10px] text-text-dim">Without country code (+91)</span>
                   </div>
 
-                  {/* Driving License */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="font-sans text-xs font-semibold text-text-muted flex items-center gap-1" htmlFor="dl_number">
-                      <FileText className="h-3.5 w-3.5 text-text-dim" />
-                      Driving License Number <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      id="dl_number"
-                      type="text"
-                      required
-                      placeholder="e.g. TS09 20210045612"
-                      value={dlNumber}
-                      onChange={(e) => setDlNumber(e.target.value)}
-                      className="h-11 rounded-lg border border-border px-3.5 font-sans text-sm text-text outline-none focus:border-2 focus:border-primary bg-white placeholder:text-text-dim"
-                    />
-                  </div>
+                   {/* Driving License (Hidden for Operator, Optional for Individual) */}
+                   {visitorType !== "Operator" && (
+                     <div className="flex flex-col gap-1.5">
+                       <label className="font-sans text-xs font-semibold text-text-muted flex items-center gap-1" htmlFor="dl_number">
+                         <FileText className="h-3.5 w-3.5 text-text-dim" />
+                         Driving License Number <span className="text-text-dim font-normal text-[10px]">(Optional)</span>
+                       </label>
+                       <input
+                         id="dl_number"
+                         type="text"
+                         placeholder="e.g. TS09 20210045612"
+                         value={dlNumber}
+                         onChange={(e) => setDlNumber(e.target.value)}
+                         className="h-11 rounded-lg border border-border px-3.5 font-sans text-sm text-text outline-none focus:border-2 focus:border-primary bg-white placeholder:text-text-dim"
+                       />
+                     </div>
+                   )}
 
                   {/* Aadhaar (Optional) */}
                   <div className="flex flex-col gap-1.5">
@@ -768,54 +769,56 @@ export default function WalkInForm({
                     )}
                   </div>
 
-                  {/* Driving License Photo Card */}
-                  <div className="flex flex-col gap-2.5 rounded-xl border-2 border-dashed border-border bg-slate-50/50 p-4 relative">
-                    <span className="font-sans text-xs font-semibold text-text-muted">Driving License Photo</span>
-                    
-                    {dlImage ? (
-                      <div className="relative flex flex-col items-center justify-center bg-slate-100 rounded-lg p-3 min-h-[140px]">
-                        <img 
-                          src={dlImage} 
-                          alt="DL Thumbnail" 
-                          className="max-h-28 w-auto object-contain rounded-md shadow-xs border border-border"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setDlImage(null)}
-                          className="absolute top-2 right-2 rounded-full bg-rose-50 border border-rose-200 p-1.5 text-rose-500 hover:bg-rose-100 transition-all cursor-pointer"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center text-center p-6 min-h-[140px] gap-3">
-                        <div className="rounded-full bg-primary/10 p-3 text-primary">
-                          <Camera className="h-5 w-5" />
-                        </div>
-                        <span className="font-sans text-xs text-text-dim">No photo captured yet</span>
-                        <div className="flex gap-2.5">
-                          <button
-                            type="button"
-                            onClick={() => setCameraActiveField("dl")}
-                            className="flex items-center gap-1.5 rounded-lg bg-primary hover:bg-primary-hover text-white text-[11px] font-semibold px-3.5 py-2 transition-colors cursor-pointer"
-                          >
-                            <Camera className="h-3.5 w-3.5" />
-                            Capture Photo
-                          </button>
-                          <label className="flex items-center gap-1.5 rounded-lg border border-border bg-white hover:bg-slate-100 text-text-muted text-[11px] font-semibold px-3.5 py-2 transition-colors cursor-pointer">
-                            <Upload className="h-3.5 w-3.5" />
-                            Upload File
-                            <input 
-                              type="file" 
-                              accept="image/*" 
-                              className="hidden" 
-                              onChange={(e) => handleFileUpload(e, "dl")}
-                            />
-                          </label>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                   {/* Driving License Photo Card (Hidden for Operator) */}
+                   {visitorType !== "Operator" && (
+                     <div className="flex flex-col gap-2.5 rounded-xl border-2 border-dashed border-border bg-slate-50/50 p-4 relative">
+                       <span className="font-sans text-xs font-semibold text-text-muted">Driving License Photo</span>
+                       
+                       {dlImage ? (
+                         <div className="relative flex flex-col items-center justify-center bg-slate-100 rounded-lg p-3 min-h-[140px]">
+                           <img 
+                             src={dlImage} 
+                             alt="DL Thumbnail" 
+                             className="max-h-28 w-auto object-contain rounded-md shadow-xs border border-border"
+                           />
+                           <button
+                             type="button"
+                             onClick={() => setDlImage(null)}
+                             className="absolute top-2 right-2 rounded-full bg-rose-50 border border-rose-200 p-1.5 text-rose-500 hover:bg-rose-100 transition-all cursor-pointer"
+                           >
+                             <Trash2 className="h-4 w-4" />
+                           </button>
+                         </div>
+                       ) : (
+                         <div className="flex flex-col items-center justify-center text-center p-6 min-h-[140px] gap-3">
+                           <div className="rounded-full bg-primary/10 p-3 text-primary">
+                             <Camera className="h-5 w-5" />
+                           </div>
+                           <span className="font-sans text-xs text-text-dim">No photo captured yet</span>
+                           <div className="flex gap-2.5">
+                             <button
+                               type="button"
+                               onClick={() => setCameraActiveField("dl")}
+                               className="flex items-center gap-1.5 rounded-lg bg-primary hover:bg-primary-hover text-white text-[11px] font-semibold px-3.5 py-2 transition-colors cursor-pointer"
+                             >
+                               <Camera className="h-3.5 w-3.5" />
+                               Capture Photo
+                             </button>
+                             <label className="flex items-center gap-1.5 rounded-lg border border-border bg-white hover:bg-slate-100 text-text-muted text-[11px] font-semibold px-3.5 py-2 transition-colors cursor-pointer">
+                               <Upload className="h-3.5 w-3.5" />
+                               Upload File
+                               <input 
+                                 type="file" 
+                                 accept="image/*" 
+                                 className="hidden" 
+                                 onChange={(e) => handleFileUpload(e, "dl")}
+                               />
+                             </label>
+                           </div>
+                         </div>
+                       )}
+                     </div>
+                   )}
 
                 </div>
               </div>
@@ -865,7 +868,7 @@ export default function WalkInForm({
                     {metrics.total}
                   </span>
                   <span className="font-sans text-[10px] text-text-muted mt-2">
-                    <strong className="text-green font-semibold">{metrics.drivers}</strong> Drivers · <strong className="text-primary font-semibold">{metrics.partners}</strong> Partners
+                    <strong className="text-green font-semibold">{metrics.individuals}</strong> Individuals · <strong className="text-primary font-semibold">{metrics.operators}</strong> Operators
                   </span>
                 </div>
                 <div className="rounded-xl bg-teal-50/50 text-green p-3">
@@ -1001,8 +1004,8 @@ export default function WalkInForm({
                     className="h-10 w-full rounded-lg border border-border px-3 font-sans text-xs text-text bg-white outline-none focus:border-primary cursor-pointer"
                   >
                     <option value="all">All Visitor Types</option>
-                    <option value="Driver">Drivers Only</option>
-                    <option value="Partner">Partners Only</option>
+                    <option value="Individual">Individuals Only</option>
+                    <option value="Operator">Operators Only</option>
                   </select>
                 </div>
 
@@ -1050,7 +1053,7 @@ export default function WalkInForm({
                       </tr>
                     ) : (
                       records.map((r) => {
-                        const isDriver = r.visitor_type === "Driver";
+                        const isDriver = r.visitor_type === "Individual";
                         
                         // outcome color pills
                         let statusColor = "bg-amber-50 text-amber-700 border-amber-200";

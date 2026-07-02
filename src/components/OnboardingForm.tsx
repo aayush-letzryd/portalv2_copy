@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { 
   Calendar, MapPin, User, Phone, FileText, CheckCircle, 
   Clock, ArrowLeft, Download, Search, Trash2, Edit, Camera, 
-  Upload, X, RefreshCw, AlertTriangle, ShieldCheck, Filter, Plus, ChevronLeft, UserCheck, Database
+  Upload, X, RefreshCw, AlertTriangle, ShieldCheck, Filter, Plus, ChevronLeft, UserCheck, Database, IndianRupee
 } from "lucide-react";
 import { OnboardingRecord, User as UserSession, CITIES } from "../types";
 import CameraCapture from "./CameraCapture";
@@ -38,6 +38,13 @@ export default function OnboardingForm({
 
   // Form Fields State
   const [editingId, setEditingId] = useState<number | null>(null);
+
+  const [vendorType, setVendorType] = useState<"Individual" | "Operator">("Individual");
+  const [driverId, setDriverId] = useState("");
+  const [customRentAmount, setCustomRentAmount] = useState("");
+  const [sameAsDriver, setSameAsDriver] = useState(true);
+  const [operatorDrivers, setOperatorDrivers] = useState<any[]>([]);
+
   const [linkedWalkinId, setLinkedWalkinId] = useState<number | null>(null);
   const [walkinSearchInput, setWalkinSearchInput] = useState("");
   const [driverName, setDriverName] = useState("");
@@ -164,6 +171,12 @@ export default function OnboardingForm({
     }
 
     const payload = {
+
+      vendor_type: vendorType,
+      driver_id: driverId,
+      custom_rent_amount: customRentAmount,
+      operator_drivers: vendorType === "Operator" ? operatorDrivers : [],
+
       driver_name: driverName.trim(),
       phone_number: cleanPhone,
       whatsapp_number: whatsappNumber.trim() || undefined,
@@ -229,6 +242,11 @@ export default function OnboardingForm({
 
   const resetForm = () => {
     setEditingId(null);
+    setVendorType("Individual");
+    setDriverId("");
+    setCustomRentAmount("");
+    setOperatorDrivers([]);
+
     setLinkedWalkinId(null);
     setWalkinSearchInput("");
     setDriverName("");
@@ -307,6 +325,11 @@ export default function OnboardingForm({
       setPanNumber(data.pan_number || "");
       setAadhaarNumber(data.aadhaar_number || "");
       setPanAadhaarLinked(data.pan_aadhaar_linked || "Yes");
+
+      setVendorType(data.vendor_type || "Individual");
+      setDriverId(data.driver_id || "");
+      setCustomRentAmount(data.custom_rent_amount || "");
+
       
       setSelfiePhoto(data.selfie_photo || null);
       setDlFront(data.dl_front || null);
@@ -605,7 +628,10 @@ export default function OnboardingForm({
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Driver Name *</label>
-                        <input type="text" required value={driverName} onChange={(e) => setDriverName(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Full Name as per Aadhaar" />
+                        <input type="text" required value={driverName} onChange={(e) => {
+                          setDriverName(e.target.value);
+                          if (sameAsDriver) setVendorName(e.target.value);
+                        }} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Full Name as per Aadhaar" />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Father's Name *</label>
@@ -634,12 +660,43 @@ export default function OnboardingForm({
                         <input type="text" value={operatingPlace} onChange={(e) => setOperatingPlace(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Enter operating place" />
                       </div>
                       <div className="space-y-2">
+                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Driver ID *</label>
+                        <input type="text" required value={driverId} onChange={(e) => {
+                          setDriverId(e.target.value);
+                          if (sameAsDriver) setVendorId(e.target.value);
+                        }} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Enter Driver ID" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Custom Rent Amount (Optional)</label>
+                        <div className="relative">
+                          <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
+                          <input type="number" value={customRentAmount} onChange={(e) => setCustomRentAmount(e.target.value)} className="w-full h-11 pl-9 pr-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="₹ per day" />
+                        </div>
+                      </div>
+                      <div className="space-y-2 col-span-1 md:col-span-2 lg:col-span-3 flex items-center pt-2">
+                        <label className="flex items-center gap-2 text-xs text-text-muted cursor-pointer hover:text-primary">
+                          <input 
+                            type="checkbox" 
+                            checked={sameAsDriver}
+                            onChange={(e) => {
+                              setSameAsDriver(e.target.checked);
+                              if (e.target.checked) {
+                                setVendorName(driverName);
+                                setVendorId(driverId);
+                              }
+                            }}
+                            className="rounded border-border text-primary focus:ring-primary/20"
+                          />
+                          Vendor details same as Driver details (Individual)
+                        </label>
+                      </div>
+                      <div className="space-y-2">
                         <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Vendor Name</label>
-                        <input type="text" value={vendorName} onChange={(e) => setVendorName(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Enter Vendor Name (if any)" />
+                        <input type="text" value={vendorName} onChange={(e) => setVendorName(e.target.value)} disabled={sameAsDriver} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="Enter Vendor Name (if any)" />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Vendor ID</label>
-                        <input type="text" value={vendorId} onChange={(e) => setVendorId(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Enter Vendor ID (if any)" />
+                        <input type="text" value={vendorId} onChange={(e) => setVendorId(e.target.value)} disabled={sameAsDriver} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="Enter Vendor ID (if any)" />
                       </div>
                       <div className="space-y-2 lg:col-span-3">
                         <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Present Address *</label>

@@ -39,7 +39,7 @@ export default function AllocationForm({
   // Form Fields State
   const [editingId, setEditingId] = useState<number | null>(null);
   const [allocationDate, setAllocationDate] = useState(new Date().toISOString().split("T")[0]);
-  const [allocationType, setAllocationType] = useState<"New Allocation" | "Car Swap" | "Reallocation">("New Allocation");
+  const [allocationType, setAllocationType] = useState<"New allocation" | "Reallocation" | "Swap" | "Dropoff">("New allocation");
   const [cityName, setCityName] = useState("Hyderabad");
   const [driverId, setDriverId] = useState("");
   const [driverName, setDriverName] = useState("");
@@ -54,6 +54,77 @@ export default function AllocationForm({
   const [dropoffOdometer, setDropoffOdometer] = useState("");
   const [dropoffRemarks, setDropoffRemarks] = useState("");
   const [dropoffPhoto, setDropoffPhoto] = useState<string | null>(null);
+
+  // Allocated Vehicle Inspection Checklist States
+  const [jack, setJack] = useState("Available");
+  const [jackRod, setJackRod] = useState("Available");
+  const [spanner, setSpanner] = useState("Available");
+  const [parkingTriangle, setParkingTriangle] = useState("Available");
+  const [fireExtinguishers, setFireExtinguishers] = useState("Available");
+  const [seatCover, setSeatCover] = useState("Available");
+  const [floorCarpet, setFloorCarpet] = useState("Available");
+  const [inspectionRemarks, setInspectionRemarks] = useState("");
+
+  // Returned Vehicle Inspection Checklist States
+  const [oldJack, setOldJack] = useState("Available");
+  const [oldJackRod, setOldJackRod] = useState("Available");
+  const [oldSpanner, setOldSpanner] = useState("Available");
+  const [oldParkingTriangle, setOldParkingTriangle] = useState("Available");
+  const [oldFireExtinguishers, setOldFireExtinguishers] = useState("Available");
+  const [oldSeatCover, setOldSeatCover] = useState("Available");
+  const [oldFloorCarpet, setOldFloorCarpet] = useState("Available");
+  const [oldInspectionRemarks, setOldInspectionRemarks] = useState("");
+
+  // Helper to load inspection data from backend
+  const fetchLastInspectionForGiven = async (num: string) => {
+    if (!num.trim()) return;
+    try {
+      const token = localStorage.getItem("lr_token");
+      const res = await fetch(`/api/inspection/last/${num}`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data) {
+          setJack(data.jack || "Available");
+          setJackRod(data.jack_rod || "Available");
+          setSpanner(data.spanner || "Available");
+          setParkingTriangle(data.parking_triangle || "Available");
+          setFireExtinguishers(data.fire_extinguishers || "Available");
+          setSeatCover(data.seat_cover || "Available");
+          setFloorCarpet(data.floor_carpet || "Available");
+          setInspectionRemarks(data.remarks || "");
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchLastInspectionForOld = async (num: string) => {
+    if (!num.trim()) return;
+    try {
+      const token = localStorage.getItem("lr_token");
+      const res = await fetch(`/api/inspection/last/${num}`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data) {
+          setOldJack(data.jack || "Available");
+          setOldJackRod(data.jack_rod || "Available");
+          setOldSpanner(data.spanner || "Available");
+          setOldParkingTriangle(data.parking_triangle || "Available");
+          setOldFireExtinguishers(data.fire_extinguishers || "Available");
+          setOldSeatCover(data.seat_cover || "Available");
+          setOldFloorCarpet(data.floor_carpet || "Available");
+          setOldInspectionRemarks(data.remarks || "");
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const [cameraActive, setCameraActive] = useState(false);
 
@@ -140,7 +211,13 @@ export default function AllocationForm({
       
       setEditingId(data.id);
       setAllocationDate(data.allocation_date || "");
-      setAllocationType(data.allocation_type || "New Allocation");
+      
+      // Map old types to new type names if necessary
+      let mappedType = data.allocation_type || "New allocation";
+      if (mappedType === "New Allocation") mappedType = "New allocation";
+      if (mappedType === "Car Swap") mappedType = "Swap";
+      
+      setAllocationType(mappedType);
       setCityName(data.city_name || "Hyderabad");
       setDriverId(data.driver_id || "");
       setDriverName(data.driver_name || "");
@@ -154,6 +231,13 @@ export default function AllocationForm({
       setDropoffOdometer(data.dropoff_odometer || "");
       setDropoffRemarks(data.dropoff_remarks || "");
       setDropoffPhoto(data.dropoff_photo || null);
+
+      if (data.vehicle_number) {
+        fetchLastInspectionForGiven(data.vehicle_number);
+      }
+      if (data.old_vehicle_number) {
+        fetchLastInspectionForOld(data.old_vehicle_number);
+      }
       
       setActiveTab("form");
       setRetrieveIdInput("");
@@ -171,7 +255,7 @@ export default function AllocationForm({
   const resetForm = () => {
     setEditingId(null);
     setAllocationDate(new Date().toISOString().split("T")[0]);
-    setAllocationType("New Allocation");
+    setAllocationType("New allocation");
     setCityName("Hyderabad");
     setDriverId("");
     setDriverName("");
@@ -184,6 +268,26 @@ export default function AllocationForm({
     setDropoffOdometer("");
     setDropoffRemarks("");
     setDropoffPhoto(null);
+
+    // Given Vehicle Inspection States Reset
+    setJack("Available");
+    setJackRod("Available");
+    setSpanner("Available");
+    setParkingTriangle("Available");
+    setFireExtinguishers("Available");
+    setSeatCover("Available");
+    setFloorCarpet("Available");
+    setInspectionRemarks("");
+
+    // Returned Vehicle Inspection States Reset
+    setOldJack("Available");
+    setOldJackRod("Available");
+    setOldSpanner("Available");
+    setOldParkingTriangle("Available");
+    setOldFireExtinguishers("Available");
+    setOldSeatCover("Available");
+    setOldFloorCarpet("Available");
+    setOldInspectionRemarks("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -191,32 +295,87 @@ export default function AllocationForm({
     if (!driverId.trim()) return alert("Driver ID is required");
     if (!driverName.trim()) return alert("Driver Name is required");
     if (!driverPhone.trim()) return alert("Driver Phone is required");
-    if (!vehicleNumber.trim()) return alert("Vehicle Number is required");
 
-    if (allocationType === "Car Swap" || allocationType === "Reallocation") {
-      if (!oldVehicleNumber.trim()) return alert("Old Vehicle Number is required for Swap/Reallocation");
-      if (!dropoffOdometer.trim()) return alert("Dropoff Odometer reading is required for Swap/Reallocation");
+    if (allocationType !== "Dropoff" && !vehicleNumber.trim()) {
+      return alert("Vehicle Number is required");
     }
 
-    const payload = {
-      allocation_date: allocationDate,
-      allocation_type: allocationType,
-      city_name: cityName,
-      driver_id: driverId.trim(),
-      driver_name: driverName.trim(),
-      driver_phone: driverPhone.trim(),
-      driver_plan: driverPlan.trim() || null,
-      type_of_plan: typeOfPlan.trim() || null,
-      car_model: carModel.trim() || null,
-      vehicle_number: vehicleNumber.trim(),
-      old_vehicle_number: (allocationType === "Car Swap" || allocationType === "Reallocation") ? oldVehicleNumber.trim() : null,
-      dropoff_odometer: (allocationType === "Car Swap" || allocationType === "Reallocation") ? dropoffOdometer.trim() : null,
-      dropoff_remarks: (allocationType === "Car Swap" || allocationType === "Reallocation") ? dropoffRemarks.trim() : null,
-      dropoff_photo: (allocationType === "Car Swap" || allocationType === "Reallocation") ? dropoffPhoto : null
-    };
+    if (allocationType === "Swap" || allocationType === "Dropoff") {
+      if (!oldVehicleNumber.trim()) return alert("Returned Vehicle Number is required");
+      if (!dropoffOdometer.trim()) return alert("Dropoff Odometer reading is required");
+    }
+
+    const token = localStorage.getItem("lr_token");
 
     try {
-      const token = localStorage.getItem("lr_token");
+      // 1. Submit Inspection for Allocated Vehicle (if allocated)
+      if (allocationType !== "Dropoff") {
+        const inspRes = await fetch("/api/inspection", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            vehicle_number: vehicleNumber.trim().toUpperCase(),
+            inspection_date: allocationDate,
+            odometer_reading: dropoffOdometer || "0",
+            jack,
+            jack_rod: jackRod,
+            spanner,
+            parking_triangle: parkingTriangle,
+            fire_extinguishers: fireExtinguishers,
+            seat_cover: seatCover,
+            floor_carpet: floorCarpet,
+            remarks: inspectionRemarks
+          })
+        });
+        if (!inspRes.ok) throw new Error("Failed to log Allocated Vehicle inspection checklist");
+      }
+
+      // 2. Submit Inspection for Returned Vehicle (if dropped off/swapped)
+      if (allocationType === "Swap" || allocationType === "Dropoff") {
+        const inspRes = await fetch("/api/inspection", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            vehicle_number: oldVehicleNumber.trim().toUpperCase(),
+            inspection_date: allocationDate,
+            odometer_reading: dropoffOdometer,
+            jack: oldJack,
+            jack_rod: oldJackRod,
+            spanner: oldSpanner,
+            parking_triangle: oldParkingTriangle,
+            fire_extinguishers: oldFireExtinguishers,
+            seat_cover: oldSeatCover,
+            floor_carpet: oldFloorCarpet,
+            remarks: oldInspectionRemarks
+          })
+        });
+        if (!inspRes.ok) throw new Error("Failed to log Returned Vehicle inspection checklist");
+      }
+
+      // 3. Submit Allocation Payload
+      const payload = {
+        allocation_date: allocationDate,
+        allocation_type: allocationType,
+        city_name: cityName,
+        driver_id: driverId.trim(),
+        driver_name: driverName.trim(),
+        driver_phone: driverPhone.trim(),
+        driver_plan: driverPlan.trim() || null,
+        type_of_plan: typeOfPlan.trim() || null,
+        car_model: carModel.trim() || null,
+        vehicle_number: allocationType === "Dropoff" ? oldVehicleNumber.trim() : vehicleNumber.trim(),
+        old_vehicle_number: (allocationType === "Swap" || allocationType === "Dropoff") ? oldVehicleNumber.trim() : null,
+        dropoff_odometer: (allocationType === "Swap" || allocationType === "Dropoff") ? dropoffOdometer.trim() : null,
+        dropoff_remarks: (allocationType === "Swap" || allocationType === "Dropoff") ? dropoffRemarks.trim() : null,
+        dropoff_photo: (allocationType === "Swap" || allocationType === "Dropoff") ? dropoffPhoto : null
+      };
+
       const url = editingId ? `/api/allocation/${editingId}` : "/api/allocation";
       const method = editingId ? "PUT" : "POST";
 
@@ -234,7 +393,7 @@ export default function AllocationForm({
         throw new Error(errorText || "Failed to submit allocation record");
       }
 
-      alert(editingId ? "Allocation Record Updated Successfully!" : "Allocation Record Saved Successfully!");
+      alert(editingId ? "Allocation Record & Inspections Updated Successfully!" : "Allocation Record & Inspections Saved Successfully!");
       resetForm();
       fetchStats();
       fetchRecords();
@@ -484,7 +643,7 @@ export default function AllocationForm({
                       <div>
                         <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Allocation Type <span className="text-red-500">*</span></label>
                         <div className="flex flex-col gap-2">
-                          {["New Allocation", "Car Swap", "Reallocation"].map((type) => (
+                          {["New allocation", "Reallocation", "Swap", "Dropoff"].map((type) => (
                             <label key={type} className="flex items-center gap-3 rounded-xl border border-border px-4 py-2.5 text-xs font-bold hover:bg-bg cursor-pointer transition-all shadow-2xs">
                               <input 
                                 type="radio" 
@@ -609,12 +768,22 @@ export default function AllocationForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Vehicle Number (New) <span className="text-red-500">*</span></label>
+                        <div className="flex justify-between items-center mb-2">
+                          <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider">Vehicle Number (New/Current) <span className="text-red-500">*</span></label>
+                          <button
+                            type="button"
+                            onClick={() => fetchLastInspectionForGiven(vehicleNumber)}
+                            className="text-[10px] font-bold text-primary hover:underline cursor-pointer"
+                          >
+                            Load Last Inspection
+                          </button>
+                        </div>
                         <input 
                           type="text" 
                           placeholder="e.g. TS09 EA 1234..."
                           value={vehicleNumber}
                           onChange={(e) => setVehicleNumber(e.target.value)}
+                          onBlur={() => fetchLastInspectionForGiven(vehicleNumber)}
                           required
                           className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                         />
@@ -623,8 +792,8 @@ export default function AllocationForm({
                   </div>
                 </div>
 
-                {/* CONDITIONAL PANEL 4: DROPOFF DETAILS */}
-                {(allocationType === "Car Swap" || allocationType === "Reallocation") && (
+                 {/* CONDITIONAL PANEL 4: DROPOFF DETAILS */}
+                {(allocationType === "Swap" || allocationType === "Dropoff") && (
                   <div className="border-t border-border pt-10 space-y-6">
                     <div className="border-b border-border pb-3">
                       <h3 className="font-sans text-sm font-bold text-amber-600 uppercase tracking-wider flex items-center gap-2">
@@ -637,12 +806,22 @@ export default function AllocationForm({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-4">
                         <div>
-                          <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Old Vehicle Number <span className="text-red-500">*</span></label>
+                          <div className="flex justify-between items-center mb-2">
+                            <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider">Old Vehicle Number <span className="text-red-500">*</span></label>
+                            <button
+                              type="button"
+                              onClick={() => fetchLastInspectionForOld(oldVehicleNumber)}
+                              className="text-[10px] font-bold text-primary hover:underline cursor-pointer"
+                            >
+                              Load Last Inspection
+                            </button>
+                          </div>
                           <input 
                             type="text" 
                             placeholder="Vehicle being returned..."
                             value={oldVehicleNumber}
                             onChange={(e) => setOldVehicleNumber(e.target.value)}
+                            onBlur={() => fetchLastInspectionForOld(oldVehicleNumber)}
                             required
                             className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                           />
@@ -719,6 +898,178 @@ export default function AllocationForm({
                               </div>
                             </div>
                           )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 5. GIVEN VEHICLE INSPECTION CHECKLIST */}
+                {allocationType !== "Dropoff" && (
+                  <div className="border-t border-border pt-10 space-y-6">
+                    <div className="border-b border-border pb-3">
+                      <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">5</span>
+                        Inspection Checklist: Allocated Car ({vehicleNumber || "No vehicle entered"})
+                      </h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-3.5">
+                        <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-slate-50/50">
+                          <span className="font-sans text-xs font-bold text-text">Jack</span>
+                          <div className="flex gap-2">
+                            {["Available", "Not Available"].map((opt) => (
+                              <button key={opt} type="button" onClick={() => setJack(opt)} className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${jack === opt ? "bg-green-light border-green/30 text-green" : "bg-white border-border text-text-muted"}`}>{opt}</button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-slate-50/50">
+                          <span className="font-sans text-xs font-bold text-text">Jack Rod</span>
+                          <div className="flex gap-2">
+                            {["Available", "Not Available"].map((opt) => (
+                              <button key={opt} type="button" onClick={() => setJackRod(opt)} className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${jackRod === opt ? "bg-green-light border-green/30 text-green" : "bg-white border-border text-text-muted"}`}>{opt}</button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-slate-50/50">
+                          <span className="font-sans text-xs font-bold text-text">Spanner</span>
+                          <div className="flex gap-2">
+                            {["Available", "Not Available"].map((opt) => (
+                              <button key={opt} type="button" onClick={() => setSpanner(opt)} className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${spanner === opt ? "bg-green-light border-green/30 text-green" : "bg-white border-border text-text-muted"}`}>{opt}</button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-slate-50/50">
+                          <span className="font-sans text-xs font-bold text-text">Parking Triangle</span>
+                          <div className="flex gap-2">
+                            {["Available", "Not Available"].map((opt) => (
+                              <button key={opt} type="button" onClick={() => setParkingTriangle(opt)} className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${parkingTriangle === opt ? "bg-green-light border-green/30 text-green" : "bg-white border-border text-text-muted"}`}>{opt}</button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3.5">
+                        <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-slate-50/50">
+                          <span className="font-sans text-xs font-bold text-text">Fire Extinguisher</span>
+                          <div className="flex gap-2">
+                            {["Available", "Not Available"].map((opt) => (
+                              <button key={opt} type="button" onClick={() => setFireExtinguishers(opt)} className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${fireExtinguishers === opt ? "bg-green-light border-green/30 text-green" : "bg-white border-border text-text-muted"}`}>{opt}</button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-slate-50/50">
+                          <span className="font-sans text-xs font-bold text-text">Seat Covers</span>
+                          <div className="flex gap-2">
+                            {["Available", "Not Available"].map((opt) => (
+                              <button key={opt} type="button" onClick={() => setSeatCover(opt)} className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${seatCover === opt ? "bg-green-light border-green/30 text-green" : "bg-white border-border text-text-muted"}`}>{opt}</button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-slate-50/50">
+                          <span className="font-sans text-xs font-bold text-text">Floor Carpets</span>
+                          <div className="flex gap-2">
+                            {["Available", "Not Available"].map((opt) => (
+                              <button key={opt} type="button" onClick={() => setFloorCarpet(opt)} className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${floorCarpet === opt ? "bg-green-light border-green/30 text-green" : "bg-white border-border text-text-muted"}`}>{opt}</button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Inspection Remarks (Allocated Car)</label>
+                          <input type="text" value={inspectionRemarks} onChange={(e) => setInspectionRemarks(e.target.value)} placeholder="Condition details..." className="w-full rounded-xl border border-border bg-white px-3 py-2 text-xs focus:outline-none focus:border-primary" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 6. RETURNED VEHICLE INSPECTION CHECKLIST */}
+                {(allocationType === "Swap" || allocationType === "Dropoff") && (
+                  <div className="border-t border-border pt-10 space-y-6">
+                    <div className="border-b border-border pb-3">
+                      <h3 className="font-sans text-sm font-bold text-amber-600 uppercase tracking-wider flex items-center gap-2">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-50 text-amber-600 text-xs font-bold">6</span>
+                        Inspection Checklist: Returned Car ({oldVehicleNumber || "No vehicle entered"})
+                      </h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-3.5">
+                        <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-slate-50/50">
+                          <span className="font-sans text-xs font-bold text-text">Jack</span>
+                          <div className="flex gap-2">
+                            {["Available", "Not Available"].map((opt) => (
+                              <button key={opt} type="button" onClick={() => setOldJack(opt)} className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${oldJack === opt ? "bg-green-light border-green/30 text-green" : "bg-white border-border text-text-muted"}`}>{opt}</button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-slate-50/50">
+                          <span className="font-sans text-xs font-bold text-text">Jack Rod</span>
+                          <div className="flex gap-2">
+                            {["Available", "Not Available"].map((opt) => (
+                              <button key={opt} type="button" onClick={() => setOldJackRod(opt)} className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${oldJackRod === opt ? "bg-green-light border-green/30 text-green" : "bg-white border-border text-text-muted"}`}>{opt}</button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-slate-50/50">
+                          <span className="font-sans text-xs font-bold text-text">Spanner</span>
+                          <div className="flex gap-2">
+                            {["Available", "Not Available"].map((opt) => (
+                              <button key={opt} type="button" onClick={() => setOldSpanner(opt)} className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${oldSpanner === opt ? "bg-green-light border-green/30 text-green" : "bg-white border-border text-text-muted"}`}>{opt}</button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-slate-50/50">
+                          <span className="font-sans text-xs font-bold text-text">Parking Triangle</span>
+                          <div className="flex gap-2">
+                            {["Available", "Not Available"].map((opt) => (
+                              <button key={opt} type="button" onClick={() => setOldParkingTriangle(opt)} className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${oldParkingTriangle === opt ? "bg-green-light border-green/30 text-green" : "bg-white border-border text-text-muted"}`}>{opt}</button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3.5">
+                        <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-slate-50/50">
+                          <span className="font-sans text-xs font-bold text-text">Fire Extinguisher</span>
+                          <div className="flex gap-2">
+                            {["Available", "Not Available"].map((opt) => (
+                              <button key={opt} type="button" onClick={() => setOldFireExtinguishers(opt)} className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${oldFireExtinguishers === opt ? "bg-green-light border-green/30 text-green" : "bg-white border-border text-text-muted"}`}>{opt}</button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-slate-50/50">
+                          <span className="font-sans text-xs font-bold text-text">Seat Covers</span>
+                          <div className="flex gap-2">
+                            {["Available", "Not Available"].map((opt) => (
+                              <button key={opt} type="button" onClick={() => setOldSeatCover(opt)} className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${oldSeatCover === opt ? "bg-green-light border-green/30 text-green" : "bg-white border-border text-text-muted"}`}>{opt}</button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-slate-50/50">
+                          <span className="font-sans text-xs font-bold text-text">Floor Carpets</span>
+                          <div className="flex gap-2">
+                            {["Available", "Not Available"].map((opt) => (
+                              <button key={opt} type="button" onClick={() => setOldFloorCarpet(opt)} className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${oldFloorCarpet === opt ? "bg-green-light border-green/30 text-green" : "bg-white border-border text-text-muted"}`}>{opt}</button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Inspection Remarks (Returned Car)</label>
+                          <input type="text" value={oldInspectionRemarks} onChange={(e) => setOldInspectionRemarks(e.target.value)} placeholder="Condition details..." className="w-full rounded-xl border border-border bg-white px-3 py-2 text-xs focus:outline-none focus:border-primary" />
                         </div>
                       </div>
                     </div>
@@ -871,9 +1222,10 @@ export default function AllocationForm({
                     className="w-full rounded-xl border border-border bg-white px-4 py-2 font-sans text-xs focus:border-primary focus:outline-none transition-all shadow-2xs cursor-pointer"
                   >
                     <option value="all">All Types</option>
-                    <option value="New Allocation">New Allocation</option>
-                    <option value="Car Swap">Car Swap</option>
+                    <option value="New allocation">New allocation</option>
                     <option value="Reallocation">Reallocation</option>
+                    <option value="Swap">Swap</option>
+                    <option value="Dropoff">Dropoff</option>
                   </select>
                 </div>
               </div>
@@ -910,9 +1262,10 @@ export default function AllocationForm({
                             <td className="px-6 py-4">
                               <div className="font-sans text-xs font-bold text-text">{r.city_name}</div>
                               <span className={`inline-block rounded-md px-1.5 py-0.5 font-mono text-[9px] font-bold mt-1 uppercase ${
-                                r.allocation_type === "New Allocation" ? "bg-green-light text-green" :
-                                r.allocation_type === "Car Swap" ? "bg-yellow-light text-amber-600 border border-yellow-100" :
-                                "bg-indigo-50 text-indigo-600 border border-indigo-100"
+                                (r.allocation_type === "New allocation" || r.allocation_type === "New Allocation") ? "bg-green-light text-green" :
+                                r.allocation_type === "Reallocation" ? "bg-indigo-50 text-indigo-600 border border-indigo-100" :
+                                (r.allocation_type === "Swap" || r.allocation_type === "Car Swap") ? "bg-yellow-light text-amber-600 border border-yellow-100" :
+                                "bg-red-50 text-red-600 border border-red-100"
                               }`}>
                                 {r.allocation_type}
                               </span>

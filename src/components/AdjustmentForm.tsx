@@ -46,6 +46,11 @@ export default function AdjustmentForm({
   const [cityName, setCityName] = useState("Hyderabad");
   const [partnerType, setPartnerType] = useState<"Individual" | "Fleet" | "Rental">("Individual");
   
+  const [adjustmentLevel, setAdjustmentLevel] = useState<"Vehicle" | "Operator" | "Operator+Driver" | "Individual">("Vehicle");
+  const [adjustmentNature, setAdjustmentNature] = useState<"Monetary" | "Time">("Monetary");
+  const [timeDuration, setTimeDuration] = useState("");
+  const [customTimeDuration, setCustomTimeDuration] = useState("");
+
   const [adjustmentType, setAdjustmentType] = useState<"Credit" | "Debit" | "Waiver">("Credit");
   const [adjustmentDate, setAdjustmentDate] = useState(new Date().toISOString().split("T")[0]);
   const [enterAmount, setEnterAmount] = useState("");
@@ -155,6 +160,18 @@ export default function AdjustmentForm({
       setCityName(data.city_name || "Hyderabad");
       setPartnerType(data.partner_type || "Individual");
       
+      setAdjustmentLevel(data.adjustment_level || "Vehicle");
+      setAdjustmentNature(data.adjustment_nature || "Monetary");
+      
+      const dur = data.time_duration || "";
+      if (dur && !["Half Day", "1 Day", "2 Days", "3 Days"].includes(dur)) {
+        setTimeDuration("Custom");
+        setCustomTimeDuration(dur);
+      } else {
+        setTimeDuration(dur);
+        setCustomTimeDuration("");
+      }
+
       setAdjustmentType(data.adjustment_type || "Credit");
       setAdjustmentDate(data.adjustment_date || "");
       setEnterAmount(data.enter_amount || "");
@@ -192,6 +209,11 @@ export default function AdjustmentForm({
     setCityName("Hyderabad");
     setPartnerType("Individual");
     
+    setAdjustmentLevel("Vehicle");
+    setAdjustmentNature("Monetary");
+    setTimeDuration("");
+    setCustomTimeDuration("");
+
     setAdjustmentType("Credit");
     setAdjustmentDate(new Date().toISOString().split("T")[0]);
     setEnterAmount("");
@@ -212,7 +234,15 @@ export default function AdjustmentForm({
     if (!partnerName.trim()) return alert("Partner Name is required");
     if (!partnerCode.trim()) return alert("Partner Code is required");
     if (!partnerNumber.trim()) return alert("Partner Number is required");
-    if (!enterAmount || parseFloat(enterAmount) <= 0) return alert("Please enter a valid Amount");
+    if (adjustmentNature === "Monetary" && (!enterAmount || parseFloat(enterAmount) <= 0)) {
+      return alert("Please enter a valid Amount");
+    }
+    if (adjustmentNature === "Time" && !timeDuration) {
+      return alert("Please select a Time Duration");
+    }
+    if (adjustmentNature === "Time" && timeDuration === "Custom" && !customTimeDuration.trim()) {
+      return alert("Please specify the custom duration details");
+    }
 
     const payload = {
       partner_name: partnerName.trim(),
@@ -222,9 +252,14 @@ export default function AdjustmentForm({
       vehicle_number: vehicleNumber.trim() || null,
       city_name: cityName,
       partner_type: partnerType,
+      adjustment_level: adjustmentLevel,
+      adjustment_nature: adjustmentNature,
+      time_duration: adjustmentNature === "Time" 
+        ? (timeDuration === "Custom" ? customTimeDuration.trim() : timeDuration)
+        : null,
       adjustment_type: adjustmentType,
       adjustment_date: adjustmentDate,
-      enter_amount: enterAmount,
+      enter_amount: adjustmentNature === "Monetary" ? enterAmount : "0",
       remittance_towards: remittanceTowards.trim() || null,
       adjustment_related_to: adjustmentRelatedTo.trim() || null,
       remarks: remarks.trim() || null,
@@ -313,7 +348,7 @@ export default function AdjustmentForm({
     if (filteredRecords.length === 0) return alert("No records to export");
     const headers = [
       "ID", "Partner Name", "Partner Code", "Driver ID", "Partner Number", 
-      "Vehicle Number", "City", "Partner Type", "Adjustment Type", "Date", 
+      "Vehicle Number", "City", "Partner Type", "Adj Level", "Adj Nature", "Time Duration", "Adjustment Type", "Date", 
       "Amount", "Remittance Towards", "Related To", "Remarks", 
       "1st Level Approval", "Finance Status", "Finance Remarks", "Final Approval", "Status", "Created At"
     ];
@@ -327,6 +362,9 @@ export default function AdjustmentForm({
       r.vehicle_number || "",
       r.city_name,
       r.partner_type,
+      r.adjustment_level || "",
+      r.adjustment_nature || "",
+      r.time_duration || "",
       r.adjustment_type,
       r.adjustment_date,
       r.enter_amount,
@@ -608,6 +646,71 @@ export default function AdjustmentForm({
 
                     <div className="space-y-4">
                       <div>
+                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Adjustment Level <span className="text-red-500">*</span></label>
+                        <select 
+                          value={adjustmentLevel}
+                          onChange={(e) => setAdjustmentLevel(e.target.value as any)}
+                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:outline-none transition-all shadow-2xs cursor-pointer"
+                        >
+                          <option value="Vehicle">Vehicle Level</option>
+                          <option value="Operator">Operator Level (No Specific Driver)</option>
+                          <option value="Operator+Driver">Operator Level (Specific Driver)</option>
+                          <option value="Individual">Individual Level</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Adjustment Nature <span className="text-red-500">*</span></label>
+                        <div className="flex gap-4">
+                          {["Monetary", "Time"].map((type) => (
+                            <label key={type} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-bold hover:bg-bg cursor-pointer transition-all shadow-2xs">
+                              <input 
+                                type="radio" 
+                                name="adjustmentNature" 
+                                checked={adjustmentNature === type}
+                                onChange={() => { setAdjustmentNature(type as any); if (type === "Monetary") setTimeDuration(""); }}
+                                className="text-primary focus:ring-primary cursor-pointer"
+                              />
+                              {type}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      {adjustmentNature === "Time" && (
+                        <div>
+                          <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Time Duration <span className="text-red-500">*</span></label>
+                          <select 
+                            value={timeDuration}
+                            onChange={(e) => setTimeDuration(e.target.value)}
+                            required
+                            className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:outline-none transition-all shadow-2xs cursor-pointer"
+                          >
+                            <option value="">Select Duration...</option>
+                            <option value="Half Day">Half Day (0.5 Days)</option>
+                            <option value="1 Day">1 Day</option>
+                            <option value="2 Days">2 Days</option>
+                            <option value="3 Days">3 Days</option>
+                            <option value="Custom">Custom...</option>
+                          </select>
+                        </div>
+                      )}
+
+                      {adjustmentNature === "Time" && timeDuration === "Custom" && (
+                        <div>
+                          <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Custom Time Duration <span className="text-red-500">*</span></label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. 5 Days, 1.5 Days, Half Day Leave..."
+                            value={customTimeDuration}
+                            onChange={(e) => setCustomTimeDuration(e.target.value)}
+                            required
+                            className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
+                          />
+                        </div>
+                      )}
+
+                      <div>
                         <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Adjustment Type <span className="text-red-500">*</span></label>
                         <div className="flex gap-4">
                           {["Credit", "Debit", "Waiver"].map((type) => (
@@ -636,17 +739,19 @@ export default function AdjustmentForm({
                         />
                       </div>
 
-                      <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Enter Amount (₹) <span className="text-red-500">*</span></label>
-                        <input 
-                          type="number" 
-                          placeholder="0.00"
-                          value={enterAmount}
-                          onChange={(e) => setEnterAmount(e.target.value)}
-                          required
-                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
-                        />
-                      </div>
+                      {adjustmentNature === "Monetary" && (
+                        <div>
+                          <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Enter Amount (₹) <span className="text-red-500">*</span></label>
+                          <input 
+                            type="number" 
+                            placeholder="0.00"
+                            value={enterAmount}
+                            onChange={(e) => setEnterAmount(e.target.value)}
+                            required
+                            className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
+                          />
+                        </div>
+                      )}
 
                       <div>
                         <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Remittance Towards (Optional)</label>

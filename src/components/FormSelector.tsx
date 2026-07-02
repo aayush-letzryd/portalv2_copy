@@ -1,9 +1,9 @@
-import { ClipboardList, UserCheck, Settings, Key, LogOut, Truck, AlertTriangle } from "lucide-react";
+import { ClipboardList, UserCheck, Settings, Key, LogOut, Truck, AlertTriangle, Wrench, MapPin, IndianRupee } from "lucide-react";
 import { User } from "../types";
 
 interface FormSelectorProps {
   user: User;
-  onSelectForm: (form: "walkin" | "onboarding" | "adjustment" | "allocation" | "expenses") => void;
+  onSelectForm: (form: "walkin" | "onboarding" | "operator_onboarding" | "adjustment" | "allocation" | "expenses" | "vehicle_onboarding" | "workshops" | "hubs_parking" | "rents" | "accident" | "inspection") => void;
   onLogout: () => void;
 }
 
@@ -84,7 +84,7 @@ export default function FormSelector({ user, onSelectForm, onLogout }: FormSelec
             </span>
           </button>
 
-          {/* Driver Onboarding Form (Active Card) */}
+          {/* Individual Onboarding Form (Active Card) */}
           <button
             onClick={() => onSelectForm("onboarding")}
             className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-green hover:shadow-md transition-all duration-200 cursor-pointer"
@@ -93,7 +93,23 @@ export default function FormSelector({ user, onSelectForm, onLogout }: FormSelec
               <UserCheck className="h-6 w-6" />
             </div>
             <div className="flex-grow">
-              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Onboarding Form</h3>
+              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Individual Onboarding</h3>
+            </div>
+            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
+              Live
+            </span>
+          </button>
+
+          {/* Operator Onboarding Form (Active Card) */}
+          <button
+            onClick={() => onSelectForm("operator_onboarding")}
+            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-blue-500 hover:shadow-md transition-all duration-200 cursor-pointer"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-primary group-hover:scale-105 transition-transform duration-200">
+              <UserCheck className="h-6 w-6" />
+            </div>
+            <div className="flex-grow">
+              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Operator Onboarding</h3>
             </div>
             <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
               Live
@@ -148,34 +164,105 @@ export default function FormSelector({ user, onSelectForm, onLogout }: FormSelec
             </span>
           </button>
 
-          {/* Vehicle Onboarding Form (Disabled Card) */}
-          <div className="relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white/60 p-6 opacity-60">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+          {/* Vehicle Onboarding Form (Active Card) */}
+          <button
+            onClick={() => onSelectForm("vehicle_onboarding")}
+            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-primary hover:shadow-md transition-all duration-200 cursor-pointer"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-primary group-hover:scale-105 transition-transform duration-200">
               <Truck className="h-6 w-6" />
             </div>
-            <div>
+            <div className="flex-grow">
               <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Vehicle Onboarding</h3>
             </div>
-            <span className="absolute top-4 right-4 rounded-md bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-text-muted uppercase tracking-wider">
-              Coming Soon
+            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
+              Live
             </span>
-          </div>
+          </button>
 
-          {/* Accidents Form (Disabled Card) */}
-          <div className="relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white/60 p-6 opacity-60">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+          {/* Workshops Form (Active Card) */}
+          <button
+            onClick={() => onSelectForm("workshops")}
+            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-green hover:shadow-md transition-all duration-200 cursor-pointer"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-light text-green group-hover:scale-105 transition-transform duration-200">
+              <Wrench className="h-6 w-6" />
+            </div>
+            <div className="flex-grow">
+              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Workshops Form</h3>
+            </div>
+            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
+              Live
+            </span>
+          </button>
+
+          {/* Hubs & Parking Form (Active Card) */}
+          <button
+            onClick={() => onSelectForm("hubs_parking")}
+            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-amber-500 hover:shadow-md transition-all duration-200 cursor-pointer"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-light text-amber-600 group-hover:scale-105 transition-transform duration-200">
+              <MapPin className="h-6 w-6" />
+            </div>
+            <div className="flex-grow">
+              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Hubs & Parking</h3>
+            </div>
+            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
+              Live
+            </span>
+          </button>
+
+          {/* Rent Plans Form (Active Card) */}
+          <button
+            onClick={() => onSelectForm("rents")}
+            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-blue-500 hover:shadow-md transition-all duration-200 cursor-pointer"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 group-hover:scale-105 transition-transform duration-200">
+              <IndianRupee className="h-6 w-6" />
+            </div>
+            <div className="flex-grow">
+              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Rent Plans</h3>
+            </div>
+            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
+              Live
+            </span>
+          </button>
+
+          {/* Accidents Form (Active Card) */}
+          <button
+            onClick={() => onSelectForm("accident")}
+            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-red-500 hover:shadow-md transition-all duration-200 cursor-pointer"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-50 text-red-600 group-hover:scale-105 transition-transform duration-200">
               <AlertTriangle className="h-6 w-6" />
             </div>
-            <div>
+            <div className="flex-grow">
               <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Accidents Form</h3>
             </div>
-            <span className="absolute top-4 right-4 rounded-md bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-text-muted uppercase tracking-wider">
-              Coming Soon
+            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
+              Live
             </span>
-          </div>
+          </button>
+
+          {/* Vehicle Inspection Form (Active Card) */}
+          <button
+            onClick={() => onSelectForm("inspection")}
+            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-primary hover:shadow-md transition-all duration-200 cursor-pointer"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-primary group-hover:scale-105 transition-transform duration-200">
+              <ClipboardList className="h-6 w-6" />
+            </div>
+            <div className="flex-grow">
+              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Vehicle Inspection</h3>
+            </div>
+            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
+              Live
+            </span>
+          </button>
 
         </div>
       </main>
+
 
       {/* Footer */}
       <footer className="bg-primary py-8 text-center text-xs text-white/50 border-t border-primary-hover font-sans mt-auto">
