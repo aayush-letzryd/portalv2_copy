@@ -620,6 +620,9 @@ def startup_event():
                 created_at   TIMESTAMP DEFAULT NOW()
             );
         """)
+        cur.execute("ALTER TABLE app_users ADD COLUMN IF NOT EXISTS raw_password VARCHAR(255);")
+        cur.execute("UPDATE app_users SET raw_password = 'letzryd123' WHERE raw_password IS NULL;")
+        
         cur.execute("""
             CREATE TABLE IF NOT EXISTS app_sessions (
                 token        VARCHAR(255) PRIMARY KEY,
@@ -635,16 +638,16 @@ def startup_event():
             exec_rows = cur.fetchall()
             exec_map = {name: uid for uid, name in exec_rows}
 
-            default_password = pwd_context.hash("letzryd123")
+            default_password_hash = pwd_context.hash("letzryd123")
             login_accounts = [
-                ("dshiva",       default_password, exec_map.get("D Shiva")),
-                ("arshadkhan",   default_password, exec_map.get("Arshad Khan")),
-                ("priyasharma",  default_password, exec_map.get("Priya Sharma")),
-                ("rohanverma",   default_password, exec_map.get("Rohan Verma")),
-                ("snehareddy",   default_password, exec_map.get("Sneha Reddy")),
+                ("dshiva",       default_password_hash, exec_map.get("D Shiva"), 'letzryd123'),
+                ("arshadkhan",   default_password_hash, exec_map.get("Arshad Khan"), 'letzryd123'),
+                ("priyasharma",  default_password_hash, exec_map.get("Priya Sharma"), 'letzryd123'),
+                ("rohanverma",   default_password_hash, exec_map.get("Rohan Verma"), 'letzryd123'),
+                ("snehareddy",   default_password_hash, exec_map.get("Sneha Reddy"), 'letzryd123'),
             ]
             cur.executemany(
-                "INSERT INTO app_users (username, password_hash, executive_id) VALUES (%s,%s,%s);",
+                "INSERT INTO app_users (username, password_hash, executive_id, raw_password) VALUES (%s,%s,%s,%s);",
                 login_accounts
             )
             print("[OK] Login accounts seeded (password: letzryd123)")
@@ -1396,6 +1399,12 @@ class AppUserData(BaseModel):
     username: str
     password: str
 
+class AppUserUpdateData(BaseModel):
+    name: str
+    role: str
+    username: str
+    password: Optional[str] = None
+
 @app.get("/api/users")
 def list_app_users(authorization: Optional[str] = Header(None)):
     get_current_user(authorization)
@@ -1403,7 +1412,7 @@ def list_app_users(authorization: Optional[str] = Header(None)):
     try:
         cur = conn.cursor()
         cur.execute("""
-            SELECT au.id, au.username, u.name, u.role, au.created_at
+            SELECT au.id, au.username, u.name, u.role, au.created_at, au.raw_password
             FROM app_users au
             JOIN users u ON u.id = au.executive_id
             ORDER BY au.id DESC;
@@ -1416,7 +1425,8 @@ def list_app_users(authorization: Optional[str] = Header(None)):
                 "username": r[1],
                 "name": r[2],
                 "role": r[3],
-                "created_at": r[4].isoformat() if r[4] else None
+                "created_at": r[4].isoformat() if r[4] else None,
+                "raw_password": r[5] or "letzryd123"
             })
         return result
     finally:
@@ -1444,13 +1454,63 @@ def create_app_user(req: AppUserData, authorization: Optional[str] = Header(None
         
         hashed_password = pwd_context.hash(req.password)
         cur.execute(
-            "INSERT INTO app_users (username, password_hash, executive_id) VALUES (%s, %s, %s) RETURNING id;",
-            (username_cleaned, hashed_password, executive_id)
+            "INSERT INTO app_users (username, password_hash, executive_id, raw_password) VALUES (%s, %s, %s, %s) RETURNING id;",
+            (username_cleaned, hashed_password, executive_id, req.password)
         )
         user_id = cur.fetchone()[0]
         
         conn.commit()
         return {"success": True, "user_id": user_id, "executive_id": executive_id}
+    except Exception as e:
+        conn.rollback()
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.put("/api/users/{id}")
+def update_app_user(id: int, req: AppUserUpdateData, authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    username_cleaned = req.username.strip().lower()
+    
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        
+        # Check if user exists
+        cur.execute("SELECT executive_id FROM app_users WHERE id = %s;", (id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="User not found")
+        exec_id = row[0]
+        
+        # Check username conflicts
+        cur.execute("SELECT id FROM app_users WHERE username = %s AND id != %s;", (username_cleaned, id))
+        if cur.fetchone():
+            raise HTTPException(status_code=400, detail="Username already exists")
+            
+        # Update users table (name, role)
+        cur.execute(
+            "UPDATE users SET name = %s, role = %s WHERE id = %s;",
+            (req.name.strip(), req.role.strip(), exec_id)
+        )
+        
+        # Update app_users table (username)
+        if req.password:
+            hashed_password = pwd_context.hash(req.password)
+            cur.execute(
+                "UPDATE app_users SET username = %s, password_hash = %s, raw_password = %s WHERE id = %s;",
+                (username_cleaned, hashed_password, req.password, id)
+            )
+        else:
+            cur.execute(
+                "UPDATE app_users SET username = %s WHERE id = %s;",
+                (username_cleaned, id)
+            )
+            
+        conn.commit()
+        return {"success": True}
     except Exception as e:
         conn.rollback()
         if isinstance(e, HTTPException):

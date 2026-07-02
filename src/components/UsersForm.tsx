@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { 
   Users, ArrowLeft, Trash2, Search, UserPlus, ShieldAlert,
-  Info, CheckCircle, RefreshCw, Key
+  Info, CheckCircle, RefreshCw, Key, Eye, EyeOff, Edit
 } from "lucide-react";
 import { User as UserSession } from "../types";
 
@@ -43,6 +43,8 @@ export default function UsersForm({
   }, []);
 
   // Form Fields State
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [revealedPasswordId, setRevealedPasswordId] = useState<number | null>(null);
   const [name, setName] = useState("");
   const [role, setRole] = useState("Executive");
   const [customRole, setCustomRole] = useState("");
@@ -91,7 +93,7 @@ export default function UsersForm({
     e.preventDefault();
     if (!name.trim()) return alert("Full Name is required");
     if (!username.trim()) return alert("Username is required");
-    if (!password.trim()) return alert("Password is required");
+    if (!editingId && !password.trim()) return alert("Password is required");
 
     const finalRole = role === "Other" ? customRole.trim() : role;
     if (!finalRole) return alert("Role is required");
@@ -99,32 +101,40 @@ export default function UsersForm({
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem("lr_token");
-      const res = await fetch("/api/users", {
-        method: "POST",
+      const url = editingId ? `/api/users/${editingId}` : "/api/users";
+      const method = editingId ? "PUT" : "POST";
+      
+      const payload: any = {
+        name: name.trim(),
+        role: finalRole,
+        username: username.trim()
+      };
+      if (password) {
+        payload.password = password;
+      }
+
+      const res = await fetch(url, {
+        method: method,
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({
-          name: name.trim(),
-          role: finalRole,
-          username: username.trim(),
-          password: password
-        })
+        body: JSON.stringify(payload)
       });
 
       const data = await res.json();
       if (res.ok) {
-        alert("User account created successfully!");
+        alert(editingId ? "User account updated successfully!" : "User account created successfully!");
         // Reset form
         setName("");
         setRole("Executive");
         setCustomRole("");
         setUsername("");
         setPassword("");
+        setEditingId(null);
         setActiveTab("registry");
       } else {
-        alert(data.detail || "Failed to create user account");
+        alert(data.detail || "Failed to submit user account");
       }
     } catch (err: any) {
       alert("Error occurred: " + err.message);
@@ -238,8 +248,12 @@ export default function UsersForm({
           <div className="mx-auto max-w-lg rounded-2xl border border-border bg-white shadow-sm overflow-hidden">
             <div className="bg-primary px-8 py-6 text-white flex items-center justify-between">
               <div>
-                <h2 className="font-sans text-lg font-extrabold tracking-tight">Create User Account</h2>
-                <p className="font-sans text-[11px] text-white/70 mt-1">Register portal login access for executives and managers</p>
+                <h2 className="font-sans text-lg font-extrabold tracking-tight">
+                  {editingId ? `Update User Account #${editingId}` : "Create User Account"}
+                </h2>
+                <p className="font-sans text-[11px] text-white/70 mt-1">
+                  {editingId ? `Edit account details and roles for user @${username}` : "Register portal login access for executives and managers"}
+                </p>
               </div>
               <Key className="h-8 w-8 text-white/20" />
             </div>
@@ -325,34 +339,55 @@ export default function UsersForm({
                   {/* Password */}
                   <div>
                     <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
-                      Password <span className="text-red-500">*</span>
+                      Password {editingId ? "(Optional)" : <span className="text-red-500">*</span>}
                     </label>
                     <input 
                       type="password" 
-                      placeholder="••••••••"
+                      placeholder={editingId ? "Leave blank to keep existing password..." : "••••••••"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      required
+                      required={!editingId}
                       minLength={6}
                       className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                     />
-                    <p className="font-sans text-[10px] text-text-muted mt-1">Minimum 6 characters recommended.</p>
+                    <p className="font-sans text-[10px] text-text-muted mt-1">
+                      {editingId ? "Leave empty to keep current password. Minimum 6 characters if editing." : "Minimum 6 characters recommended."}
+                    </p>
                   </div>
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full rounded-xl bg-primary hover:bg-primary-hover px-4 py-3 font-sans text-sm font-bold text-white shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                {isSubmitting ? (
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                ) : (
-                  <UserPlus className="h-4 w-4" />
+              <div className="flex gap-4">
+                {editingId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingId(null);
+                      setName("");
+                      setRole("Executive");
+                      setCustomRole("");
+                      setUsername("");
+                      setPassword("");
+                      setActiveTab("registry");
+                    }}
+                    className="flex-1 rounded-xl border border-border hover:bg-bg px-4 py-3 font-sans text-sm font-bold text-text transition-all cursor-pointer text-center"
+                  >
+                    Cancel Edit
+                  </button>
                 )}
-                Register Portal User
-              </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`rounded-xl px-4 py-3 font-sans text-sm font-bold text-white shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 ${editingId ? 'flex-1 bg-amber-500 hover:bg-amber-600' : 'w-full bg-primary hover:bg-primary-hover'}`}
+                >
+                  {isSubmitting ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <UserPlus className="h-4 w-4" />
+                  )}
+                  {editingId ? "Update Portal User" : "Register Portal User"}
+                </button>
+              </div>
             </form>
           </div>
         ) : (
@@ -406,46 +441,84 @@ export default function UsersForm({
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Full Name</th>
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Username</th>
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Designation / Role</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Password</th>
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Created On</th>
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/60">
-                    {filteredRecords.map((r) => (
-                      <tr key={r.id} className="hover:bg-slate-50/40 transition-colors">
-                        <td className="px-6 py-4 font-mono text-xs font-semibold text-text-muted">#{r.id}</td>
-                        <td className="px-6 py-4 font-sans text-sm font-bold text-text">{r.name}</td>
-                        <td className="px-6 py-4 font-mono text-xs text-primary font-semibold">@{r.username}</td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold ${
-                            r.role === "Administrator" 
-                              ? "bg-red-50 text-red-600 border border-red-200/50" 
-                              : r.role === "Finance Team" 
-                              ? "bg-amber-50 text-amber-600 border border-amber-200/50"
-                              : "bg-slate-100 text-slate-700"
-                          }`}>
-                            {r.role}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 font-sans text-xs text-text-muted">
-                          {r.created_at ? new Date(r.created_at).toLocaleDateString("en-IN", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric"
-                          }) : "-"}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={() => handleDelete(r.id, r.username)}
-                            disabled={user.id === r.id}
-                            className={`inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 hover:bg-red-500 hover:text-white text-red-500 border border-red-200/40 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed`}
-                            title={user.id === r.id ? "Cannot delete yourself" : "Delete User Account"}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredRecords.map((r) => {
+                      const isSelf = user.id === r.id;
+                      const isRevealed = revealedPasswordId === r.id;
+                      return (
+                        <tr key={r.id} className="hover:bg-slate-50/40 transition-colors">
+                          <td className="px-6 py-4 font-mono text-xs font-semibold text-text-muted">#{r.id}</td>
+                          <td className="px-6 py-4 font-sans text-sm font-bold text-text">{r.name}</td>
+                          <td className="px-6 py-4 font-mono text-xs text-primary font-semibold">@{r.username}</td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                              r.role === "Administrator" 
+                                ? "bg-red-50 text-red-600 border border-red-200/50" 
+                                : r.role === "Finance Team" 
+                                ? "bg-amber-50 text-amber-600 border border-amber-200/50"
+                                : "bg-slate-100 text-slate-700"
+                            }`}>
+                              {r.role}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 font-mono text-xs text-text font-semibold">
+                            <div className="flex items-center gap-1.5">
+                              <span>{isRevealed ? r.raw_password : "••••••••"}</span>
+                              <button 
+                                onClick={() => setRevealedPasswordId(isRevealed ? null : r.id)}
+                                className="text-text-muted hover:text-primary transition-all focus:outline-none cursor-pointer"
+                                title={isRevealed ? "Hide Password" : "Show Password"}
+                              >
+                                {isRevealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                              </button>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 font-sans text-xs text-text-muted">
+                            {r.created_at ? new Date(r.created_at).toLocaleDateString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric"
+                            }) : "-"}
+                          </td>
+                          <td className="px-6 py-4 text-right space-x-2">
+                            <button
+                              onClick={() => {
+                                setEditingId(r.id);
+                                setName(r.name);
+                                setUsername(r.username);
+                                const commonRoles = ["Executive", "Driver Relations Manager", "Onboarding Specialist", "Partner Onboarding Lead", "Regional Operations Manager", "Finance Team", "Administrator"];
+                                if (commonRoles.includes(r.role)) {
+                                  setRole(r.role);
+                                  setCustomRole("");
+                                } else {
+                                  setRole("Other");
+                                  setCustomRole(r.role);
+                                }
+                                setPassword(""); // reset password input when editing
+                                setActiveTab("form");
+                              }}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 hover:bg-amber-500 hover:text-white text-amber-500 border border-amber-200/40 transition-all cursor-pointer"
+                              title="Edit User Details & Password"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(r.id, r.username)}
+                              disabled={isSelf}
+                              className={`inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 hover:bg-red-500 hover:text-white text-red-500 border border-red-200/40 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed`}
+                              title={isSelf ? "Cannot delete yourself" : "Delete User Account"}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
