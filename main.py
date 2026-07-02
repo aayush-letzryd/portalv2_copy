@@ -1390,6 +1390,112 @@ def logout(authorization: Optional[str] = Header(None)):
     return {"success": True}
 
 
+class AppUserData(BaseModel):
+    name: str
+    role: str
+    username: str
+    password: str
+
+@app.get("/api/users")
+def list_app_users(authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT au.id, au.username, u.name, u.role, au.created_at
+            FROM app_users au
+            JOIN users u ON u.id = au.executive_id
+            ORDER BY au.id DESC;
+        """)
+        rows = cur.fetchall()
+        result = []
+        for r in rows:
+            result.append({
+                "id": r[0],
+                "username": r[1],
+                "name": r[2],
+                "role": r[3],
+                "created_at": r[4].isoformat() if r[4] else None
+            })
+        return result
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.post("/api/users")
+def create_app_user(req: AppUserData, authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    username_cleaned = req.username.strip().lower()
+    if not req.password:
+         raise HTTPException(status_code=400, detail="Password is required")
+    
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM app_users WHERE username = %s;", (username_cleaned,))
+        if cur.fetchone():
+            raise HTTPException(status_code=400, detail="Username already exists")
+        
+        cur.execute(
+            "INSERT INTO users (name, role) VALUES (%s, %s) RETURNING id;",
+            (req.name.strip(), req.role.strip())
+        )
+        executive_id = cur.fetchone()[0]
+        
+        hashed_password = pwd_context.hash(req.password)
+        cur.execute(
+            "INSERT INTO app_users (username, password_hash, executive_id) VALUES (%s, %s, %s) RETURNING id;",
+            (username_cleaned, hashed_password, executive_id)
+        )
+        user_id = cur.fetchone()[0]
+        
+        conn.commit()
+        return {"success": True, "user_id": user_id, "executive_id": executive_id}
+    except Exception as e:
+        conn.rollback()
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.delete("/api/users/{id}")
+def delete_app_user(id: int, authorization: Optional[str] = Header(None)):
+    user = get_current_user(authorization)
+    if user["user_id"] == id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+        
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT executive_id FROM app_users WHERE id = %s;", (id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="User not found")
+        exec_id = row[0]
+        
+        cur.execute("DELETE FROM app_sessions WHERE user_id = %s;", (id,))
+        cur.execute("DELETE FROM app_users WHERE id = %s;", (id,))
+        
+        try:
+            cur.execute("DELETE FROM users WHERE id = %s;", (exec_id,))
+        except Exception:
+            conn.rollback()
+            cur = conn.cursor()
+            cur.execute("DELETE FROM app_sessions WHERE user_id = %s;", (id,))
+            cur.execute("DELETE FROM app_users WHERE id = %s;", (id,))
+            
+        conn.commit()
+        return {"success": True}
+    except Exception as e:
+        conn.rollback()
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+
 # ─────────────────────────────────────────────────────────
 # Executives
 # ─────────────────────────────────────────────────────────

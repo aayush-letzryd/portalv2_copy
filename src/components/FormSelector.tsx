@@ -1,9 +1,9 @@
-import { ClipboardList, UserCheck, Settings, Key, LogOut, Truck, AlertTriangle, Wrench, MapPin, IndianRupee } from "lucide-react";
+import { ClipboardList, UserCheck, Settings, Key, LogOut, Truck, AlertTriangle, Wrench, MapPin, IndianRupee, Users } from "lucide-react";
 import { User } from "../types";
 
 interface FormSelectorProps {
   user: User;
-  onSelectForm: (form: "walkin" | "onboarding" | "operator_onboarding" | "adjustment" | "allocation" | "expenses" | "vehicle_onboarding" | "workshops" | "hubs_parking" | "rents" | "accident" | "inspection") => void;
+  onSelectForm: (form: "walkin" | "onboarding" | "operator_onboarding" | "adjustment" | "allocation" | "expenses" | "vehicle_onboarding" | "workshops" | "hubs_parking" | "rents" | "accident" | "inspection" | "users") => void;
   onLogout: () => void;
 }
 
@@ -254,6 +254,22 @@ export default function FormSelector({ user, onSelectForm, onLogout }: FormSelec
             </div>
             <div className="flex-grow">
               <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Vehicle Inspection</h3>
+            </div>
+            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
+              Live
+            </span>
+          </button>
+
+          {/* User Manager Form (Active Card) */}
+          <button
+            onClick={() => onSelectForm("users")}
+            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-indigo-500 hover:shadow-md transition-all duration-200 cursor-pointer"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 group-hover:scale-105 transition-transform duration-200">
+              <Users className="h-6 w-6" />
+            </div>
+            <div className="flex-grow">
+              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Portal Users Form</h3>
             </div>
             <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
               Live
