@@ -14,6 +14,7 @@ interface Employee {
   role: string;
   phone: string | null;
   email: string | null;
+  company_email: string | null;
   department: string | null;
   city: string | null;
   joining_date: string | null;
@@ -65,10 +66,10 @@ export default function EmployeesForm({
 
   // Form fields
   const [name, setName] = useState("");
-  const [role, setRole] = useState("Executive");
-  const [customRole, setCustomRole] = useState("");
+  const [role, setRole] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [companyEmail, setCompanyEmail] = useState("");
   const [department, setDepartment] = useState("");
   const [city, setCity] = useState("");
   const [joiningDate, setJoiningDate] = useState("");
@@ -110,8 +111,8 @@ export default function EmployeesForm({
   }, [activeTab]);
 
   const resetForm = () => {
-    setName(""); setRole("Executive"); setCustomRole("");
-    setPhone(""); setEmail(""); setDepartment(""); setCity("");
+    setName(""); setRole("");
+    setPhone(""); setEmail(""); setCompanyEmail(""); setDepartment(""); setCity("");
     setJoiningDate(""); setEmployeeId(""); setStatus("Active");
     setEditingEmployee(null);
   };
@@ -119,11 +120,10 @@ export default function EmployeesForm({
   const loadForEdit = (emp: Employee) => {
     setEditingEmployee(emp);
     setName(emp.name);
-    const knownRole = ROLES.includes(emp.role);
-    setRole(knownRole ? emp.role : "Other");
-    setCustomRole(knownRole ? "" : emp.role);
+    setRole(emp.role);
     setPhone(emp.phone || "");
     setEmail(emp.email || "");
+    setCompanyEmail(emp.company_email || "");
     setDepartment(emp.department || "");
     setCity(emp.city || "");
     setJoiningDate(emp.joining_date || "");
@@ -136,20 +136,20 @@ export default function EmployeesForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return alert("Full Name is required.");
-    const finalRole = role === "Other" ? customRole.trim() : role;
-    if (!finalRole) return alert("Role is required.");
+    if (!role.trim()) return alert("Role is required.");
 
     setIsSubmitting(true);
     const payload = {
       name: name.trim(),
-      role: finalRole,
+      role: role.trim(),
       phone: phone.trim() || null,
       email: email.trim() || null,
+      company_email: companyEmail.trim() || null,
       department: department || null,
       city: city || null,
       joining_date: joiningDate || null,
       employee_id: employeeId.trim() || null,
-      status,
+      status: status || "Active"
     };
 
     try {
@@ -378,34 +378,21 @@ export default function EmployeesForm({
                     <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
                       Designation / Role <span className="text-red-500">*</span>
                     </label>
-                    <select
+                    <input
+                      type="text"
+                      list="roles-list"
+                      placeholder="e.g. Operations Intern"
                       value={role}
                       onChange={(e) => setRole(e.target.value)}
                       required
-                      className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-all cursor-pointer"
-                    >
+                      className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-all"
+                    />
+                    <datalist id="roles-list">
                       {ROLES.map((r) => (
-                        <option key={r} value={r}>{r}</option>
+                        <option key={r} value={r} />
                       ))}
-                      <option value="Other">Other (Custom)</option>
-                    </select>
+                    </datalist>
                   </div>
-
-                  {role === "Other" && (
-                    <div>
-                      <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
-                        Custom Designation <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Operations Intern"
-                        value={customRole}
-                        onChange={(e) => setCustomRole(e.target.value)}
-                        required
-                        className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-all"
-                      />
-                    </div>
-                  )}
 
                   <div>
                     <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
@@ -458,13 +445,26 @@ export default function EmployeesForm({
 
                   <div>
                     <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
-                      Email Address
+                      Personal Email Address
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="e.g. rahul@gmail.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                      LetzRyd Email Address
                     </label>
                     <input
                       type="email"
                       placeholder="e.g. rahul@letzryd.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      value={companyEmail}
+                      onChange={(e) => setCompanyEmail(e.target.value)}
                       className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-all"
                     />
                   </div>
@@ -627,10 +627,15 @@ export default function EmployeesForm({
                             )}
                             {emp.email && (
                               <p className="font-sans text-xs text-text-muted flex items-center gap-1 mt-0.5">
-                                <Mail className="h-3 w-3" /> {emp.email}
+                                <Mail className="h-3 w-3" /> {emp.email} (P)
                               </p>
                             )}
-                            {!emp.phone && !emp.email && <span className="text-xs text-text-muted italic">—</span>}
+                            {emp.company_email && (
+                              <p className="font-sans text-xs text-violet-600 flex items-center gap-1 mt-0.5">
+                                <Mail className="h-3 w-3" /> {emp.company_email} (W)
+                              </p>
+                            )}
+                            {!emp.phone && !emp.email && !emp.company_email && <span className="text-xs text-text-muted italic">—</span>}
                           </td>
                           <td className="px-5 py-4 font-sans text-xs text-text">
                             {emp.city ? (
