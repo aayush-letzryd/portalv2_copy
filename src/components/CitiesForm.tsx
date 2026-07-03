@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { Plus, Trash2, Search, ArrowLeft, RefreshCw, MapPin, Info, Settings, ChevronLeft, FileText } from "lucide-react";
+import { Plus, Trash2, Search, ArrowLeft, RefreshCw, MapPin, Info, Settings, ChevronLeft, FileText, Edit, X } from "lucide-react";
 import { User as UserSession } from "../types";
 
 interface CitiesFormProps {
@@ -10,6 +9,10 @@ interface CitiesFormProps {
 
 interface OperatingCity {
   id: number;
+  name: string;
+  state: string;
+  country: string;
+  status: string;
   value: string;
   text: string;
 }
@@ -39,6 +42,10 @@ export default function CitiesForm({
 
   // Form Fields State
   const [cityName, setCityName] = useState("");
+  const [stateName, setStateName] = useState("");
+  const [countryName, setCountryName] = useState("India");
+  const [status, setStatus] = useState("Active");
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Registry Search & Filter State
@@ -78,6 +85,14 @@ export default function CitiesForm({
     }
   }, [activeTab]);
 
+  const resetForm = () => {
+    setCityName("");
+    setStateName("");
+    setCountryName("India");
+    setStatus("Active");
+    setEditingId(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cityName.trim()) return alert("City Name is required");
@@ -85,24 +100,30 @@ export default function CitiesForm({
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem("lr_token");
-      const res = await fetch("/api/cities", {
-        method: "POST",
+      const url = editingId ? `/api/cities/${editingId}` : "/api/cities";
+      const method = editingId ? "PUT" : "POST";
+      
+      const res = await fetch(url, {
+        method: method,
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
-          name: cityName.trim()
+          name: cityName.trim(),
+          state: stateName.trim() || null,
+          country: countryName.trim() || "India",
+          status: status || "Active"
         })
       });
 
       const data = await res.json();
       if (res.ok) {
-        alert("City registered successfully!");
-        setCityName("");
+        alert(editingId ? "City details updated successfully!" : "City registered successfully!");
+        resetForm();
         setActiveTab("registry");
       } else {
-        alert(data.detail || "Failed to register city");
+        alert(data.detail || "Failed to submit city data");
       }
     } catch (err: any) {
       alert("Error occurred: " + err.message);
@@ -111,33 +132,14 @@ export default function CitiesForm({
     }
   };
 
-  const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`Are you sure you want to delete city "${name}"?`)) {
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem("lr_token");
-      const res = await fetch(`/api/cities/${id}`, {
-        method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      if (res.ok) {
-        alert("City deleted successfully!");
-        fetchRecords();
-      } else {
-        const data = await res.json();
-        alert(data.detail || "Failed to delete city");
-      }
-    } catch (err: any) {
-      alert("Error deleting city: " + err.message);
-    }
-  };
-
   const filteredRecords = records.filter((r) => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
-    return r.text.toLowerCase().includes(q);
+    return (
+      (r.name || "").toLowerCase().includes(q) ||
+      (r.state || "").toLowerCase().includes(q) ||
+      (r.country || "").toLowerCase().includes(q)
+    );
   });
 
   return (
@@ -250,8 +252,7 @@ export default function CitiesForm({
               </div>
             </div>
 
-
-            <form onSubmit={handleSubmit} className="p-8 space-y-6">
+             <form onSubmit={handleSubmit} className="p-8 space-y-6">
               {/* City Name */}
               <div>
                 <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
@@ -259,26 +260,81 @@ export default function CitiesForm({
                 </label>
                 <input 
                   type="text" 
-                  placeholder="e.g. Hyderabad, Bangalore, Chennai, Delhi..."
+                  placeholder="e.g. Hyderabad, Bangalore, Pune..."
                   value={cityName}
                   onChange={(e) => setCityName(e.target.value)}
                   required
+                  disabled={editingId !== null && editingId <= 5}
                   className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                 />
               </div>
 
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full rounded-xl bg-primary hover:bg-primary-hover px-4 py-3 font-sans text-sm font-bold text-white shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                {isSubmitting ? (
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Plus className="h-4 w-4" />
+              {/* State */}
+              <div>
+                <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                  State / Province
+                </label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Telangana, Maharashtra..."
+                  value={stateName}
+                  onChange={(e) => setStateName(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
+                />
+              </div>
+
+              {/* Country & Status */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    Country
+                  </label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. India"
+                    value={countryName}
+                    onChange={(e) => setCountryName(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    Operational Status
+                  </label>
+                  <select 
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:outline-none transition-all shadow-2xs cursor-pointer"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                {editingId !== null && (
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="flex-1 rounded-xl border border-border hover:bg-bg px-4 py-3 font-sans text-sm font-bold text-text transition-all cursor-pointer text-center"
+                  >
+                    Cancel Edit
+                  </button>
                 )}
-                Register Operating City
-              </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`rounded-xl px-4 py-3 font-sans text-sm font-bold text-white shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 ${editingId ? 'flex-1 bg-amber-500 hover:bg-amber-600' : 'w-full bg-primary hover:bg-primary-hover'}`}
+                >
+                  {isSubmitting ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                  {editingId ? "Update City" : "Register Operating City"}
+                </button>
+              </div>
             </form>
           </div>
         ) : (
@@ -330,25 +386,53 @@ export default function CitiesForm({
                     <tr className="border-b border-border bg-slate-50/70">
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">ID</th>
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">City Name</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">State</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Country</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Status</th>
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/60">
-                    {filteredRecords.map((r) => (
-                      <tr key={r.id} className="hover:bg-slate-50/40 transition-colors">
-                        <td className="px-6 py-4 font-mono text-xs font-semibold text-text-muted">#{r.id}</td>
-                        <td className="px-6 py-4 font-sans text-sm font-bold text-text">{r.text}</td>
-                        <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={() => handleDelete(r.id, r.text)}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 hover:bg-red-500 hover:text-white text-red-500 border border-red-200/40 transition-all cursor-pointer"
-                            title="Delete Operational City"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredRecords.map((r) => {
+                      const isPreExisting = r.id <= 5;
+                      return (
+                        <tr key={r.id} className="hover:bg-slate-50/40 transition-colors">
+                          <td className="px-6 py-4 font-mono text-xs font-semibold text-text-muted">#{r.id}</td>
+                          <td className="px-6 py-4 font-sans text-sm font-bold text-text">{r.name}</td>
+                          <td className="px-6 py-4 font-sans text-xs text-text-muted">{r.state || "—"}</td>
+                          <td className="px-6 py-4 font-sans text-xs text-text-muted">{r.country || "India"}</td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                              r.status === "Active" 
+                                ? "bg-green-50 text-green-700 ring-green-600/20" 
+                                : "bg-red-50 text-red-700 ring-red-600/20"
+                            }`}>
+                              {r.status || "Active"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            {!isPreExisting ? (
+                              <button
+                                onClick={() => {
+                                  setEditingId(r.id);
+                                  setCityName(r.name);
+                                  setStateName(r.state || "");
+                                  setCountryName(r.country || "India");
+                                  setStatus(r.status || "Active");
+                                  setActiveTab("form");
+                                }}
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 hover:bg-amber-500 hover:text-white text-amber-500 border border-amber-200/40 transition-all cursor-pointer"
+                                title="Edit Operational City"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </button>
+                            ) : (
+                              <span className="text-[10px] text-text-muted italic px-2">Locked</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

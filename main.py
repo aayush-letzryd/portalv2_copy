@@ -2026,14 +2026,25 @@ def delete_employee(id: int, authorization: Optional[str] = Header(None)):
 # ─────────────────────────────────────────────────────────
 class CityData(BaseModel):
     name: str
+    state: Optional[str] = None
+    country: Optional[str] = "India"
+    status: Optional[str] = "Active"
 
 @app.get("/api/cities")
 def get_all_cities():
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT id, name FROM cities ORDER BY id;")
-        return [{"value": r[1], "text": r[1], "id": r[0]} for r in cur.fetchall()]
+        cur.execute("SELECT id, name, state, country, status FROM dev_city ORDER BY id;")
+        return [{
+            "id": r[0],
+            "value": r[1],
+            "text": r[1],
+            "name": r[1],
+            "state": r[2] or "",
+            "country": r[3] or "India",
+            "status": r[4] or "Active"
+        } for r in cur.fetchall()]
     finally:
         postgreSQL_pool.putconn(conn)
 
@@ -2047,11 +2058,14 @@ def create_city(req: CityData, authorization: Optional[str] = Header(None)):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT id FROM cities WHERE name = %s;", (name_cleaned,))
+        cur.execute("SELECT id FROM dev_city WHERE name = %s;", (name_cleaned,))
         if cur.fetchone():
             raise HTTPException(status_code=400, detail="City already exists")
             
-        cur.execute("INSERT INTO cities (name) VALUES (%s) RETURNING id;", (name_cleaned,))
+        cur.execute(
+            "INSERT INTO dev_city (name, state, country, status) VALUES (%s, %s, %s, %s) RETURNING id;", 
+            (name_cleaned, (req.state or "").strip(), (req.country or "India").strip(), (req.status or "Active").strip())
+        )
         city_id = cur.fetchone()[0]
         conn.commit()
         return {"success": True, "id": city_id}
@@ -2061,13 +2075,46 @@ def create_city(req: CityData, authorization: Optional[str] = Header(None)):
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.delete("/api/cities/{id}")
-def delete_city(id: int, authorization: Optional[str] = Header(None)):
+@app.put("/api/cities/{id}")
+def update_city(id: int, req: CityData, authorization: Optional[str] = Header(None)):
     get_current_user(authorization)
+    if id <= 5:
+        raise HTTPException(status_code=400, detail="Pre-existing operating cities cannot be edited")
+        
+    name_cleaned = req.name.strip()
+    if not name_cleaned:
+        raise HTTPException(status_code=400, detail="City name is required")
+        
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("DELETE FROM cities WHERE id = %s RETURNING id;", (id,))
+        cur.execute("SELECT id FROM dev_city WHERE name = %s AND id != %s;", (name_cleaned, id))
+        if cur.fetchone():
+            raise HTTPException(status_code=400, detail="City name already exists")
+            
+        cur.execute(
+            """UPDATE dev_city 
+               SET name = %s, state = %s, country = %s, status = %s, modified_at = NOW() 
+               WHERE id = %s;""",
+            (name_cleaned, (req.state or "").strip(), (req.country or "India").strip(), (req.status or "Active").strip(), id)
+        )
+        conn.commit()
+        return {"success": True}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.delete("/api/cities/{id}")
+def delete_city(id: int, authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    if id <= 5:
+        raise HTTPException(status_code=400, detail="Pre-existing operating cities cannot be deleted")
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM dev_city WHERE id = %s RETURNING id;", (id,))
         deleted = cur.fetchone()
         if not deleted:
             raise HTTPException(status_code=404, detail="City not found")
