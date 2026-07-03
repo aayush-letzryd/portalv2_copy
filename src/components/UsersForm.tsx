@@ -15,6 +15,9 @@ interface AppUser {
   role: string;
   role_id: number | null;
   created_at: string | null;
+  employee_id?: string | null;
+  email?: string | null;
+  raw_password?: string;
 }
 
 interface AppRole {
@@ -54,6 +57,9 @@ export default function UsersForm({
   const [roleId, setRoleId] = useState<number | "">("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
+  const [email, setEmail] = useState("");
+  const [searchEmpId, setSearchEmpId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Registry Search & Filter State
@@ -107,6 +113,39 @@ export default function UsersForm({
     fetchRoles();
   }, []);
 
+  const handleLookupEmployee = async () => {
+    if (!searchEmpId.trim()) return alert("Please enter an Employee ID to search");
+    try {
+      const token = localStorage.getItem("lr_token");
+      const res = await fetch("/api/employees", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const emp = data.find((e: any) => e.employee_id && e.employee_id.toLowerCase() === searchEmpId.trim().toLowerCase());
+        if (emp) {
+          setName(emp.name);
+          setEmployeeId(emp.employee_id || "");
+          setEmail(emp.company_email || emp.email || "");
+          const knownRoles = ["Executive", "Driver Relations Manager", "Onboarding Specialist", "Partner Onboarding Lead", "Regional Operations Manager", "Finance Team", "Administrator", "Other"];
+          if (knownRoles.includes(emp.role)) {
+            setRole(emp.role);
+            setCustomRole("");
+          } else {
+            setRole("Other");
+            setCustomRole(emp.role);
+          }
+          alert(`Found employee: ${emp.name} (${emp.role})`);
+        } else {
+          alert("No employee found with this ID.");
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error looking up employee.");
+    }
+  };
+
   useEffect(() => {
     if (activeTab === "registry") {
       fetchRecords();
@@ -132,7 +171,9 @@ export default function UsersForm({
         name: name.trim(),
         role: finalRole,
         username: username.trim(),
-        role_id: roleId || null
+        role_id: roleId || null,
+        employee_id: employeeId.trim() || null,
+        email: email.trim() || null
       };
       if (password) {
         payload.password = password;
@@ -157,6 +198,9 @@ export default function UsersForm({
         setRoleId("");
         setUsername("");
         setPassword("");
+        setEmployeeId("");
+        setEmail("");
+        setSearchEmpId("");
         setEditingId(null);
         setActiveTab("registry");
       } else {
@@ -318,6 +362,59 @@ export default function UsersForm({
 
 
             <form onSubmit={handleSubmit} className="p-8 space-y-6">
+              {/* Lookup Section */}
+              {!editingId && (
+                <div className="bg-slate-50 p-4 rounded-xl border border-border">
+                  <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    Auto-fill from Employee ID
+                  </label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="e.g. LR-EMP-001"
+                      value={searchEmpId}
+                      onChange={(e) => setSearchEmpId(e.target.value)}
+                      className="flex-1 rounded-xl border border-border bg-white px-4 py-2 font-sans text-sm focus:border-primary focus:outline-none transition-all shadow-2xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleLookupEmployee}
+                      className="rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-2 font-sans text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                    >
+                      Lookup
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Employee ID & Email Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    Employee ID
+                  </label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. LR-EMP-001"
+                    value={employeeId}
+                    onChange={(e) => setEmployeeId(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    Email Address
+                  </label>
+                  <input 
+                    type="email" 
+                    placeholder="e.g. employee@letzryd.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
+                  />
+                </div>
+              </div>
+
               {/* Name */}
               <div>
                 <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
@@ -440,13 +537,16 @@ export default function UsersForm({
                   <button
                     type="button"
                     onClick={() => {
-                      setEditingId(null);
                       setName("");
                       setRole("Executive");
                       setCustomRole("");
+                      setRoleId("");
                       setUsername("");
                       setPassword("");
-                      setActiveTab("registry");
+                      setEmployeeId("");
+                      setEmail("");
+                      setSearchEmpId("");
+                      setEditingId(null);
                     }}
                     className="flex-1 rounded-xl border border-border hover:bg-bg px-4 py-3 font-sans text-sm font-bold text-text transition-all cursor-pointer text-center"
                   >
@@ -516,6 +616,7 @@ export default function UsersForm({
                   <thead>
                     <tr className="border-b border-border bg-slate-50/70">
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">User ID</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Employee ID / Email</th>
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Full Name</th>
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Username</th>
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Designation / Role</th>
@@ -531,6 +632,10 @@ export default function UsersForm({
                       return (
                         <tr key={r.id} className="hover:bg-slate-50/40 transition-colors">
                           <td className="px-6 py-4 font-mono text-xs font-semibold text-text-muted">#{r.id}</td>
+                          <td className="px-6 py-4">
+                            <div className="font-mono text-xs font-bold text-slate-800">{r.employee_id || "—"}</div>
+                            {r.email && <div className="font-sans text-[11px] text-text-muted mt-0.5">{r.email}</div>}
+                          </td>
                           <td className="px-6 py-4 font-sans text-sm font-bold text-text">{r.name}</td>
                           <td className="px-6 py-4 font-mono text-xs text-primary font-semibold">@{r.username}</td>
                           <td className="px-6 py-4">
@@ -569,6 +674,9 @@ export default function UsersForm({
                                 setEditingId(r.id);
                                 setName(r.name);
                                 setUsername(r.username);
+                                setEmployeeId(r.employee_id || "");
+                                setEmail(r.email || "");
+                                setSearchEmpId(r.employee_id || "");
                                 const commonRoles = ["Executive", "Driver Relations Manager", "Onboarding Specialist", "Partner Onboarding Lead", "Regional Operations Manager", "Finance Team", "Administrator"];
                                 if (commonRoles.includes(r.role)) {
                                   setRole(r.role);

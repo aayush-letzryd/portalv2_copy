@@ -654,6 +654,8 @@ def startup_event():
         """)
         cur.execute("ALTER TABLE app_users ADD COLUMN IF NOT EXISTS raw_password VARCHAR(255);")
         cur.execute("ALTER TABLE app_users ADD COLUMN IF NOT EXISTS role_id INTEGER REFERENCES app_roles(id);")
+        cur.execute("ALTER TABLE app_users ADD COLUMN IF NOT EXISTS employee_id VARCHAR(100);")
+        cur.execute("ALTER TABLE app_users ADD COLUMN IF NOT EXISTS email VARCHAR(255);")
         cur.execute("UPDATE app_users SET raw_password = 'letzryd123' WHERE raw_password IS NULL;")
         
         cur.execute("""
@@ -1552,6 +1554,8 @@ class AppUserData(BaseModel):
     username: str
     password: str
     role_id: Optional[int] = None
+    employee_id: Optional[str] = None
+    email: Optional[str] = None
 
 class AppUserUpdateData(BaseModel):
     name: str
@@ -1559,6 +1563,8 @@ class AppUserUpdateData(BaseModel):
     username: str
     password: Optional[str] = None
     role_id: Optional[int] = None
+    employee_id: Optional[str] = None
+    email: Optional[str] = None
 
 @app.get("/api/users")
 def list_app_users(authorization: Optional[str] = Header(None)):
@@ -1567,7 +1573,8 @@ def list_app_users(authorization: Optional[str] = Header(None)):
     try:
         cur = conn.cursor()
         cur.execute("""
-            SELECT au.id, au.username, u.name, u.role, au.created_at, au.raw_password, au.role_id, ar.name
+            SELECT au.id, au.username, u.name, u.role, au.created_at, au.raw_password, 
+                   au.role_id, ar.name, COALESCE(au.employee_id, u.employee_id), COALESCE(au.email, u.email)
             FROM app_users au
             JOIN users u ON u.id = au.executive_id
             LEFT JOIN app_roles ar ON ar.id = au.role_id
@@ -1584,7 +1591,9 @@ def list_app_users(authorization: Optional[str] = Header(None)):
                 "created_at": r[4].isoformat() if r[4] else None,
                 "raw_password": r[5] or "letzryd123",
                 "role_id": r[6],
-                "role_name": r[7]
+                "role_name": r[7],
+                "employee_id": r[8],
+                "email": r[9]
             })
         return result
     finally:
@@ -1604,16 +1613,31 @@ def create_app_user(req: AppUserData, authorization: Optional[str] = Header(None
         if cur.fetchone():
             raise HTTPException(status_code=400, detail="Username already exists")
         
-        cur.execute(
-            "INSERT INTO users (name, role) VALUES (%s, %s) RETURNING id;",
-            (req.name.strip(), req.role.strip())
-        )
-        executive_id = cur.fetchone()[0]
+        # Search if a user with this employee_id already exists in the users table
+        executive_id = None
+        if req.employee_id and req.employee_id.strip():
+            cur.execute("SELECT id FROM users WHERE employee_id = %s;", (req.employee_id.strip(),))
+            row = cur.fetchone()
+            if row:
+                executive_id = row[0]
+                # Update details in the existing users row
+                cur.execute(
+                    "UPDATE users SET name = %s, role = %s, email = COALESCE(email, %s) WHERE id = %s;",
+                    (req.name.strip(), req.role.strip(), req.email, executive_id)
+                )
+
+        if not executive_id:
+            cur.execute(
+                "INSERT INTO users (name, role, employee_id, email) VALUES (%s, %s, %s, %s) RETURNING id;",
+                (req.name.strip(), req.role.strip(), req.employee_id, req.email)
+            )
+            executive_id = cur.fetchone()[0]
         
         hashed_password = pwd_context.hash(req.password)
         cur.execute(
-            "INSERT INTO app_users (username, password_hash, executive_id, raw_password, role_id) VALUES (%s, %s, %s, %s, %s) RETURNING id;",
-            (username_cleaned, hashed_password, executive_id, req.password, req.role_id)
+            """INSERT INTO app_users (username, password_hash, executive_id, raw_password, role_id, employee_id, email) 
+               VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id;""",
+            (username_cleaned, hashed_password, executive_id, req.password, req.role_id, req.employee_id, req.email)
         )
         user_id = cur.fetchone()[0]
         
@@ -1648,23 +1672,43 @@ def update_app_user(id: int, req: AppUserUpdateData, authorization: Optional[str
         if cur.fetchone():
             raise HTTPException(status_code=400, detail="Username already exists")
             
-        # Update users table (name, role)
-        cur.execute(
-            "UPDATE users SET name = %s, role = %s WHERE id = %s;",
-            (req.name.strip(), req.role.strip(), exec_id)
-        )
+        # Check if we should update or switch executive_id if employee_id has changed
+        if req.employee_id and req.employee_id.strip():
+            cur.execute("SELECT id FROM users WHERE employee_id = %s;", (req.employee_id.strip(),))
+            emp_row = cur.fetchone()
+            if emp_row:
+                new_exec_id = emp_row[0]
+                if new_exec_id != exec_id:
+                    # Point app_user to this existing user row
+                    cur.execute("UPDATE app_users SET executive_id = %s WHERE id = %s;", (new_exec_id, id))
+                    exec_id = new_exec_id
+                cur.execute(
+                    "UPDATE users SET name = %s, role = %s, email = COALESCE(email, %s) WHERE id = %s;",
+                    (req.name.strip(), req.role.strip(), req.email, exec_id)
+                )
+            else:
+                cur.execute(
+                    "UPDATE users SET name = %s, role = %s, employee_id = %s, email = %s WHERE id = %s;",
+                    (req.name.strip(), req.role.strip(), req.employee_id, req.email, exec_id)
+                )
+        else:
+            cur.execute(
+                "UPDATE users SET name = %s, role = %s WHERE id = %s;",
+                (req.name.strip(), req.role.strip(), exec_id)
+            )
         
-        # Update app_users table (username, role_id)
+        # Update app_users table (username, role_id, employee_id, email)
         if req.password:
             hashed_password = pwd_context.hash(req.password)
             cur.execute(
-                "UPDATE app_users SET username = %s, password_hash = %s, raw_password = %s, role_id = %s WHERE id = %s;",
-                (username_cleaned, hashed_password, req.password, req.role_id, id)
+                """UPDATE app_users SET username = %s, password_hash = %s, raw_password = %s, 
+                          role_id = %s, employee_id = %s, email = %s WHERE id = %s;""",
+                (username_cleaned, hashed_password, req.password, req.role_id, req.employee_id, req.email, id)
             )
         else:
             cur.execute(
-                "UPDATE app_users SET username = %s, role_id = %s WHERE id = %s;",
-                (username_cleaned, req.role_id, id)
+                "UPDATE app_users SET username = %s, role_id = %s, employee_id = %s, email = %s WHERE id = %s;",
+                (username_cleaned, req.role_id, req.employee_id, req.email, id)
             )
             
         conn.commit()
