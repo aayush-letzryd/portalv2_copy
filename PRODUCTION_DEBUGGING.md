@@ -1,6 +1,6 @@
 # LetzRyd Operations Portal: Production Diagnostics & Logging Guide
 
-This document describes the **Global Exception Catcher and Structured Logging** mechanism integrated into the LetzRyd backend (`main.py`). This feature allows developers and data scientists to easily debug production crashes, trace which user triggered an issue, and inspect exact variables at the time of failure.
+This document describes the **Non-Blocking Global Exception Catcher and Structured JSON Logging** mechanism integrated into the LetzRyd backend (`main.py`). This feature allows developers and data scientists to easily debug production crashes, trace which user triggered an issue, and inspect exact variables at the time of failure, without blocking concurrent traffic.
 
 ---
 
@@ -9,9 +9,9 @@ This document describes the **Global Exception Catcher and Structured Logging** 
 The diagnostic tracker acts like a **flight data recorder** for the API server. Whenever a database query, data conversion, or route execution fails:
 
 1. **Interception**: The catcher intercepts the unhandled Python exception (which would normally result in a generic 500 error page).
-2. **Identity Resolution**: It safely parses the incoming request's `Authorization` header, queries the session table, and resolves the logged-in **Username** and **User ID**.
-3. **Structured Print**: It outputs a formatted diagnostic block containing the traceback, timestamp, endpoint, and user context.
-4. **Google Cloud Sync**: In production, GCP automatically captures these terminal outputs and indexes them in **Google Cloud Logging**.
+2. **Non-Blocking Identity Resolution**: It safely parses the incoming request's `Authorization` header and resolves the logged-in **Username** and **User ID**. This synchronous database check is run inside a **thread pool** (`run_in_threadpool`) so it does not block the FastAPI async event loop for other users.
+3. **Structured JSON Output**: Instead of plain text prints, it outputs a single-line **JSON string** to stdout. Google Cloud Logging automatically detects, parses, and indexes this JSON object.
+4. **Guaranteed Unique Diagnostic ID**: It generates a unique identifier using the format `ERR-YYYYMMDD-HHMMSS-[8-char-uuid]` so concurrent errors are easily separated.
 
 ---
 
@@ -20,6 +20,12 @@ The diagnostic tracker acts like a **flight data recorder** for the API server. 
 The implementation is located at the top of `main.py`:
 
 ```python
+import traceback
+import json
+import uuid
+from datetime import datetime
+from starlette.concurrency import run_in_threadpool
+
 def get_user_for_log(request: Request) -> str:
     auth = request.headers.get("authorization")
     if not auth or not auth.startswith("Bearer "):
@@ -45,21 +51,36 @@ def get_user_for_log(request: Request) -> str:
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    user_info = get_user_for_log(request)
+    # Run the blocking DB call in a thread pool so it does not block the event loop
+    user_info = await run_in_threadpool(get_user_for_log, request)
     error_traceback = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-    timestamp = datetime.now().isoformat()
     
-    print(f"\n================ [PRODUCTION CRASH] ================")
-    print(f"Time: {timestamp}")
-    print(f"Request: {request.method} {request.url.path}")
-    print(f"User: {user_info}")
-    print(f"Error: {str(exc)}")
-    print(f"Traceback:\n{error_traceback}")
-    print(f"====================================================\n")
+    # Generate a guaranteed unique Diagnostic ID using UUID + Timestamp
+    timestamp = datetime.utcnow().isoformat() + "Z"
+    unique_suffix = uuid.uuid4().hex[:8]
+    diagnostic_id = f"ERR-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}-{unique_suffix}"
+    
+    # Structured JSON log format automatically parsed by Google Cloud Logging
+    log_entry = {
+        "severity": "ERROR",
+        "message": f"Production Crash on {request.method} {request.url.path}: {str(exc)}",
+        "timestamp": timestamp,
+        "diagnostic_id": diagnostic_id,
+        "request": {
+            "method": request.method,
+            "path": request.url.path,
+            "query_params": str(request.query_params)
+        },
+        "user": user_info,
+        "traceback": error_traceback
+    }
+    
+    # Print as JSON string - GCP Logging reads stdout JSON objects and auto-indexes all fields
+    print(json.dumps(log_entry))
     
     return JSONResponse(
         status_code=500,
-        content={"detail": f"Internal server error. Diagnostic ID: {timestamp}"}
+        content={"detail": f"Internal server error. Diagnostic ID: {diagnostic_id}"}
     )
 ```
 
@@ -102,21 +123,25 @@ python -m uvicorn main:app --port 8000
 ```
 Any error will print directly in your PowerShell/Bash console window.
 
-### B. Production (Google Cloud Console)
+### B. Production (Google Cloud Console Log Explorer)
 1. Navigate to the **[Google Cloud Console](https://console.cloud.google.com/)**.
 2. Search for **Log Explorer** or go to **Logging** ➔ **Log Explorer**.
-3. Under the **Query** bar, filter by severity or keywords:
-   - To find only crashes:
+3. Since we use structured JSON logs, Google Cloud automatically populates all variables under `jsonPayload`. You can search/filter with high precision:
+   - Find only critical errors:
      ```text
-     "PRODUCTION CRASH"
+     severity="ERROR"
      ```
-   - To find errors triggered by a specific username (e.g. `@shiva`):
+   - Find errors triggered by a specific username:
      ```text
-     "shiva"
+     jsonPayload.user:"priyasharma"
      ```
-   - To find errors on a specific route:
+   - Find logs containing a specific diagnostic ID:
      ```text
-     "/api/tickets"
+     jsonPayload.diagnostic_id="ERR-20260703-143000-8f3a9cb1"
+     ```
+   - Find errors on a specific request path:
+     ```text
+     jsonPayload.request.path="/api/tickets"
      ```
 
 ---
@@ -125,17 +150,20 @@ Any error will print directly in your PowerShell/Bash console window.
 
 When a crash happens, you will see a structured diagnostic log entry like this:
 
-```text
-================ [PRODUCTION CRASH] ================
-Time: 2026-07-03T14:30:15.123456
-Request: POST /api/tickets
-User: @priyasharma (ID: 12)
-Error: psycopg2.errors.NotNullViolation: null value in column "title" violates not-null constraint
-Traceback:
-  File "C:\Users\anura\Downloads\surveyjs-demo\main.py", line 1618, in create_ticket
-    cur.execute("INSERT INTO tickets (title, description) VALUES (%s, %s);", (title, desc))
-psycopg2.errors.NotNullViolation: null value in column "title" violates not-null constraint
-====================================================
+```json
+{
+  "severity": "ERROR",
+  "message": "Production Crash on POST /api/tickets: null value in column \"title\" violates not-null constraint",
+  "timestamp": "2026-07-03T14:30:15.123456Z",
+  "diagnostic_id": "ERR-20260703-143015-8f3a9cb1",
+  "request": {
+    "method": "POST",
+    "path": "/api/tickets",
+    "query_params": ""
+  },
+  "user": "@priyasharma (ID: 12)",
+  "traceback": "Traceback:\n  File \"main.py\", line 1618, in create_ticket\n    cur.execute(\"INSERT INTO tickets (title, description) VALUES (%s, %s);\", (title, desc))\npsycopg2.errors.NotNullViolation: null value in column \"title\" violates not-null constraint"
+}
 ```
 
-*Note: The frontend will also display the unique **Diagnostic ID** (e.g. `2026-07-03T14:30:15.123456`) in the error alert box, so users can report it directly to developers to look up.*
+*Note: The frontend will also display the unique **Diagnostic ID** (e.g. `ERR-20260703-143015-8f3a9cb1`) in the error alert box, so users can report it directly to developers to look up.*
