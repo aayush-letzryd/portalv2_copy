@@ -1,21 +1,36 @@
-import { ClipboardList, UserCheck, Settings, Key, LogOut, Truck, AlertTriangle, Wrench, MapPin, IndianRupee, Users, ShieldCheck, TicketIcon } from "lucide-react";
+import { ClipboardList, UserCheck, Settings, Key, LogOut, Truck, AlertTriangle, Wrench, MapPin, IndianRupee, Users, ShieldCheck, TicketIcon, UserCircle } from "lucide-react";
 import { User } from "../types";
 
 interface FormSelectorProps {
   user: User;
-  onSelectForm: (form: "walkin" | "onboarding" | "operator_onboarding" | "adjustment" | "allocation" | "expenses" | "vehicle_onboarding" | "workshops" | "hubs_parking" | "rents" | "accident" | "inspection" | "users" | "vehicle_models" | "cities" | "roles" | "tickets") => void;
+  onSelectForm: (form: "walkin" | "onboarding" | "operator_onboarding" | "adjustment" | "allocation" | "expenses" | "vehicle_onboarding" | "workshops" | "hubs_parking" | "rents" | "accident" | "inspection" | "users" | "vehicle_models" | "cities" | "roles" | "tickets" | "employees") => void;
   onLogout: () => void;
 }
 
+const CARDS = [
+  { key: "walkin",              label: "Walk-In Form",           sub: "Log visitor & walk-in enquiries",         icon: ClipboardList, iconBg: "bg-blue-50",    iconColor: "text-primary",     hover: "hover:border-primary"    },
+  { key: "onboarding",         label: "Individual Onboarding",  sub: "Onboard new drivers to the fleet",        icon: UserCheck,     iconBg: "bg-green-light", iconColor: "text-green",       hover: "hover:border-green"      },
+  { key: "operator_onboarding",label: "Operator Onboarding",   sub: "Register new fleet partners",             icon: UserCheck,     iconBg: "bg-blue-50",    iconColor: "text-primary",     hover: "hover:border-blue-500"   },
+  { key: "adjustment",         label: "Adjustment Form",        sub: "Credit / debit wallet adjustments",       icon: Settings,      iconBg: "bg-yellow-light",iconColor: "text-amber-600",   hover: "hover:border-amber-500"  },
+  { key: "allocation",         label: "Allocation Form",        sub: "Assign vehicles to drivers",              icon: Key,           iconBg: "bg-slate-100",  iconColor: "text-primary",     hover: "hover:border-primary"    },
+  { key: "expenses",           label: "Expenses Form",          sub: "Record operational expenses",             icon: ClipboardList, iconBg: "bg-red-50",     iconColor: "text-red-600",     hover: "hover:border-rose-500"   },
+  { key: "vehicle_onboarding", label: "Vehicle Onboarding",     sub: "Add vehicles to the fleet registry",      icon: Truck,         iconBg: "bg-blue-50",    iconColor: "text-primary",     hover: "hover:border-primary"    },
+  { key: "workshops",          label: "Workshops Form",         sub: "Manage service vendors & garages",        icon: Wrench,        iconBg: "bg-green-light", iconColor: "text-green",       hover: "hover:border-green"      },
+  { key: "hubs_parking",       label: "Hubs & Parking",         sub: "Track hub locations & parking slots",     icon: MapPin,        iconBg: "bg-yellow-light",iconColor: "text-amber-600",   hover: "hover:border-amber-500"  },
+  { key: "rents",              label: "Rent Plans",             sub: "Configure driver rent & payment plans",   icon: IndianRupee,   iconBg: "bg-blue-50",    iconColor: "text-blue-600",    hover: "hover:border-blue-500"   },
+  { key: "accident",           label: "Accidents Form",         sub: "Report & document vehicle accidents",     icon: AlertTriangle, iconBg: "bg-red-50",     iconColor: "text-red-600",     hover: "hover:border-red-500"    },
+  { key: "inspection",         label: "Vehicle Inspection",     sub: "Conduct & log vehicle inspections",       icon: ClipboardList, iconBg: "bg-blue-50",    iconColor: "text-primary",     hover: "hover:border-primary"    },
+  { key: "users",              label: "Portal Users",           sub: "Manage portal logins & credentials",      icon: Users,         iconBg: "bg-indigo-50",  iconColor: "text-indigo-600",  hover: "hover:border-indigo-500" },
+  { key: "employees",          label: "Employees Desk",         sub: "Manage internal LetzRyd team members",    icon: UserCircle,    iconBg: "bg-violet-50",  iconColor: "text-violet-600",  hover: "hover:border-violet-500" },
+  { key: "vehicle_models",     label: "Vehicle Models Desk",    sub: "Fleet make, model & variant registry",    icon: Truck,         iconBg: "bg-emerald-50", iconColor: "text-emerald-600", hover: "hover:border-emerald-500"},
+  { key: "cities",             label: "Operating Cities",       sub: "Manage cities where LetzRyd operates",    icon: MapPin,        iconBg: "bg-sky-50",     iconColor: "text-sky-600",     hover: "hover:border-sky-500"    },
+  { key: "roles",              label: "Roles & Permissions",    sub: "Control form access by user role",        icon: ShieldCheck,   iconBg: "bg-indigo-50",  iconColor: "text-indigo-600",  hover: "hover:border-indigo-500" },
+  { key: "tickets",            label: "Tickets Desk",           sub: "Driver, Operator, Vendor & Internal issues", icon: TicketIcon, iconBg: "bg-rose-50",   iconColor: "text-rose-600",    hover: "hover:border-rose-500"   },
+] as const;
+
 export default function FormSelector({ user, onSelectForm, onLogout }: FormSelectorProps) {
-  // Extract initials for avatar
   const displayName = user.name || user.username || "User";
-  const initials = displayName
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .substring(0, 2)
-    .toUpperCase();
+  const initials = displayName.split(" ").map((w) => w[0]).join("").substring(0, 2).toUpperCase();
 
   return (
     <div className="min-h-screen flex flex-col bg-bg text-text">
@@ -67,285 +82,26 @@ export default function FormSelector({ user, onSelectForm, onLogout }: FormSelec
 
         {/* Form Selection Grid */}
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          
-          {/* Walk-In Form (Active Card) */}
-          <button
-            onClick={() => onSelectForm("walkin")}
-            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-primary hover:shadow-md transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-primary group-hover:scale-105 transition-transform duration-200">
-              <ClipboardList className="h-6 w-6" />
-            </div>
-            <div className="flex-grow">
-              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Walk-In Form</h3>
-            </div>
-            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
-              Live
-            </span>
-          </button>
-
-          {/* Individual Onboarding Form (Active Card) */}
-          <button
-            onClick={() => onSelectForm("onboarding")}
-            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-green hover:shadow-md transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-light text-green group-hover:scale-105 transition-transform duration-200">
-              <UserCheck className="h-6 w-6" />
-            </div>
-            <div className="flex-grow">
-              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Individual Onboarding</h3>
-            </div>
-            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
-              Live
-            </span>
-          </button>
-
-          {/* Operator Onboarding Form (Active Card) */}
-          <button
-            onClick={() => onSelectForm("operator_onboarding")}
-            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-blue-500 hover:shadow-md transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-primary group-hover:scale-105 transition-transform duration-200">
-              <UserCheck className="h-6 w-6" />
-            </div>
-            <div className="flex-grow">
-              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Operator Onboarding</h3>
-            </div>
-            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
-              Live
-            </span>
-          </button>
-
-          {/* Adjustment Form (Active Card) */}
-          <button
-            onClick={() => onSelectForm("adjustment")}
-            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-amber-500 hover:shadow-md transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-light text-amber-600 group-hover:scale-105 transition-transform duration-200">
-              <Settings className="h-6 w-6" />
-            </div>
-            <div className="flex-grow">
-              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Adjustment Form</h3>
-            </div>
-            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
-              Live
-            </span>
-          </button>
-
-          {/* Allocation Form (Active Card) */}
-          <button
-            onClick={() => onSelectForm("allocation")}
-            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-primary hover:shadow-md transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-primary group-hover:scale-105 transition-transform duration-200">
-              <Key className="h-6 w-6" />
-            </div>
-            <div className="flex-grow">
-              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Allocation Form</h3>
-            </div>
-            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
-              Live
-            </span>
-          </button>
-
-          {/* Expenses Form (Active Card) */}
-          <button
-            onClick={() => onSelectForm("expenses")}
-            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-rose-500 hover:shadow-md transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-50 text-red-600 group-hover:scale-105 transition-transform duration-200">
-              <ClipboardList className="h-6 w-6" />
-            </div>
-            <div className="flex-grow">
-              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Expenses Form</h3>
-            </div>
-            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
-              Live
-            </span>
-          </button>
-
-          {/* Vehicle Onboarding Form (Active Card) */}
-          <button
-            onClick={() => onSelectForm("vehicle_onboarding")}
-            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-primary hover:shadow-md transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-primary group-hover:scale-105 transition-transform duration-200">
-              <Truck className="h-6 w-6" />
-            </div>
-            <div className="flex-grow">
-              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Vehicle Onboarding</h3>
-            </div>
-            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
-              Live
-            </span>
-          </button>
-
-          {/* Workshops Form (Active Card) */}
-          <button
-            onClick={() => onSelectForm("workshops")}
-            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-green hover:shadow-md transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-light text-green group-hover:scale-105 transition-transform duration-200">
-              <Wrench className="h-6 w-6" />
-            </div>
-            <div className="flex-grow">
-              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Workshops Form</h3>
-            </div>
-            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
-              Live
-            </span>
-          </button>
-
-          {/* Hubs & Parking Form (Active Card) */}
-          <button
-            onClick={() => onSelectForm("hubs_parking")}
-            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-amber-500 hover:shadow-md transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-light text-amber-600 group-hover:scale-105 transition-transform duration-200">
-              <MapPin className="h-6 w-6" />
-            </div>
-            <div className="flex-grow">
-              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Hubs & Parking</h3>
-            </div>
-            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
-              Live
-            </span>
-          </button>
-
-          {/* Rent Plans Form (Active Card) */}
-          <button
-            onClick={() => onSelectForm("rents")}
-            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-blue-500 hover:shadow-md transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 group-hover:scale-105 transition-transform duration-200">
-              <IndianRupee className="h-6 w-6" />
-            </div>
-            <div className="flex-grow">
-              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Rent Plans</h3>
-            </div>
-            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
-              Live
-            </span>
-          </button>
-
-          {/* Accidents Form (Active Card) */}
-          <button
-            onClick={() => onSelectForm("accident")}
-            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-red-500 hover:shadow-md transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-50 text-red-600 group-hover:scale-105 transition-transform duration-200">
-              <AlertTriangle className="h-6 w-6" />
-            </div>
-            <div className="flex-grow">
-              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Accidents Form</h3>
-            </div>
-            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
-              Live
-            </span>
-          </button>
-
-          {/* Vehicle Inspection Form (Active Card) */}
-          <button
-            onClick={() => onSelectForm("inspection")}
-            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-primary hover:shadow-md transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-primary group-hover:scale-105 transition-transform duration-200">
-              <ClipboardList className="h-6 w-6" />
-            </div>
-            <div className="flex-grow">
-              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Vehicle Inspection</h3>
-            </div>
-            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
-              Live
-            </span>
-          </button>
-
-          {/* User Manager Form (Active Card) */}
-          <button
-            onClick={() => onSelectForm("users")}
-            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-indigo-500 hover:shadow-md transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 group-hover:scale-105 transition-transform duration-200">
-              <Users className="h-6 w-6" />
-            </div>
-            <div className="flex-grow">
-              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Portal Users Form</h3>
-            </div>
-            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
-              Live
-            </span>
-          </button>
-
-          {/* Vehicle Models Form (Active Card) */}
-          <button
-            onClick={() => onSelectForm("vehicle_models")}
-            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-emerald-500 hover:shadow-md transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 group-hover:scale-105 transition-transform duration-200">
-              <Truck className="h-6 w-6" />
-            </div>
-            <div className="flex-grow">
-              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Vehicle Models Desk</h3>
-            </div>
-            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
-              Live
-            </span>
-          </button>
-
-          {/* Cities Form (Active Card) */}
-          {/* Cities Form */}
-          <button
-            onClick={() => onSelectForm("cities")}
-            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-sky-500 hover:shadow-md transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-50 text-sky-600 group-hover:scale-105 transition-transform duration-200">
-              <MapPin className="h-6 w-6" />
-            </div>
-            <div className="flex-grow">
-              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Operating Cities Desk</h3>
-            </div>
-            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
-              Live
-            </span>
-          </button>
-
-          {/* Roles & Permissions */}
-          <button
-            onClick={() => onSelectForm("roles")}
-            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-indigo-500 hover:shadow-md transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 group-hover:scale-105 transition-transform duration-200">
-              <ShieldCheck className="h-6 w-6" />
-            </div>
-            <div className="flex-grow">
-              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Roles & Permissions</h3>
-              <p className="font-sans text-xs text-gray-500">Control form access by role</p>
-            </div>
-            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
-              Live
-            </span>
-          </button>
-
-          {/* Tickets Desk */}
-          <button
-            onClick={() => onSelectForm("tickets")}
-            className="group relative flex flex-col items-start gap-4 rounded-xl border border-border bg-white p-6 text-left shadow-sm hover:border-rose-500 hover:shadow-md transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-50 text-rose-600 group-hover:scale-105 transition-transform duration-200">
-              <TicketIcon className="h-6 w-6" />
-            </div>
-            <div className="flex-grow">
-              <h3 className="font-sans text-sm font-bold text-gray-900 mb-1">Tickets Desk</h3>
-              <p className="font-sans text-xs text-gray-500">Driver, Operator, Vendor & Internal issues</p>
-            </div>
-            <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
-              Live
-            </span>
-          </button>
-
+          {CARDS.map(({ key, label, sub, icon: Icon, iconBg, iconColor, hover }) => (
+            <button
+              key={key}
+              onClick={() => onSelectForm(key as any)}
+              className={`group relative flex flex-col items-start gap-3 rounded-xl border border-border bg-white p-6 text-left shadow-sm ${hover} hover:shadow-md transition-all duration-200 cursor-pointer`}
+            >
+              <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${iconBg} ${iconColor} group-hover:scale-105 transition-transform duration-200`}>
+                <Icon className="h-6 w-6" />
+              </div>
+              <div className="flex-grow">
+                <h3 className="font-sans text-sm font-bold text-gray-900 mb-1 leading-tight">{label}</h3>
+                <p className="font-sans text-xs text-gray-500 leading-snug line-clamp-1">{sub}</p>
+              </div>
+              <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
+                Live
+              </span>
+            </button>
+          ))}
         </div>
       </main>
-
 
       {/* Footer */}
       <footer className="bg-primary py-8 text-center text-xs text-white/50 border-t border-primary-hover font-sans mt-auto">

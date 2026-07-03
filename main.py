@@ -82,7 +82,7 @@ def startup_event():
             """)
             print("[OK] Cities seeded")
 
-        # ── users (executives) ───────────────────────────
+        # ── users (executives / employees) ───────────────
         cur.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id   SERIAL PRIMARY KEY,
@@ -90,6 +90,13 @@ def startup_event():
             );
         """)
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(255) DEFAULT 'Executive';")
+        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50);")
+        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255);")
+        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS department VARCHAR(255);")
+        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS city VARCHAR(255);")
+        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS joining_date VARCHAR(50);")
+        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS employee_id VARCHAR(100);")
+        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'Active';")
 
         cur.execute("SELECT COUNT(*) FROM users;")
         if cur.fetchone()[0] == 0:
@@ -1780,7 +1787,7 @@ def delete_vehicle_model(id: int, authorization: Optional[str] = Header(None)):
 
 
 # ─────────────────────────────────────────────────────────
-# Executives
+# Executives (legacy — used by dropdowns in forms)
 # ─────────────────────────────────────────────────────────
 @app.get("/api/executives")
 def get_all_executives():
@@ -1804,6 +1811,107 @@ def get_executive(user_id: int):
         if r:
             return {"id": user_id, "name": r[0], "role": r[1]}
         raise HTTPException(status_code=404, detail="Executive not found")
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+
+# ─────────────────────────────────────────────────────────
+# Employees (full CRUD)
+# ─────────────────────────────────────────────────────────
+
+class EmployeeData(BaseModel):
+    name: str
+    role: str
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    department: Optional[str] = None
+    city: Optional[str] = None
+    joining_date: Optional[str] = None
+    employee_id: Optional[str] = None
+    status: Optional[str] = "Active"
+
+@app.get("/api/employees")
+def get_employees(authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT id, name, COALESCE(role,'Executive'), phone, email, 
+                   department, city, joining_date, employee_id, COALESCE(status,'Active')
+            FROM users ORDER BY id;
+        """)
+        keys = ["id","name","role","phone","email","department","city","joining_date","employee_id","status"]
+        return [dict(zip(keys, row)) for row in cur.fetchall()]
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.post("/api/employees")
+def create_employee(req: EmployeeData, authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO users (name, role, phone, email, department, city, joining_date, employee_id, status)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id;
+        """, (req.name.strip(), req.role.strip(), req.phone, req.email, req.department,
+              req.city, req.joining_date, req.employee_id, req.status or "Active"))
+        new_id = cur.fetchone()[0]
+        conn.commit()
+        return {"success": True, "id": new_id}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.put("/api/employees/{id}")
+def update_employee(id: int, req: EmployeeData, authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE users SET name=%s, role=%s, phone=%s, email=%s, department=%s,
+                city=%s, joining_date=%s, employee_id=%s, status=%s
+            WHERE id=%s RETURNING id;
+        """, (req.name.strip(), req.role.strip(), req.phone, req.email, req.department,
+              req.city, req.joining_date, req.employee_id, req.status or "Active", id))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="Employee not found")
+        conn.commit()
+        return {"success": True}
+    except Exception as e:
+        conn.rollback()
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.delete("/api/employees/{id}")
+def delete_employee(id: int, authorization: Optional[str] = Header(None)):
+    current = get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        # Don't delete if linked to an app_user (just deactivate instead)
+        cur.execute("SELECT id FROM app_users WHERE executive_id = %s;", (id,))
+        if cur.fetchone():
+            cur.execute("UPDATE users SET status = 'Inactive' WHERE id = %s;", (id,))
+            conn.commit()
+            return {"success": True, "deactivated": True, "message": "Employee deactivated (has a portal login — not permanently deleted)"}
+        cur.execute("DELETE FROM users WHERE id = %s RETURNING id;", (id,))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="Employee not found")
+        conn.commit()
+        return {"success": True}
+    except Exception as e:
+        conn.rollback()
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         postgreSQL_pool.putconn(conn)
 
