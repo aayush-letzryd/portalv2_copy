@@ -92,6 +92,7 @@ def startup_event():
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(255) DEFAULT 'Executive';")
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50);")
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255);")
+        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS company_email VARCHAR(255);")
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS department VARCHAR(255);")
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS city VARCHAR(255);")
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS joining_date VARCHAR(50);")
@@ -764,6 +765,7 @@ def startup_event():
                 resolution_notes TEXT
             );
         """)
+        cur.execute("ALTER TABLE tickets ADD COLUMN IF NOT EXISTS assigned_to INTEGER REFERENCES app_users(id);")
 
         # ── Drop existing tables for demo schema changes ──────
         cur.execute("DROP TABLE IF EXISTS vehicle_onboarding CASCADE;")
@@ -1824,6 +1826,7 @@ class EmployeeData(BaseModel):
     role: str
     phone: Optional[str] = None
     email: Optional[str] = None
+    company_email: Optional[str] = None
     department: Optional[str] = None
     city: Optional[str] = None
     joining_date: Optional[str] = None
@@ -1837,11 +1840,11 @@ def get_employees(authorization: Optional[str] = Header(None)):
     try:
         cur = conn.cursor()
         cur.execute("""
-            SELECT id, name, COALESCE(role,'Executive'), phone, email, 
+            SELECT id, name, COALESCE(role,'Executive'), phone, email, company_email,
                    department, city, joining_date, employee_id, COALESCE(status,'Active')
             FROM users ORDER BY id;
         """)
-        keys = ["id","name","role","phone","email","department","city","joining_date","employee_id","status"]
+        keys = ["id","name","role","phone","email","company_email","department","city","joining_date","employee_id","status"]
         return [dict(zip(keys, row)) for row in cur.fetchall()]
     finally:
         postgreSQL_pool.putconn(conn)
@@ -1853,9 +1856,9 @@ def create_employee(req: EmployeeData, authorization: Optional[str] = Header(Non
     try:
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO users (name, role, phone, email, department, city, joining_date, employee_id, status)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id;
-        """, (req.name.strip(), req.role.strip(), req.phone, req.email, req.department,
+            INSERT INTO users (name, role, phone, email, company_email, department, city, joining_date, employee_id, status)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id;
+        """, (req.name.strip(), req.role.strip(), req.phone, req.email, req.company_email, req.department,
               req.city, req.joining_date, req.employee_id, req.status or "Active"))
         new_id = cur.fetchone()[0]
         conn.commit()
@@ -1873,10 +1876,10 @@ def update_employee(id: int, req: EmployeeData, authorization: Optional[str] = H
     try:
         cur = conn.cursor()
         cur.execute("""
-            UPDATE users SET name=%s, role=%s, phone=%s, email=%s, department=%s,
+            UPDATE users SET name=%s, role=%s, phone=%s, email=%s, company_email=%s, department=%s,
                 city=%s, joining_date=%s, employee_id=%s, status=%s
             WHERE id=%s RETURNING id;
-        """, (req.name.strip(), req.role.strip(), req.phone, req.email, req.department,
+        """, (req.name.strip(), req.role.strip(), req.phone, req.email, req.company_email, req.department,
               req.city, req.joining_date, req.employee_id, req.status or "Active", id))
         if not cur.fetchone():
             raise HTTPException(status_code=404, detail="Employee not found")
