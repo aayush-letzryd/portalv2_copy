@@ -2078,7 +2078,7 @@ def create_city(req: CityData, authorization: Optional[str] = Header(None)):
 @app.put("/api/cities/{id}")
 def update_city(id: int, req: CityData, authorization: Optional[str] = Header(None)):
     get_current_user(authorization)
-    if id <= 5:
+    if id <= 3:
         raise HTTPException(status_code=400, detail="Pre-existing operating cities cannot be edited")
         
     name_cleaned = req.name.strip()
@@ -2109,7 +2109,7 @@ def update_city(id: int, req: CityData, authorization: Optional[str] = Header(No
 @app.delete("/api/cities/{id}")
 def delete_city(id: int, authorization: Optional[str] = Header(None)):
     get_current_user(authorization)
-    if id <= 5:
+    if id <= 3:
         raise HTTPException(status_code=400, detail="Pre-existing operating cities cannot be deleted")
     conn = postgreSQL_pool.getconn()
     try:

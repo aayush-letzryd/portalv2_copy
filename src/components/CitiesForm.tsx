@@ -395,7 +395,7 @@ export default function CitiesForm({
                   </thead>
                   <tbody className="divide-y divide-border/60">
                     {filteredRecords.map((r) => {
-                      const isPreExisting = r.id <= 5;
+                      const isPreExisting = r.id <= 3;
                       return (
                         <tr key={r.id} className="hover:bg-slate-50/40 transition-colors">
                           <td className="px-6 py-4 font-mono text-xs font-semibold text-text-muted">#{r.id}</td>
