@@ -1,6 +1,7 @@
 import psycopg2
 from psycopg2 import pool
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -8,6 +9,8 @@ from typing import Optional, Union, Any, List
 from passlib.context import CryptContext
 import os
 import secrets
+import traceback
+from datetime import datetime
 
 app = FastAPI(title="LetzRyd Walk-In Registry API")
 
@@ -20,6 +23,45 @@ app.add_middleware(
 )
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def get_user_for_log(request: Request) -> str:
+    auth = request.headers.get("authorization")
+    if not auth or not auth.startswith("Bearer "):
+        return "Anonymous"
+    token = auth.split(" ", 1)[1]
+    conn = None
+    try:
+        conn = postgreSQL_pool.getconn()
+        cur = conn.cursor()
+        cur.execute("SELECT au.username, au.id FROM app_sessions s JOIN app_users au ON au.id = s.user_id WHERE s.token = %s;", (token,))
+        row = cur.fetchone()
+        if row:
+            return f"@{row[0]} (ID: {row[1]})"
+    except Exception:
+        pass
+    finally:
+        if conn:
+            postgreSQL_pool.putconn(conn)
+    return "Anonymous/Invalid Token"
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    user_info = get_user_for_log(request)
+    error_traceback = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+    timestamp = datetime.now().isoformat()
+    
+    print(f"\n================ [PRODUCTION CRASH] ================")
+    print(f"Time: {timestamp}")
+    print(f"Request: {request.method} {request.url.path}")
+    print(f"User: {user_info}")
+    print(f"Error: {str(exc)}")
+    print(f"Traceback:\n{error_traceback}")
+    print(f"====================================================\n")
+    
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Internal server error. Diagnostic ID: {timestamp}"}
+    )
 
 # Load local .env file if it exists
 if os.path.exists(".env"):
