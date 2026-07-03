@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import { Plus, Trash2, Search, ArrowLeft, RefreshCw, MapPin, Info, Settings, ChevronLeft, FileText, Edit, X } from "lucide-react";
 import { User as UserSession } from "../types";
 
