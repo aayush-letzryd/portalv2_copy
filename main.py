@@ -10,7 +10,10 @@ from passlib.context import CryptContext
 import os
 import secrets
 import traceback
+import json
+import uuid
 from datetime import datetime
+from starlette.concurrency import run_in_threadpool
 
 app = FastAPI(title="LetzRyd Walk-In Registry API")
 
@@ -46,21 +49,36 @@ def get_user_for_log(request: Request) -> str:
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    user_info = get_user_for_log(request)
+    # Run the blocking DB call in a thread pool so it does not block the event loop
+    user_info = await run_in_threadpool(get_user_for_log, request)
     error_traceback = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-    timestamp = datetime.now().isoformat()
     
-    print(f"\n================ [PRODUCTION CRASH] ================")
-    print(f"Time: {timestamp}")
-    print(f"Request: {request.method} {request.url.path}")
-    print(f"User: {user_info}")
-    print(f"Error: {str(exc)}")
-    print(f"Traceback:\n{error_traceback}")
-    print(f"====================================================\n")
+    # Generate a guaranteed unique Diagnostic ID using UUID + Timestamp
+    timestamp = datetime.utcnow().isoformat() + "Z"
+    unique_suffix = uuid.uuid4().hex[:8]
+    diagnostic_id = f"ERR-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}-{unique_suffix}"
+    
+    # Structured JSON log format automatically parsed by Google Cloud Logging
+    log_entry = {
+        "severity": "ERROR",
+        "message": f"Production Crash on {request.method} {request.url.path}: {str(exc)}",
+        "timestamp": timestamp,
+        "diagnostic_id": diagnostic_id,
+        "request": {
+            "method": request.method,
+            "path": request.url.path,
+            "query_params": str(request.query_params)
+        },
+        "user": user_info,
+        "traceback": error_traceback
+    }
+    
+    # Print as JSON string - GCP Logging reads stdout JSON objects and auto-indexes all fields
+    print(json.dumps(log_entry))
     
     return JSONResponse(
         status_code=500,
-        content={"detail": f"Internal server error. Diagnostic ID: {timestamp}"}
+        content={"detail": f"Internal server error. Diagnostic ID: {diagnostic_id}"}
     )
 
 # Load local .env file if it exists
