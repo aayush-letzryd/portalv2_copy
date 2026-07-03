@@ -19,13 +19,15 @@ import CitiesForm from "./components/CitiesForm";
 import RolesPermissionsForm from "./components/RolesPermissionsForm";
 import TicketsForm from "./components/TicketsForm";
 import EmployeesForm from "./components/EmployeesForm";
+import MaintenanceForm from "./components/MaintenanceForm";
+import ChallansForm from "./components/ChallansForm";
 import { User, CITIES } from "./types";
 
 const LOCAL_STORAGE_TOKEN_KEY = "lr_token";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
-  const [screen, setScreen] = useState<"login" | "selector" | "walkin" | "onboarding" | "operator_onboarding" | "adjustment" | "allocation" | "expenses" | "vehicle_onboarding" | "workshops" | "hubs_parking" | "rents" | "accident" | "inspection" | "users" | "vehicle_models" | "cities" | "roles" | "tickets" | "employees">("login");
+  const [screen, setScreen] = useState<"login" | "selector" | "walkin" | "onboarding" | "operator_onboarding" | "adjustment" | "allocation" | "expenses" | "vehicle_onboarding" | "workshops" | "hubs_parking" | "rents" | "accident" | "inspection" | "users" | "vehicle_models" | "cities" | "roles" | "tickets" | "employees" | "maintenance" | "challans">("login");
   const [isInitializing, setIsInitializing] = useState(true);
 
   // Load user session from API using token on startup
@@ -223,6 +225,20 @@ export default function App() {
       )}
       {screen === "employees" && user && (
         <EmployeesForm 
+          user={user} 
+          onBackToSelector={() => setScreen("selector")} 
+          onLogout={handleLogout} 
+        />
+      )}
+      {screen === "maintenance" && user && (
+        <MaintenanceForm 
+          user={user} 
+          onBackToSelector={() => setScreen("selector")} 
+          onLogout={handleLogout} 
+        />
+      )}
+      {screen === "challans" && user && (
+        <ChallansForm 
           user={user} 
           onBackToSelector={() => setScreen("selector")} 
           onLogout={handleLogout} 

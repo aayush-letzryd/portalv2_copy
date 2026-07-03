@@ -1179,6 +1179,176 @@ def startup_event():
                 cur.execute(insp_sql, r)
             print("[OK] Inspections seeded")
 
+        # ── maintenance_registry ───────────────────────────
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS maintenance_registry (
+                id SERIAL PRIMARY KEY,
+                vehicle_number VARCHAR(100),
+                city_name VARCHAR(100),
+                model VARCHAR(100),
+                vehicle_k_m_s VARCHAR(50),
+                repair_type VARCHAR(100),
+                vehicle_location TEXT,
+                vehicle_in_date VARCHAR(50),
+                initial_remarks TEXT,
+                vehicle_damage_photos TEXT,
+                workshop_name VARCHAR(255),
+                allocation_date VARCHAR(50),
+                estimated_delivery_date VARCHAR(50),
+                estimated_amount VARCHAR(50),
+                insurance_claimed VARCHAR(50),
+                claim_number VARCHAR(100),
+                insurance_brokerage VARCHAR(255),
+                approved_by VARCHAR(100),
+                approval_date VARCHAR(50),
+                approval_file TEXT,
+                maintenance_status VARCHAR(100),
+                vehicle_status_date VARCHAR(50),
+                daily_vehicle_remarks TEXT,
+                rfd_date VARCHAR(50),
+                delivered_date VARCHAR(50),
+                final_status VARCHAR(50),
+                tat VARCHAR(50),
+                pdi_status VARCHAR(50),
+                invoice_no VARCHAR(100),
+                invoice_date VARCHAR(50),
+                invoice_amount VARCHAR(50),
+                insurance_liability_discounts VARCHAR(50),
+                letzryd_payable VARCHAR(50),
+                payment_status VARCHAR(50),
+                type_of_payment VARCHAR(50),
+                utr_no VARCHAR(100),
+                entry_remarks TEXT,
+                invoice_file TEXT,
+                pdi_front_photo TEXT,
+                pdi_back_photo TEXT,
+                pdi_lh_photo TEXT,
+                pdi_rh_photo TEXT,
+                pdi_engine_photo TEXT,
+                engine_chassis_no VARCHAR(100),
+                battery_sl_no VARCHAR(100),
+                fast_tag VARCHAR(100),
+                pdi_jack VARCHAR(50),
+                pdi_jack_rod VARCHAR(50),
+                pdi_spanner VARCHAR(50),
+                pdi_parking_triangle VARCHAR(50),
+                pdi_fire_extinguisher VARCHAR(50),
+                pdi_seat_cover VARCHAR(50),
+                pdi_floor_carpet VARCHAR(50),
+                pdi_music_system VARCHAR(50),
+                pdi_spare_wheel VARCHAR(50),
+                pdi_key_quantity VARCHAR(50),
+                pdi_rh_front_tyre VARCHAR(50),
+                pdi_lh_front_tyre VARCHAR(50),
+                pdi_rh_rear_tyre VARCHAR(50),
+                pdi_lh_rear_tyre VARCHAR(50),
+                invoices TEXT,
+                maintenance_steps TEXT,
+                is_migrated BOOLEAN NULL,
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+        """)
+        cur.execute("ALTER TABLE maintenance_registry ADD COLUMN IF NOT EXISTS invoices TEXT;")
+        cur.execute("ALTER TABLE maintenance_registry ADD COLUMN IF NOT EXISTS maintenance_steps TEXT;")
+        cur.execute("SELECT COUNT(*) FROM maintenance_registry;")
+        if cur.fetchone()[0] == 0:
+            maint_records = [
+                (2001, "TS09 EA 9999", "Hyderabad", "Tata Tigor EV", "18400", "General Service", "Hitech City, HYD", "2026-06-25T16:20", "", "LetzRyd Direct Hub", "2026-06-25", "2026-06-25", "3500", "No", "", "", "Rohan Verma", "2026-06-25", "Delivered", "2026-06-25", "Servicing completed successfully.", "2026-06-25", "2026-06-25", "Completed", "0", "Completed", "INV-1001", "2026-06-25", "3500", "0", "3500", "Paid", "UPI", "UTR11223344", "Settled", "Available", "Available", "Available", "Available", "Available", "Available", "Available", "Available", "Available", "2", "Good", "Good", "Good", "Good"),
+                (2002, "TN07 EF 7777", "Chennai", "WagonR EV", "24100", "Breakdown", "T-Nagar, CHN", "2026-06-29T09:30", "Motor overheating", "BLEND Repairs", "2026-06-29", "2026-07-01", "8500", "No", "", "", "Sneha Reddy", "2026-06-29", "QC", "2026-06-29", "Undergoing quality testing.", "", "", "", "", "Pending", "", "", "", "", "", "Pending", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""),
+                (2003, "DL02 IJ 7777", "Delhi", "Citroen eC3", "14300", "Running Repair", "Connaught Place, DEL", "2026-07-01T11:45", "Brake pads replacement", "Zypp Auto Service", "2026-07-01", "2026-07-01", "1200", "No", "", "", "Sneha Reddy", "2026-07-01", "Ready", "2026-07-01", "Ready for delivery.", "2026-07-01", "", "", "", "Pending", "", "", "", "", "", "Pending", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""),
+                (2004, "MH02 IJ 1234", "Mumbai", "Citroen eC3", "9800", "Accidental", "Andheri West, MUM", "2026-07-02T14:15", "Left front bumper collision", "IAC Motors", "2026-07-02", "2026-07-10", "35000", "Yes", "CLM9988", "HDFC ERGO", "Priya Sharma", "2026-07-02", "Approval", "2026-07-02", "Awaiting insurance surveyor approval.", "", "", "", "", "Pending", "", "", "", "", "", "Pending", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""),
+                (2005, "TS09 EA 1111", "Bangalore", "Tata Tigor EV", "12500", "General Service", "Koramangala, BLR", "2026-07-03T10:30", "AC cooling issue", "ZoomRx Garage", "2026-07-03", "2026-07-04", "4500", "No", "", "", "Arshad Khan", "2026-07-03", "Repairing", "2026-07-03", "AC gas recharge in progress.", "", "", "", "", "Pending", "", "", "", "", "", "Pending", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
+            ]
+            maint_sql = """
+                INSERT INTO maintenance_registry (
+                    id, vehicle_number, city_name, model, vehicle_k_m_s, repair_type, vehicle_location, vehicle_in_date, initial_remarks,
+                    workshop_name, allocation_date, estimated_delivery_date, estimated_amount, insurance_claimed, claim_number, insurance_brokerage, approved_by, approval_date,
+                    maintenance_status, vehicle_status_date, daily_vehicle_remarks, rfd_date, delivered_date, final_status, tat, pdi_status,
+                    invoice_no, invoice_date, invoice_amount, insurance_liability_discounts, letzryd_payable, payment_status, type_of_payment, utr_no, entry_remarks,
+                    pdi_jack, pdi_jack_rod, pdi_spanner, pdi_parking_triangle, pdi_fire_extinguisher, pdi_seat_cover, pdi_floor_carpet, pdi_music_system, pdi_spare_wheel, pdi_key_quantity,
+                    pdi_rh_front_tyre, pdi_lh_front_tyre, pdi_rh_rear_tyre, pdi_lh_rear_tyre
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,  %s,%s,%s,%s,%s,%s,%s,%s,%s,  %s,%s,%s,%s,%s,%s,%s,%s,  %s,%s,%s,%s,%s,%s,%s,%s,%s,  %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,  %s,%s,%s,%s);
+            """
+            for r in maint_records:
+                cur.execute(maint_sql, r)
+            cur.execute("SELECT setval('maintenance_registry_id_seq', 2005, true);")
+            print("[OK] Maintenance registry seeded")
+
+        # ── rent_ledger ──────────────────────────────────
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS rent_ledger (
+                id SERIAL PRIMARY KEY,
+                entity_type VARCHAR(50),
+                entity_id VARCHAR(100),
+                change_type VARCHAR(50),
+                old_amount INTEGER,
+                new_amount INTEGER,
+                modified_by VARCHAR(100),
+                effective_date VARCHAR(50),
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+        """)
+
+        cur.execute("SELECT COUNT(*) FROM rent_ledger;")
+        if cur.fetchone()[0] == 0:
+            ledger_seed = [
+                ("Model",   "Tata Tigor EV",   "Created", 0,    900,  "Rohan Verma",  "2026-05-01"),
+                ("Model",   "Citroen eC3",      "Created", 0,    850,  "Rohan Verma",  "2026-05-01"),
+                ("Model",   "Tata Tigor EV",   "Updated", 900,  950,  "Priya Sharma", "2026-05-15"),
+                ("Vehicle", "TS09 EA 9999",     "Created", 0,    800,  "Rohan Verma",  "2026-06-01"),
+                ("Driver",  "DR-9001",          "Created", 0,    750,  "Sneha Reddy",  "2026-06-10"),
+                ("Driver",  "DR-9001",          "Updated", 750,  720,  "Arshad Khan",  "2026-06-20"),
+                ("Model",   "WagonR EV",        "Created", 0,    820,  "Priya Sharma", "2026-06-25"),
+                ("Vehicle", "MH02 IJ 1234",     "Created", 0,    950,  "Sneha Reddy",  "2026-07-01"),
+                ("Driver",  "DR-9002",          "Created", 0,    800,  "Rohan Verma",  "2026-07-02"),
+                ("Vendor",  "VND-101",          "Created", 0,   1050,  "Arshad Khan",  "2026-07-03"),
+            ]
+            for lr in ledger_seed:
+                cur.execute("""
+                    INSERT INTO rent_ledger (entity_type, entity_id, change_type, old_amount, new_amount, modified_by, effective_date)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s);
+                """, lr)
+            print("[OK] Rent ledger seeded")
+
+        # ── traffic_challans ─────────────────────────────
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS traffic_challans (
+                id SERIAL PRIMARY KEY,
+                challan_number VARCHAR(100) NOT NULL UNIQUE,
+                vehicle_number VARCHAR(100) NOT NULL,
+                driver_id VARCHAR(50),
+                driver_name VARCHAR(255),
+                violation_date VARCHAR(50),
+                violation_location TEXT,
+                challan_amount INTEGER NOT NULL,
+                internal_fine_amount INTEGER DEFAULT 0,
+                recovery_status VARCHAR(50) DEFAULT 'Pending',
+                recovered_amount INTEGER DEFAULT 0,
+                remarks TEXT,
+                challan_photo TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+        """)
+        # Add internal_fine_amount if it doesn't exist (for already-created tables)
+        cur.execute("ALTER TABLE traffic_challans ADD COLUMN IF NOT EXISTS internal_fine_amount INTEGER DEFAULT 0;")
+        cur.execute("SELECT COUNT(*) FROM traffic_challans;")
+        if cur.fetchone()[0] == 0:
+            challan_records = [
+                ("CHL-8822912", "TS09 EA 9999",  "DR-9001", "Suresh Kumar",  "2026-07-01", "Gachibowli X Roads, Hyderabad",      500,  "Pending",   0,   "Over-speeding violation caught by speed camera."),
+                ("CHL-8833911", "MH02 IJ 1234",  "N/A",     "N/A",           "2026-07-02", "Andheri Link Rd, Mumbai",           1000,  "Disputed",  0,   "Wrong way driving. Driver was not active, checking vehicle custody."),
+                ("CHL-8844910", "DL02 IJ 7777",  "DR-9002", "Mahesh Babu",   "2026-06-30", "Connaught Place, Delhi",             300,  "Recovered", 300, "No seat belt violation. Deducted from driver wallet on request."),
+                ("CHL-8855909", "TN07 EF 7777",  "DR-9003", "Kiran Rao",     "2026-06-28", "Anna Salai, Chennai",                500,  "Pending",   0,   "Signal jumping at Anna Salai intersection. CCTV footage obtained."),
+                ("CHL-8866908", "TS09 EA 1111",  "DR-9004", "Vijay Sharma",  "2026-06-25", "Koramangala 80ft Rd, Bengaluru",    1500,  "Recovered", 1500,"Parking in no-parking zone. Driver accepted liability and paid."),
+                ("CHL-8877907", "KA01 GH 5432",  "DR-9005", "Ravi Teja",     "2026-07-02", "MG Road, Bengaluru",                 700,  "Disputed",  0,   "Triple seat riding violation. Driver claims vehicle was not under his custody that day."),
+                ("CHL-8888906", "MH02 KL 8888",  "DR-9006", "Aarav Mishra",  "2026-07-03", "Baner Road, Pune",                  2000,  "Waived",    0,   "False challan alert by automated system. District RTO verified and waived on request."),
+            ]
+            for cr in challan_records:
+                cur.execute("""
+                    INSERT INTO traffic_challans (challan_number, vehicle_number, driver_id, driver_name, violation_date, violation_location, challan_amount, recovery_status, recovered_amount, remarks)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+                """, cr)
+            print("[OK] Traffic challans seeded")
+
         conn.commit()
         cur.close()
         print("[OK] Database setup complete")
@@ -3590,7 +3760,7 @@ def get_rents(
 
 @app.post("/api/rents")
 def create_rent(data: RentData, authorization: Optional[str] = Header(None)):
-    get_current_user(authorization)
+    user = get_current_user(authorization)
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
@@ -3599,6 +3769,23 @@ def create_rent(data: RentData, authorization: Optional[str] = Header(None)):
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id;
         """, (data.level, data.vehicle_manufacturer, data.vehicle_model, data.vehicle_number, data.vehicle_age, data.vendor_id, data.driver_id, data.rent_amount))
         new_id = cur.fetchone()[0]
+
+        # Log to rent_ledger
+        entity_type = data.level.capitalize()
+        entity_id = ""
+        if data.level == "driver": entity_id = data.driver_id or ""
+        elif data.level == "vendor": entity_id = data.vendor_id or ""
+        elif data.level == "vehicle": entity_id = data.vehicle_number or ""
+        elif data.level == "model": entity_id = data.vehicle_model or ""
+
+        from datetime import date
+        today_str = date.today().isoformat()
+
+        cur.execute("""
+            INSERT INTO rent_ledger (entity_type, entity_id, change_type, old_amount, new_amount, modified_by, effective_date)
+            VALUES (%s, %s, %s, %s, %s, %s, %s);
+        """, (entity_type, entity_id, "Created", 0, data.rent_amount, user.get("name") or user.get("username"), today_str))
+
         conn.commit()
         return {"success": True, "id": new_id}
     finally:
@@ -3606,17 +3793,39 @@ def create_rent(data: RentData, authorization: Optional[str] = Header(None)):
 
 @app.put("/api/rents/{id}")
 def update_rent(id: int, data: RentData, authorization: Optional[str] = Header(None)):
-    get_current_user(authorization)
+    user = get_current_user(authorization)
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
+        # Fetch old rent amount
+        cur.execute("SELECT rent_amount, level, driver_id, vendor_id, vehicle_number, vehicle_model FROM rents WHERE id = %s;", (id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Rent record not found")
+        old_rent_amount, old_level, old_driver_id, old_vendor_id, old_vehicle_number, old_vehicle_model = row
+
         cur.execute("""
             UPDATE rents SET level=%s, vehicle_manufacturer=%s, vehicle_model=%s, vehicle_number=%s, vehicle_age=%s, vendor_id=%s, driver_id=%s, rent_amount=%s
             WHERE id=%s RETURNING id;
         """, (data.level, data.vehicle_manufacturer, data.vehicle_model, data.vehicle_number, data.vehicle_age, data.vendor_id, data.driver_id, data.rent_amount, id))
-        row = cur.fetchone()
-        if not row:
-            raise HTTPException(status_code=404, detail="Rent record not found")
+        cur.fetchone()
+
+        # Log to rent_ledger
+        entity_type = data.level.capitalize()
+        entity_id = ""
+        if data.level == "driver": entity_id = data.driver_id or ""
+        elif data.level == "vendor": entity_id = data.vendor_id or ""
+        elif data.level == "vehicle": entity_id = data.vehicle_number or ""
+        elif data.level == "model": entity_id = data.vehicle_model or ""
+
+        from datetime import date
+        today_str = date.today().isoformat()
+
+        cur.execute("""
+            INSERT INTO rent_ledger (entity_type, entity_id, change_type, old_amount, new_amount, modified_by, effective_date)
+            VALUES (%s, %s, %s, %s, %s, %s, %s);
+        """, (entity_type, entity_id, "Updated", old_rent_amount, data.rent_amount, user.get("name") or user.get("username"), today_str))
+
         conn.commit()
         return {"success": True, "id": id}
     finally:
@@ -3624,16 +3833,50 @@ def update_rent(id: int, data: RentData, authorization: Optional[str] = Header(N
 
 @app.delete("/api/rents/{id}")
 def delete_rent(id: int, authorization: Optional[str] = Header(None)):
+    user = get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        # Fetch old rent amount
+        cur.execute("SELECT rent_amount, level, driver_id, vendor_id, vehicle_number, vehicle_model FROM rents WHERE id = %s;", (id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Rent record not found")
+        old_rent_amount, old_level, old_driver_id, old_vendor_id, old_vehicle_number, old_vehicle_model = row
+
+        cur.execute("DELETE FROM rents WHERE id = %s RETURNING id;", (id,))
+        cur.fetchone()
+
+        # Log to rent_ledger
+        entity_type = old_level.capitalize() if old_level else "Model"
+        entity_id = ""
+        if old_level == "driver": entity_id = old_driver_id or ""
+        elif old_level == "vendor": entity_id = old_vendor_id or ""
+        elif old_level == "vehicle": entity_id = old_vehicle_number or ""
+        elif old_level == "model": entity_id = old_vehicle_model or ""
+
+        from datetime import date
+        today_str = date.today().isoformat()
+
+        cur.execute("""
+            INSERT INTO rent_ledger (entity_type, entity_id, change_type, old_amount, new_amount, modified_by, effective_date)
+            VALUES (%s, %s, %s, %s, %s, %s, %s);
+        """, (entity_type, entity_id, "Deleted", old_rent_amount, 0, user.get("name") or user.get("username"), today_str))
+
+        conn.commit()
+        return {"success": True}
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.get("/api/rent-ledger")
+def get_rent_ledger(authorization: Optional[str] = Header(None)):
     get_current_user(authorization)
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("DELETE FROM rents WHERE id = %s RETURNING id;", (id,))
-        deleted = cur.fetchone()
-        if not deleted:
-            raise HTTPException(status_code=404, detail="Rent record not found")
-        conn.commit()
-        return {"success": True}
+        cur.execute("SELECT * FROM rent_ledger ORDER BY id DESC;")
+        cols = [d[0] for d in cur.description]
+        return [dict(zip(cols, row)) for row in cur.fetchall()]
     finally:
         postgreSQL_pool.putconn(conn)
 
@@ -4096,6 +4339,334 @@ def resolve_ticket(id: int, data: dict, authorization: Optional[str] = Header(No
         """, (notes, id))
         if not cur.fetchone():
             raise HTTPException(status_code=404, detail="Ticket not found")
+        conn.commit()
+        return {"success": True}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+class MaintenanceData(BaseModel):
+    # Panel 1
+    vehicle_number: str
+    city_name: str
+    model: str
+    vehicle_k_m_s: str
+    repair_type: str
+    vehicle_location: Optional[str] = None
+    vehicle_in_date: str
+    initial_remarks: Optional[str] = None
+    vehicle_damage_photos: Optional[Any] = None
+    
+    # Panel 2
+    workshop_name: str
+    allocation_date: Optional[str] = None
+    estimated_delivery_date: Optional[str] = None
+    estimated_amount: Optional[str] = None
+    insurance_claimed: str
+    claim_number: Optional[str] = None
+    insurance_brokerage: Optional[str] = None
+    approved_by: Optional[str] = None
+    approval_date: Optional[str] = None
+    approval_file: Optional[Any] = None
+    
+    # Panel 3
+    maintenance_status: Optional[str] = None
+    vehicle_status_date: Optional[str] = None
+    daily_vehicle_remarks: Optional[str] = None
+    rfd_date: Optional[str] = None
+    delivered_date: Optional[str] = None
+    final_status: Optional[str] = None
+    tat: Optional[str] = None
+    pdi_status: Optional[str] = None
+    maintenance_steps: Optional[Union[List[Any], str]] = None
+    
+    # Panel 4
+    invoice_no: Optional[str] = None
+    invoice_date: Optional[str] = None
+    invoice_amount: Optional[str] = None
+    insurance_liability_discounts: Optional[str] = None
+    letzryd_payable: Optional[str] = None
+    payment_status: Optional[str] = None
+    type_of_payment: Optional[str] = None
+    utr_no: Optional[str] = None
+    entry_remarks: Optional[str] = None
+    invoice_file: Optional[Any] = None
+    invoices: Optional[Union[List[Any], str]] = None
+    
+    # Panel 5 (PDI)
+    pdi_front_photo: Optional[Any] = None
+    pdi_back_photo: Optional[Any] = None
+    pdi_lh_photo: Optional[Any] = None
+    pdi_rh_photo: Optional[Any] = None
+    pdi_engine_photo: Optional[Any] = None
+    engine_chassis_no: Optional[str] = None
+    battery_sl_no: Optional[str] = None
+    fast_tag: Optional[str] = None
+    pdi_jack: Optional[str] = None
+    pdi_jack_rod: Optional[str] = None
+    pdi_spanner: Optional[str] = None
+    pdi_parking_triangle: Optional[str] = None
+    pdi_fire_extinguisher: Optional[str] = None
+    pdi_seat_cover: Optional[str] = None
+    pdi_floor_carpet: Optional[str] = None
+    pdi_music_system: Optional[str] = None
+    pdi_spare_wheel: Optional[str] = None
+    pdi_key_quantity: Optional[str] = None
+    pdi_rh_front_tyre: Optional[str] = None
+    pdi_lh_front_tyre: Optional[str] = None
+    pdi_rh_rear_tyre: Optional[str] = None
+    pdi_lh_rear_tyre: Optional[str] = None
+
+def extract_image(val: Any) -> Optional[str]:
+    if val is None: return None
+    if isinstance(val, list) and len(val) > 0:
+        first = val[0]
+        return first.get("content") if isinstance(first, dict) else str(first)
+    return val if isinstance(val, str) and val.startswith("data:") else None
+
+@app.get("/api/maintenance")
+def get_all_maintenance_jobs(authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT id, vehicle_in_date, vehicle_number, workshop_name, repair_type, 
+                   city_name, estimated_amount, maintenance_status, created_at 
+            FROM maintenance_registry ORDER BY id DESC;
+        """)
+        cols = [d[0] for d in cur.description]
+        result = [dict(zip(cols, row)) for row in cur.fetchall()]
+        return result
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.get("/api/maintenance/{id}")
+def get_maintenance_job(id: int, authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM maintenance_registry WHERE id = %s;", (id,))
+        r = cur.fetchone()
+        if not r: raise HTTPException(status_code=404, detail="Record not found")
+        cols = [d[0] for d in cur.description]
+        return dict(zip(cols, r))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.post("/api/maintenance")
+def create_maintenance_job(data: MaintenanceData, authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO maintenance_registry (
+                vehicle_number, city_name, model, vehicle_k_m_s, repair_type, vehicle_location, vehicle_in_date, initial_remarks, vehicle_damage_photos,
+                workshop_name, allocation_date, estimated_delivery_date, estimated_amount, insurance_claimed, claim_number, insurance_brokerage, approved_by, approval_date, approval_file,
+                maintenance_status, vehicle_status_date, daily_vehicle_remarks, rfd_date, delivered_date, final_status, tat, pdi_status,
+                invoice_no, invoice_date, invoice_amount, insurance_liability_discounts, letzryd_payable, payment_status, type_of_payment, utr_no, entry_remarks, invoice_file, invoices, maintenance_steps,
+                pdi_front_photo, pdi_back_photo, pdi_lh_photo, pdi_rh_photo, pdi_engine_photo, engine_chassis_no, battery_sl_no, fast_tag, pdi_jack, pdi_jack_rod, pdi_spanner, pdi_parking_triangle, pdi_fire_extinguisher, pdi_seat_cover, pdi_floor_carpet, pdi_music_system, pdi_spare_wheel, pdi_key_quantity, pdi_rh_front_tyre, pdi_lh_front_tyre, pdi_rh_rear_tyre, pdi_lh_rear_tyre
+            ) VALUES (
+                %s,%s,%s,%s,%s,%s,%s,%s,%s,
+                %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
+                %s,%s,%s,%s,%s,%s,%s,%s,
+                %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
+                %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s
+            ) RETURNING id;
+        """, (
+            # Panel 1
+            data.vehicle_number, data.city_name, data.model, data.vehicle_k_m_s, data.repair_type, data.vehicle_location, data.vehicle_in_date, data.initial_remarks, extract_image(data.vehicle_damage_photos),
+            # Panel 2
+            data.workshop_name, data.allocation_date, data.estimated_delivery_date, data.estimated_amount, data.insurance_claimed, data.claim_number, data.insurance_brokerage, data.approved_by, data.approval_date, extract_image(data.approval_file),
+            # Panel 3
+            data.maintenance_status, data.vehicle_status_date, data.daily_vehicle_remarks, data.rfd_date, data.delivered_date, data.final_status, data.tat, data.pdi_status,
+            # Panel 4
+            data.invoice_no, data.invoice_date, data.invoice_amount, data.insurance_liability_discounts, data.letzryd_payable, data.payment_status, data.type_of_payment, data.utr_no, data.entry_remarks, extract_image(data.invoice_file),
+            # Panel 5
+            extract_image(data.pdi_front_photo), extract_image(data.pdi_back_photo), extract_image(data.pdi_lh_photo), extract_image(data.pdi_rh_photo), extract_image(data.pdi_engine_photo), data.engine_chassis_no, data.battery_sl_no, data.fast_tag, data.pdi_jack, data.pdi_jack_rod, data.pdi_spanner, data.pdi_parking_triangle, data.pdi_fire_extinguisher, data.pdi_seat_cover, data.pdi_floor_carpet, data.pdi_music_system, data.pdi_spare_wheel, data.pdi_key_quantity, data.pdi_rh_front_tyre, data.pdi_lh_front_tyre, data.pdi_rh_rear_tyre, data.pdi_lh_rear_tyre
+        ))
+        new_id = cur.fetchone()[0]
+        conn.commit()
+        return {"success": True, "id": new_id}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.put("/api/maintenance/{id}")
+def update_maintenance_job(id: int, data: MaintenanceData, authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE maintenance_registry SET 
+                vehicle_number=%s, city_name=%s, model=%s, vehicle_k_m_s=%s, repair_type=%s, vehicle_location=%s, vehicle_in_date=%s, initial_remarks=%s, vehicle_damage_photos=%s,
+                workshop_name=%s, allocation_date=%s, estimated_delivery_date=%s, estimated_amount=%s, insurance_claimed=%s, claim_number=%s, insurance_brokerage=%s, approved_by=%s, approval_date=%s, approval_file=%s,
+                maintenance_status=%s, vehicle_status_date=%s, daily_vehicle_remarks=%s, rfd_date=%s, delivered_date=%s, final_status=%s, tat=%s, pdi_status=%s,
+                invoice_no=%s, invoice_date=%s, invoice_amount=%s, insurance_liability_discounts=%s, letzryd_payable=%s, payment_status=%s, type_of_payment=%s, utr_no=%s, entry_remarks=%s, invoice_file=%s,
+                invoices=%s, maintenance_steps=%s,
+                pdi_front_photo=%s, pdi_back_photo=%s, pdi_lh_photo=%s, pdi_rh_photo=%s, pdi_engine_photo=%s, engine_chassis_no=%s, battery_sl_no=%s, fast_tag=%s, pdi_jack=%s, pdi_jack_rod=%s, pdi_spanner=%s, pdi_parking_triangle=%s, pdi_fire_extinguisher=%s, pdi_seat_cover=%s, pdi_floor_carpet=%s, pdi_music_system=%s, pdi_spare_wheel=%s, pdi_key_quantity=%s, pdi_rh_front_tyre=%s, pdi_lh_front_tyre=%s, pdi_rh_rear_tyre=%s, pdi_lh_rear_tyre=%s
+            WHERE id = %s;
+        """, (
+            # Panel 1
+            data.vehicle_number, data.city_name, data.model, data.vehicle_k_m_s, data.repair_type, data.vehicle_location, data.vehicle_in_date, data.initial_remarks, extract_image(data.vehicle_damage_photos),
+            # Panel 2
+            data.workshop_name, data.allocation_date, data.estimated_delivery_date, data.estimated_amount, data.insurance_claimed, data.claim_number, data.insurance_brokerage, data.approved_by, data.approval_date, extract_image(data.approval_file),
+            # Panel 3
+            data.maintenance_status, data.vehicle_status_date, data.daily_vehicle_remarks, data.rfd_date, data.delivered_date, data.final_status, data.tat, data.pdi_status,
+            # Panel 4
+            data.invoice_no, data.invoice_date, data.invoice_amount, data.insurance_liability_discounts, data.letzryd_payable, data.payment_status, data.type_of_payment, data.utr_no, data.entry_remarks, extract_image(data.invoice_file),
+            # Panel 5
+            extract_image(data.pdi_front_photo), extract_image(data.pdi_back_photo), extract_image(data.pdi_lh_photo), extract_image(data.pdi_rh_photo), extract_image(data.pdi_engine_photo), data.engine_chassis_no, data.battery_sl_no, data.fast_tag, data.pdi_jack, data.pdi_jack_rod, data.pdi_spanner, data.pdi_parking_triangle, data.pdi_fire_extinguisher, data.pdi_seat_cover, data.pdi_floor_carpet, data.pdi_music_system, data.pdi_spare_wheel, data.pdi_key_quantity, data.pdi_rh_front_tyre, data.pdi_lh_front_tyre, data.pdi_rh_rear_tyre, data.pdi_lh_rear_tyre,
+            # ID condition
+            id
+        ))
+        conn.commit()
+        return {"success": True}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.delete("/api/maintenance/{id}")
+def delete_maintenance_job(id: int, authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM maintenance_registry WHERE id = %s RETURNING id;", (id,))
+        deleted = cur.fetchone()
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Maintenance job not found")
+        conn.commit()
+        return {"success": True}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+class ChallanData(BaseModel):
+    challan_number: str
+    vehicle_number: str
+    driver_id: Optional[str] = None
+    driver_name: Optional[str] = None
+    violation_date: str
+    violation_location: Optional[str] = None
+    challan_amount: int
+    internal_fine_amount: int = 0
+    recovery_status: str = "Pending"
+    recovered_amount: int = 0
+    remarks: Optional[str] = None
+    challan_photo: Optional[Any] = None
+
+@app.get("/api/challans")
+def get_all_challans(authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT id, challan_number, vehicle_number, driver_id, driver_name, 
+                   violation_date, violation_location, challan_amount, internal_fine_amount,
+                   recovery_status, recovered_amount, remarks, created_at
+            FROM traffic_challans ORDER BY id DESC;
+        """)
+        cols = [d[0] for d in cur.description]
+        return [dict(zip(cols, row)) for row in cur.fetchall()]
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.get("/api/challans/{id}")
+def get_challan(id: int, authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM traffic_challans WHERE id = %s;", (id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Challan not found")
+        cols = [d[0] for d in cur.description]
+        return dict(zip(cols, row))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.post("/api/challans")
+def create_challan(data: ChallanData, authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        # Verify uniqueness
+        cur.execute("SELECT id FROM traffic_challans WHERE challan_number = %s;", (data.challan_number,))
+        if cur.fetchone():
+            raise HTTPException(status_code=400, detail="Challan number already exists")
+
+        cur.execute("""
+            INSERT INTO traffic_challans (
+                challan_number, vehicle_number, driver_id, driver_name, 
+                violation_date, violation_location, challan_amount, internal_fine_amount,
+                recovery_status, recovered_amount, remarks, challan_photo
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id;
+        """, (
+            data.challan_number, data.vehicle_number, data.driver_id, data.driver_name,
+            data.violation_date, data.violation_location, data.challan_amount, data.internal_fine_amount,
+            data.recovery_status, data.recovered_amount, data.remarks, extract_image(data.challan_photo)
+        ))
+        new_id = cur.fetchone()[0]
+        conn.commit()
+        return {"success": True, "id": new_id}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.put("/api/challans/{id}")
+def update_challan(id: int, data: ChallanData, authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE traffic_challans SET 
+                challan_number=%s, vehicle_number=%s, driver_id=%s, driver_name=%s, 
+                violation_date=%s, violation_location=%s, challan_amount=%s, internal_fine_amount=%s,
+                recovery_status=%s, recovered_amount=%s, remarks=%s, challan_photo=%s
+            WHERE id=%s RETURNING id;
+        """, (
+            data.challan_number, data.vehicle_number, data.driver_id, data.driver_name,
+            data.violation_date, data.violation_location, data.challan_amount, data.internal_fine_amount,
+            data.recovery_status, data.recovered_amount, data.remarks, extract_image(data.challan_photo),
+            id
+        ))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="Challan not found")
+        conn.commit()
+        return {"success": True, "id": id}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.delete("/api/challans/{id}")
+def delete_challan(id: int, authorization: Optional[str] = Header(None)):
+    get_current_user(authorization)
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM traffic_challans WHERE id = %s RETURNING id;", (id,))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="Challan not found")
         conn.commit()
         return {"success": True}
     except Exception as e:

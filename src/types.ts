@@ -292,3 +292,108 @@ export interface AccidentRecord {
   fir_document_copy?: string;
   created_at?: string;
 }
+
+export interface MaintenanceRecord {
+  id: number;
+  // Panel 1
+  vehicle_number: string;
+  city_name: string;
+  model: string;
+  vehicle_k_m_s: string;
+  repair_type: string;
+  vehicle_location?: string;
+  vehicle_in_date: string;
+  initial_remarks?: string;
+  vehicle_damage_photos?: string;
+  
+  // Panel 2
+  workshop_name: string;
+  allocation_date?: string;
+  estimated_delivery_date?: string;
+  estimated_amount?: string;
+  insurance_claimed: string;
+  claim_number?: string;
+  insurance_brokerage?: string;
+  approved_by?: string;
+  approval_date?: string;
+  approval_file?: string;
+  
+  // Panel 3
+  maintenance_status?: string;
+  vehicle_status_date?: string;
+  daily_vehicle_remarks?: string;
+  rfd_date?: string;
+  delivered_date?: string;
+  final_status?: string;
+  tat?: string;
+  pdi_status?: string;
+  maintenance_steps?: any[] | string;
+  
+  // Panel 4
+  invoice_no?: string;
+  invoice_date?: string;
+  invoice_amount?: string;
+  insurance_liability_discounts?: string;
+  letzryd_payable?: string;
+  payment_status?: string;
+  type_of_payment?: string;
+  utr_no?: string;
+  entry_remarks?: string;
+  invoice_file?: string;
+  invoices?: any[] | string;
+  
+  // Panel 5 (PDI)
+  pdi_front_photo?: string;
+  pdi_back_photo?: string;
+  pdi_lh_photo?: string;
+  pdi_rh_photo?: string;
+  pdi_engine_photo?: string;
+  engine_chassis_no?: string;
+  battery_sl_no?: string;
+  fast_tag?: string;
+  pdi_jack?: string;
+  pdi_jack_rod?: string;
+  pdi_spanner?: string;
+  pdi_parking_triangle?: string;
+  pdi_fire_extinguisher?: string;
+  pdi_seat_cover?: string;
+  pdi_floor_carpet?: string;
+  pdi_music_system?: string;
+  pdi_spare_wheel?: string;
+  pdi_key_quantity?: string;
+  pdi_rh_front_tyre?: string;
+  pdi_lh_front_tyre?: string;
+  pdi_rh_rear_tyre?: string;
+  pdi_lh_rear_tyre?: string;
+  
+  created_at?: string;
+}
+
+export interface RentLedgerRecord {
+  id: number;
+  entity_type: "Driver" | "Vendor" | "Vehicle" | "Model";
+  entity_id: string;
+  change_type: "Created" | "Updated" | "Deleted";
+  old_amount: number;
+  new_amount: number;
+  modified_by: string;
+  effective_date: string;
+  created_at: string;
+}
+
+export interface ChallanRecord {
+  id: number;
+  challan_number: string;
+  vehicle_number: string;
+  driver_id?: string;
+  driver_name?: string;
+  violation_date: string;
+  violation_location?: string;
+  challan_amount: number;
+  internal_fine_amount: number;
+  recovery_status: "Pending" | "Recovered" | "Disputed" | "Waived";
+  recovered_amount: number;
+  remarks?: string;
+  challan_photo?: string;
+  created_at?: string;
+}

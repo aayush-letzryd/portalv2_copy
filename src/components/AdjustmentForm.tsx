@@ -537,6 +537,19 @@ export default function AdjustmentForm({
                 </div>
               </div>
 
+              {/* Edit Mode Banner */}
+              {editingId && (
+                <div className="bg-yellow-50 px-8 py-3 border-b border-yellow-200 flex justify-between items-center">
+                  <div className="flex items-center gap-2 text-yellow-800 text-sm font-semibold">
+                    <Edit className="h-4 w-4" />
+                    Editing Adjustment Record #{editingId}
+                  </div>
+                  <button type="button" onClick={resetForm} className="text-xs text-yellow-700 hover:text-yellow-900 font-bold underline cursor-pointer">
+                    Cancel Edit
+                  </button>
+                </div>
+              )}
+
               {/* Form Content */}
               <form onSubmit={handleSubmit} className="p-8 space-y-10">
                 
@@ -962,7 +975,7 @@ export default function AdjustmentForm({
                     </button>
                     <button 
                       type="submit"
-                      className="rounded-xl bg-green px-6 py-3 font-sans text-xs font-bold text-white hover:bg-green-hover transition-colors shadow-xs cursor-pointer"
+                      className="rounded-xl bg-primary hover:bg-primary-hover px-6 py-3.5 font-sans text-sm font-bold text-white shadow-sm transition-all cursor-pointer disabled:opacity-50"
                     >
                       {editingId ? "Save Changes" : "Submit Request"}
                     </button>

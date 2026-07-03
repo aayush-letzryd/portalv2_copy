@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { 
   IndianRupee, Search, Trash2, Edit, RefreshCw, Car, User, 
-  ArrowLeft, FileText, Database, X, CheckCircle
+  ChevronLeft, FileText, Database, X, CheckCircle, History, Info
 } from "lucide-react";
-import { User as UserSession, RentRecord, CITIES } from "../types";
+import { User as UserSession, RentRecord, RentLedgerRecord, CITIES } from "../types";
 
 interface RentFormProps {
   user: UserSession;
@@ -30,7 +30,7 @@ export default function RentForm({
   onBackToSelector,
   onLogout
 }: RentFormProps) {
-  const [activeTab, setActiveTab] = useState<"form" | "registry">("form");
+  const [activeTab, setActiveTab] = useState<"form" | "registry" | "ledger">("form");
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString("en-IN", {
     timeZone: "Asia/Kolkata", hour12: true
   }));
@@ -75,10 +75,42 @@ export default function RentForm({
     }
   };
 
+  const [ledgerRecords, setLedgerRecords] = useState<RentLedgerRecord[]>([]);
+  const [isLedgerLoading, setIsLedgerLoading] = useState(false);
+  const [ledgerSearch, setLedgerSearch] = useState("");
+  const [ledgerTypeFilter, setLedgerTypeFilter] = useState("all");
+
+  const fetchLedger = async () => {
+    setIsLedgerLoading(true);
+    try {
+      const token = localStorage.getItem("lr_token");
+      const res = await fetch("/api/rent-ledger", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) setLedgerRecords(await res.json());
+    } catch (e) {
+      console.error("Error fetching rent ledger", e);
+    } finally {
+      setIsLedgerLoading(false);
+    }
+  };
+
+  const filteredLedger = ledgerRecords.filter(log => {
+    const q = ledgerSearch.toLowerCase().trim();
+    const matchesSearch = !q ||
+      (log.entity_id || "").toLowerCase().includes(q) ||
+      (log.entity_type || "").toLowerCase().includes(q) ||
+      (log.modified_by || "").toLowerCase().includes(q);
+    const matchesType = ledgerTypeFilter === "all" || log.entity_type === ledgerTypeFilter;
+    return matchesSearch && matchesType;
+  });
+
   useEffect(() => {
     if (activeTab === "registry") {
       const t = setTimeout(fetchData, 300);
       return () => clearTimeout(t);
+    } else if (activeTab === "ledger") {
+      fetchLedger();
     }
   }, [activeTab, searchQuery, filterLevel]);
 
@@ -170,37 +202,37 @@ export default function RentForm({
     <div className="min-h-screen flex flex-col bg-bg text-text">
       
       {/* HEADER */}
-      <header className="sticky top-0 z-50 bg-white border-b border-border shadow-xs">
-        <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-4">
+      <header className="sticky top-0 z-50 border-b border-border bg-white shadow-xs">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-3">
             <button 
+              type="button"
               onClick={onBackToSelector}
-              className="flex items-center gap-2 rounded-full hover:bg-slate-100 p-2 text-text-muted transition-colors cursor-pointer"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-slate-100 hover:text-primary transition-all cursor-pointer"
+              title="Back to Form Selector"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ChevronLeft className="h-5 w-5" />
             </button>
-            <div className="h-6 w-px bg-border" />
-            <div className="flex items-center gap-3">
-              <img
-                src="https://letzryd.com/replica-assets/letzryd-long-png-logo-Aq2o3DNOw1i2kBMB-7ab04eaa76.png"
-                alt="LetzRyd logo"
-                className="h-7 w-auto object-contain"
-                referrerPolicy="no-referrer"
-              />
-              <span className="hidden sm:inline px-2 py-0.5 rounded border border-primary/20 bg-primary/5 text-primary text-[10px] font-extrabold tracking-widest uppercase">
-                Rent Plans
-              </span>
-            </div>
+            <img
+              src="https://letzryd.com/replica-assets/letzryd-long-png-logo-Aq2o3DNOw1i2kBMB-7ab04eaa76.png"
+              alt="LetzRyd logo"
+              className="h-8 w-auto object-contain"
+              referrerPolicy="no-referrer"
+            />
+            <span className="hidden h-5 border-l border-border sm:inline-block" />
+            <span className="hidden font-sans text-xs font-medium text-text-muted tracking-wider uppercase sm:inline-block">
+              Rent Plans
+            </span>
           </div>
 
-          {/* Tab Selection */}
-          <nav className="flex items-center gap-1.5 rounded-2xl bg-slate-100 p-1">
+          {/* Tab Navigation */}
+          <nav className="flex gap-2">
             <button 
               onClick={() => setActiveTab("form")}
               className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
                 activeTab === "form" 
                   ? "bg-primary text-white shadow-sm shadow-primary/20" 
-                  : "text-text-muted hover:bg-slate-200 hover:text-primary"
+                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
               }`}
             >
               <FileText className="h-4 w-4" />
@@ -211,11 +243,22 @@ export default function RentForm({
               className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
                 activeTab === "registry" 
                   ? "bg-primary text-white shadow-sm shadow-primary/20" 
-                  : "text-text-muted hover:bg-slate-200 hover:text-primary"
+                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
               }`}
             >
               <Database className="h-4 w-4" />
               Rent Registry
+            </button>
+            <button 
+              onClick={() => setActiveTab("ledger")}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
+                activeTab === "ledger" 
+                  ? "bg-primary text-white shadow-sm shadow-primary/20" 
+                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
+              }`}
+            >
+              <History className="h-4 w-4" />
+              Rent Audit Ledger
             </button>
           </nav>
 
@@ -229,13 +272,14 @@ export default function RentForm({
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white uppercase">{initials}</div>
               <div className="flex flex-col">
-                <span className="font-sans text-xs font-semibold leading-none text-text">{user.name}</span>
+                <span className="font-sans text-xs font-semibold leading-none text-text">{displayName}</span>
                 <span className="font-mono text-[10px] text-text-muted mt-0.5 leading-none">{user.role || "Executive"}</span>
               </div>
             </div>
+            <span className="h-5 border-l border-border" />
             <button
               onClick={onLogout}
-              className="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-white px-3 font-sans text-xs font-medium text-text-muted hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors cursor-pointer"
+              className="flex h-8 items-center justify-center gap-1.5 rounded-lg border border-border bg-white px-2.5 font-sans text-xs font-medium text-text-muted hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors cursor-pointer"
             >
               Sign Out
             </button>
@@ -243,7 +287,7 @@ export default function RentForm({
         </div>
       </header>
 
-      <main className="flex-grow mx-auto w-full max-w-[1400px] px-4 sm:px-6 py-8">
+      <main className="flex-grow mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
 
         {/* FORM TAB */}
         {activeTab === "form" && (
@@ -281,7 +325,7 @@ export default function RentForm({
 
                   {/* Level Selector */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Rent Level *</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Rent Level *</label>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {LEVEL_OPTIONS.map(opt => (
                         <button
@@ -308,23 +352,23 @@ export default function RentForm({
                     {(level === "model" || level === "vehicle") && (
                       <>
                         <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Vehicle Manufacturer</label>
+                          <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Vehicle Manufacturer</label>
                           <input
                             type="text"
                             value={vehicleManufacturer}
                             onChange={(e) => setVehicleManufacturer(e.target.value)}
                             placeholder="e.g. Maruti Suzuki, Tata"
-                            className="h-11 w-full rounded-xl border border-border px-4 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+                            className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Vehicle Model</label>
+                          <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Vehicle Model</label>
                           <input
                             type="text"
                             value={vehicleModel}
                             onChange={(e) => setVehicleModel(e.target.value)}
                             placeholder="e.g. WagonR, Swift, Ertiga"
-                            className="h-11 w-full rounded-xl border border-border px-4 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+                            className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                           />
                         </div>
                       </>
@@ -332,24 +376,24 @@ export default function RentForm({
 
                     {level === "vehicle" && (
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Vehicle Number *</label>
+                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Vehicle Number *</label>
                         <input
                           type="text"
                           value={vehicleNumber}
                           onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
                           placeholder="e.g. TS09 EA 1001"
-                          className="h-11 w-full rounded-xl border border-border px-4 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                         />
                       </div>
                     )}
 
                     {(level === "model" || level === "vehicle") && (
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Vehicle Age (Optional)</label>
+                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Vehicle Age (Optional)</label>
                         <select
                           value={vehicleAge}
                           onChange={(e) => setVehicleAge(e.target.value)}
-                          className="h-11 w-full rounded-xl border border-border px-4 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                         >
                           <option value="">Any Age</option>
                           <option value="0-2 Years">0-2 Years</option>
@@ -361,26 +405,26 @@ export default function RentForm({
 
                     {level === "operator" && (
                       <div className="space-y-2 sm:col-span-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Operator / Vendor ID *</label>
+                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Operator / Vendor ID *</label>
                         <input
                           type="text"
                           value={vendorId}
                           onChange={(e) => setVendorId(e.target.value)}
                           placeholder="e.g. VND-HYD-001"
-                          className="h-11 w-full rounded-xl border border-border px-4 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                         />
                       </div>
                     )}
 
                     {level === "driver" && (
                       <div className="space-y-2 sm:col-span-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Driver ID *</label>
+                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Driver ID *</label>
                         <input
                           type="text"
                           value={driverId}
                           onChange={(e) => setDriverId(e.target.value)}
                           placeholder="e.g. DR-HYD-001"
-                          className="h-11 w-full rounded-xl border border-border px-4 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                         />
                       </div>
                     )}
@@ -388,7 +432,7 @@ export default function RentForm({
 
                   {/* Rent Amount */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Rent Amount (₹ / Day) *</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Rent Amount (₹ / Day) *</label>
                     <div className="relative">
                       <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
                       <input
@@ -397,7 +441,7 @@ export default function RentForm({
                         min="1"
                         value={rentAmount}
                         onChange={(e) => setRentAmount(parseInt(e.target.value) || 0)}
-                        className="h-11 w-full rounded-xl border border-border pl-10 pr-4 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+                        className="w-full rounded-xl border border-border bg-white pl-10 pr-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                       />
                     </div>
                   </div>
@@ -412,7 +456,7 @@ export default function RentForm({
                     </button>
                     <button
                       type="submit"
-                      className="flex items-center gap-2 bg-primary text-white text-sm font-bold px-6 py-2.5 rounded-xl hover:bg-primary-hover shadow-md transition-all cursor-pointer active:scale-95"
+                      className="flex items-center gap-2 bg-primary text-white text-sm font-bold px-6 py-3 rounded-xl hover:bg-primary-hover shadow-sm transition-all cursor-pointer disabled:opacity-50"
                     >
                       <CheckCircle className="h-4 w-4" />
                       {editingId ? "Update Rent Plan" : "Save Rent Plan"}
@@ -568,6 +612,122 @@ export default function RentForm({
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "ledger" && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-border/60 overflow-hidden">
+              <div className="border-b border-border bg-slate-50/50 px-8 py-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 className="font-sans text-sm font-extrabold text-primary uppercase tracking-wider">Rent Modification Audit Logs</h2>
+                  <p className="font-sans text-xs text-text-muted mt-0.5">Search by Driver ID, Vehicle Number, Model name, or Vendor ID</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="relative">
+                    <Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-text-muted" />
+                    <input
+                      type="text"
+                      placeholder="e.g. DR-9001, TS09 EA 9999..."
+                      value={ledgerSearch}
+                      onChange={e => setLedgerSearch(e.target.value)}
+                      className="w-56 rounded-xl border border-border bg-white pl-8 pr-4 py-2 font-sans text-xs focus:border-primary focus:outline-none transition-all"
+                    />
+                  </div>
+                  <select
+                    value={ledgerTypeFilter}
+                    onChange={e => setLedgerTypeFilter(e.target.value)}
+                    className="rounded-xl border border-border bg-white px-3 py-2 font-sans text-xs focus:outline-none cursor-pointer"
+                  >
+                    <option value="all">All Types</option>
+                    <option value="Model">Model</option>
+                    <option value="Vehicle">Vehicle</option>
+                    <option value="Driver">Driver</option>
+                    <option value="Vendor">Vendor</option>
+                  </select>
+                  <button
+                    onClick={fetchLedger}
+                    disabled={isLedgerLoading}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-white hover:bg-slate-50 text-text-muted transition-colors cursor-pointer"
+                    title="Refresh"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isLedgerLoading ? 'animate-spin' : ''}`} />
+                  </button>
+                </div>
+              </div>
+
+              {isLedgerLoading ? (
+                <div className="p-16 flex items-center justify-center">
+                  <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : filteredLedger.length === 0 ? (
+                <div className="p-16 text-center text-text-muted text-xs">
+                  <History className="h-8 w-8 opacity-25 mx-auto mb-2 text-primary" />
+                  {ledgerRecords.length === 0 ? "No rent configuration adjustments logged yet." : `No entries match "${ledgerSearch}". Try a different identifier.`}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-border bg-slate-50/50">
+                        <th className="px-6 py-3 font-semibold text-text-muted">Log ID</th>
+                        <th className="px-6 py-3 font-semibold text-text-muted">Timestamp</th>
+                        <th className="px-6 py-3 font-semibold text-text-muted">Level</th>
+                        <th className="px-6 py-3 font-semibold text-text-muted">Identifier</th>
+                        <th className="px-6 py-3 font-semibold text-text-muted">Modification</th>
+                        <th className="px-6 py-3 font-semibold text-text-muted">Old Rate</th>
+                        <th className="px-6 py-3 font-semibold text-text-muted">New Rate</th>
+                        <th className="px-6 py-3 font-semibold text-text-muted">Authorized By</th>
+                        <th className="px-6 py-3 font-semibold text-text-muted">Effective Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/60">
+                      {filteredLedger.map((log) => {
+                        let badgeColor = "bg-blue-50 text-blue-700 border-blue-100";
+                        if (log.change_type === "Updated") badgeColor = "bg-amber-50 text-amber-700 border-amber-100";
+                        if (log.change_type === "Deleted") badgeColor = "bg-red-50 text-red-700 border-red-100";
+
+                        let typeColor = "bg-slate-50 text-slate-700 border-slate-200";
+                        if (log.entity_type === "Driver") typeColor = "bg-green-50 text-green-700 border-green-200";
+                        if (log.entity_type === "Vendor") typeColor = "bg-yellow-50 text-yellow-700 border-yellow-200";
+                        if (log.entity_type === "Vehicle") typeColor = "bg-purple-50 text-purple-700 border-purple-200";
+
+                        return (
+                          <tr key={log.id} className="hover:bg-slate-50/30 transition-colors">
+                            <td className="px-6 py-3.5 font-mono text-text-muted">#{log.id}</td>
+                            <td className="px-6 py-3.5 font-mono text-[10px] text-text-muted">
+                              {log.created_at ? new Date(log.created_at).toLocaleString("en-IN") : "—"}
+                            </td>
+                            <td className="px-6 py-3.5">
+                              <span className={`px-2 py-0.5 rounded border text-[10px] font-bold ${typeColor}`}>
+                                {log.entity_type}
+                              </span>
+                            </td>
+                            <td className="px-6 py-3.5 font-bold text-primary font-mono">{log.entity_id || "—"}</td>
+                            <td className="px-6 py-3.5">
+                              <span className={`px-2 py-0.5 rounded border text-[10px] font-bold ${badgeColor}`}>
+                                {log.change_type}
+                              </span>
+                            </td>
+                            <td className="px-6 py-3.5 font-mono text-text-muted">₹ {log.old_amount}</td>
+                            <td className="px-6 py-3.5 font-mono font-bold text-green">₹ {log.new_amount}</td>
+                            <td className="px-6 py-3.5 font-semibold text-text">{log.modified_by}</td>
+                            <td className="px-6 py-3.5 font-mono text-text-muted">{log.effective_date}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <div className="border-t border-border bg-slate-50/50 px-8 py-3.5 text-text-dim text-[11px] flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Info className="h-3.5 w-3.5 text-primary" />
+                  This log is compiled dynamically from rent adjustments and is locked for auditing compliance.
+                </span>
+                <span className="font-mono text-text-muted">Showing {filteredLedger.length} of {ledgerRecords.length} entries</span>
               </div>
             </div>
           </div>

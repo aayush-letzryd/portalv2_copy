@@ -433,18 +433,19 @@ export default function WorkshopsForm({
 
                 {/* Retrieve block */}
                 <div className="flex flex-col gap-2 items-start md:items-end">
-                  <div className="flex gap-2 w-full max-w-xs">
+                  <div className="relative flex w-full sm:w-72 items-center">
+                    <Search className="absolute left-3 h-4 w-4 text-white/60" />
                     <input
                       type="number"
                       placeholder="Edit existing ID..."
                       value={retrieveIdInput}
                       onChange={(e) => setRetrieveIdInput(e.target.value)}
-                      className="h-10 w-full rounded-lg bg-white/10 border border-white/15 px-3 text-sm text-white placeholder:text-white/40 outline-none focus:bg-white focus:text-primary transition-all"
+                      className="h-10 w-full rounded-l-xl border border-white/20 bg-white/10 pl-9 pr-3 text-sm text-white placeholder-white/50 outline-none focus:bg-white/20 focus:ring-2 focus:ring-white/20 transition-all"
                     />
                     <button
                       type="button"
                       onClick={handleRetrieveId}
-                      className="h-10 rounded-lg bg-green px-4 text-xs font-semibold text-white hover:bg-green/90 transition-colors tracking-wide cursor-pointer"
+                      className="h-10 rounded-r-xl border border-white/20 border-l-0 bg-white px-4 text-xs font-bold text-green hover:bg-slate-50 transition-colors cursor-pointer"
                     >
                       Retrieve
                     </button>
@@ -452,6 +453,19 @@ export default function WorkshopsForm({
                 </div>
               </div>
             </div>
+
+            {/* Edit Mode Banner */}
+            {editingId && (
+              <div className="rounded-2xl bg-yellow-50 px-6 py-3 border border-yellow-200 flex justify-between items-center mb-6">
+                <div className="flex items-center gap-2 text-yellow-800 text-sm font-semibold">
+                  <Edit className="h-4 w-4" />
+                  Editing Workshop Record #{editingId}
+                </div>
+                <button type="button" onClick={() => { resetForm(); setEditingId(null); }} className="text-xs text-yellow-700 hover:text-yellow-900 font-bold underline cursor-pointer">
+                  Cancel Edit
+                </button>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="rounded-2xl border border-border bg-white p-6 shadow-xs md:p-8 flex flex-col gap-8">
               

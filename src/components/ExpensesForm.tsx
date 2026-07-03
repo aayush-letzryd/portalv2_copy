@@ -406,6 +406,19 @@ export default function ExpensesForm({
                 </div>
               </div>
 
+              {/* Edit Mode Banner */}
+              {editingId && (
+                <div className="bg-yellow-50 px-8 py-3 border-b border-yellow-200 flex justify-between items-center">
+                  <div className="flex items-center gap-2 text-yellow-800 text-sm font-semibold">
+                    <Edit className="h-4 w-4" />
+                    Editing Expense Record #{editingId}
+                  </div>
+                  <button type="button" onClick={resetForm} className="text-xs text-yellow-700 hover:text-yellow-900 font-bold underline cursor-pointer">
+                    Cancel Edit
+                  </button>
+                </div>
+              )}
+
               {/* Form Content */}
               <form onSubmit={handleSubmit} className="p-8 space-y-10">
                 
@@ -587,7 +600,7 @@ export default function ExpensesForm({
                     </button>
                     <button 
                       type="submit"
-                      className="rounded-xl bg-green px-6 py-3 font-sans text-xs font-bold text-white hover:bg-green-hover transition-colors shadow-xs cursor-pointer"
+                      className="rounded-xl bg-primary px-6 py-3 font-sans text-sm font-bold text-white hover:bg-primary-hover shadow-sm transition-all cursor-pointer disabled:opacity-50"
                     >
                       {editingId ? "Save Changes" : "Submit Expense"}
                     </button>
@@ -727,8 +740,12 @@ export default function ExpensesForm({
                   <tbody className="divide-y divide-border bg-white">
                     {filteredRecords.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-6 py-12 text-center text-text-muted font-sans text-xs">
-                          No matching expense records found in the database.
+                        <td colSpan={6}>
+                          <div className="p-16 text-center">
+                            <IndianRupee className="h-12 w-12 text-border mx-auto mb-3" />
+                            <h3 className="font-sans text-sm font-bold text-text">No Expenses Found</h3>
+                            <p className="font-sans text-xs text-text-muted mt-1">Try adjusting your filters or log a new expense entry above.</p>
+                          </div>
                         </td>
                       </tr>
                     ) : (

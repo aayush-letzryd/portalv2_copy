@@ -407,18 +407,19 @@ export default function HubsParkingForm({
 
                 {/* Retrieve block */}
                 <div className="flex flex-col gap-2 items-start md:items-end">
-                  <div className="flex gap-2 w-full max-w-xs">
+                  <div className="relative flex w-full sm:w-72 items-center">
+                    <Search className="absolute left-3 h-4 w-4 text-white/60" />
                     <input
                       type="number"
                       placeholder="Edit existing ID..."
                       value={retrieveIdInput}
                       onChange={(e) => setRetrieveIdInput(e.target.value)}
-                      className="h-10 w-full rounded-lg bg-white/10 border border-white/15 px-3 text-sm text-white placeholder:text-white/40 outline-none focus:bg-white focus:text-primary transition-all"
+                      className="h-10 w-full rounded-l-xl border border-white/20 bg-white/10 pl-9 pr-3 text-sm text-white placeholder-white/50 outline-none focus:bg-white/20 focus:ring-2 focus:ring-white/20 transition-all"
                     />
                     <button
                       type="button"
                       onClick={handleRetrieveId}
-                      className="h-10 rounded-lg bg-green px-4 text-xs font-semibold text-white hover:bg-green/90 transition-colors tracking-wide cursor-pointer"
+                      className="h-10 rounded-r-xl border border-white/20 border-l-0 bg-white px-4 text-xs font-bold text-green hover:bg-slate-50 transition-colors cursor-pointer"
                     >
                       Retrieve
                     </button>
@@ -426,6 +427,19 @@ export default function HubsParkingForm({
                 </div>
               </div>
             </div>
+
+            {/* Edit Mode Banner */}
+            {editingId && (
+              <div className="rounded-2xl bg-yellow-50 px-6 py-3 border border-yellow-200 flex justify-between items-center mb-6">
+                <div className="flex items-center gap-2 text-yellow-800 text-sm font-semibold">
+                  <Edit className="h-4 w-4" />
+                  Editing Hub Record #{editingId}
+                </div>
+                <button type="button" onClick={() => { resetForm(); setEditingId(null); }} className="text-xs text-yellow-700 hover:text-yellow-900 font-bold underline cursor-pointer">
+                  Cancel Edit
+                </button>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="rounded-2xl border border-border bg-white p-6 shadow-xs md:p-8 flex flex-col gap-8">
               
@@ -437,22 +451,22 @@ export default function HubsParkingForm({
                 </h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-bold text-text mb-1">Hub Name *</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Hub Name *</label>
                     <input
                       type="text"
                       required
                       value={hubName}
                       onChange={(e) => setHubName(e.target.value)}
                       placeholder="e.g. Koramangala Parking Hub"
-                      className="w-full rounded-lg border border-border px-3 py-2 text-xs focus:border-primary focus:outline-hidden transition-colors"
+                      className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-text mb-1">City *</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">City *</label>
                     <select
                       value={cityName}
                       onChange={(e) => setCityName(e.target.value)}
-                      className="w-full rounded-lg border border-border px-3 py-2 text-xs focus:border-primary focus:outline-hidden bg-white transition-colors"
+                      className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                     >
                       <option value="Hyderabad">Hyderabad</option>
                       <option value="Bangalore">Bangalore</option>
@@ -462,25 +476,25 @@ export default function HubsParkingForm({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-text mb-1">Pin Code *</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Pin Code *</label>
                     <input
                       type="text"
                       required
                       value={pincode}
                       onChange={(e) => setPincode(e.target.value)}
                       placeholder="e.g. 560034"
-                      className="w-full rounded-lg border border-border px-3 py-2 text-xs focus:border-primary focus:outline-hidden transition-colors"
+                      className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-text mb-1">Full Address *</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Full Address *</label>
                     <textarea
                       required
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
                       placeholder="Full street address..."
                       rows={2}
-                      className="w-full rounded-lg border border-border px-3 py-2 text-xs focus:border-primary focus:outline-hidden transition-colors"
+                      className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                     />
                   </div>
                 </div>
@@ -494,11 +508,11 @@ export default function HubsParkingForm({
                 </h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-bold text-text mb-1">Facility Type *</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Facility Type *</label>
                     <select
                       value={facilityType}
                       onChange={(e) => setFacilityType(e.target.value)}
-                      className="w-full rounded-lg border border-border px-3 py-2 text-xs focus:border-primary focus:outline-hidden bg-white transition-colors"
+                      className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                     >
                       <option value="Open Parking">Open Parking</option>
                       <option value="Covered Parking">Covered Parking</option>
@@ -507,18 +521,18 @@ export default function HubsParkingForm({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-text mb-1">Total Parking Capacity (Cars) *</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Total Parking Capacity (Cars) *</label>
                     <input
                       type="number"
                       required
                       value={totalCapacity}
                       onChange={(e) => setTotalCapacity(e.target.value)}
                       placeholder="e.g. 45"
-                      className="w-full rounded-lg border border-border px-3 py-2 text-xs focus:border-primary focus:outline-hidden transition-colors"
+                      className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-text mb-1">EV Charging Available?</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">EV Charging Available?</label>
                     <div className="flex gap-4 mt-2">
                       {["Yes", "No"].map((choice) => (
                         <label key={choice} className="flex items-center gap-2 text-xs font-medium cursor-pointer">
@@ -536,7 +550,7 @@ export default function HubsParkingForm({
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-text mb-1">CCTV / Security Guard Active?</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">CCTV / Security Guard Active?</label>
                     <div className="flex gap-4 mt-2">
                       {["Yes", "No"].map((choice) => (
                         <label key={choice} className="flex items-center gap-2 text-xs font-medium cursor-pointer">
@@ -564,53 +578,53 @@ export default function HubsParkingForm({
                 </h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-bold text-text mb-1">Hub Manager Name</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Hub Manager Name</label>
                     <input
                       type="text"
                       value={hubManager}
                       onChange={(e) => setHubManager(e.target.value)}
                       placeholder="Manager full name..."
-                      className="w-full rounded-lg border border-border px-3 py-2 text-xs focus:border-primary focus:outline-hidden transition-colors"
+                      className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-text mb-1">Manager Phone Number</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Manager Phone Number</label>
                     <input
                       type="tel"
                       value={managerPhone}
                       onChange={(e) => setManagerPhone(e.target.value)}
                       placeholder="e.g. 9848022338"
-                      className="w-full rounded-lg border border-border px-3 py-2 text-xs focus:border-primary focus:outline-hidden transition-colors"
+                      className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-text mb-1">Operating Hours</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Operating Hours</label>
                     <input
                       type="text"
                       value={operatingHours}
                       onChange={(e) => setOperatingHours(e.target.value)}
                       placeholder="e.g. 24/7 or 8 AM - 8 PM"
-                      className="w-full rounded-lg border border-border px-3 py-2 text-xs focus:border-primary focus:outline-hidden transition-colors"
+                      className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-text mb-1">Contact Person (Optional)</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Contact Person (Optional)</label>
                     <input
                       type="text"
                       value={contactPerson}
                       onChange={(e) => setContactPerson(e.target.value)}
                       placeholder="Name of contact..."
-                      className="w-full rounded-lg border border-border px-3 py-2 text-xs focus:border-primary focus:outline-hidden transition-colors"
+                      className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-text mb-1">Designation (Optional)</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Designation (Optional)</label>
                     <input
                       type="text"
                       value={designation}
                       onChange={(e) => setDesignation(e.target.value)}
                       placeholder="e.g. Area Lead, Shift Manager"
-                      className="w-full rounded-lg border border-border px-3 py-2 text-xs focus:border-primary focus:outline-hidden transition-colors"
+                      className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                     />
                   </div>
                 </div>

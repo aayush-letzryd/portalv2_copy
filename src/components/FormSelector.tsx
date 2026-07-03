@@ -3,7 +3,7 @@ import { User } from "../types";
 
 interface FormSelectorProps {
   user: User;
-  onSelectForm: (form: "walkin" | "onboarding" | "operator_onboarding" | "adjustment" | "allocation" | "expenses" | "vehicle_onboarding" | "workshops" | "hubs_parking" | "rents" | "accident" | "inspection" | "users" | "vehicle_models" | "cities" | "roles" | "tickets" | "employees") => void;
+  onSelectForm: (form: "walkin" | "onboarding" | "operator_onboarding" | "adjustment" | "allocation" | "expenses" | "vehicle_onboarding" | "workshops" | "hubs_parking" | "rents" | "accident" | "inspection" | "users" | "vehicle_models" | "cities" | "roles" | "tickets" | "employees" | "maintenance" | "challans") => void;
   onLogout: () => void;
 }
 
@@ -26,6 +26,8 @@ const CARDS = [
   { key: "cities",             label: "Operating Cities",       sub: "Manage cities where LetzRyd operates",    icon: MapPin,        iconBg: "bg-sky-50",     iconColor: "text-sky-600",     hover: "hover:border-sky-500"    },
   { key: "roles",              label: "Roles & Permissions",    sub: "Control form access by user role",        icon: ShieldCheck,   iconBg: "bg-indigo-50",  iconColor: "text-indigo-600",  hover: "hover:border-indigo-500" },
   { key: "tickets",            label: "Tickets Desk",           sub: "Driver, Operator, Vendor & Internal issues", icon: TicketIcon, iconBg: "bg-rose-50",   iconColor: "text-rose-600",    hover: "hover:border-rose-500"   },
+  { key: "maintenance",        label: "Maintenance Desk",       sub: "Log vehicle servicing & workshop lifecycles", icon: Wrench,     iconBg: "bg-indigo-50",  iconColor: "text-indigo-600",  hover: "hover:border-indigo-500" },
+  { key: "challans",           label: "Traffic Challans",       sub: "Log fines, check disputes & track driver recovery", icon: AlertTriangle, iconBg: "bg-red-50", iconColor: "text-red-600",   hover: "hover:border-red-500"    },
 ] as const;
 
 export default function FormSelector({ user, onSelectForm, onLogout }: FormSelectorProps) {

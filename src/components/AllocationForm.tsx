@@ -1091,7 +1091,7 @@ export default function AllocationForm({
                     </button>
                     <button 
                       type="submit"
-                      className="rounded-xl bg-green px-6 py-3 font-sans text-xs font-bold text-white hover:bg-green-hover transition-colors shadow-xs cursor-pointer"
+                      className="rounded-xl bg-primary hover:bg-primary-hover px-6 py-3.5 font-sans text-sm font-bold text-white shadow-sm transition-all cursor-pointer disabled:opacity-50"
                     >
                       {editingId ? "Save Changes" : "Submit Allocation"}
                     </button>

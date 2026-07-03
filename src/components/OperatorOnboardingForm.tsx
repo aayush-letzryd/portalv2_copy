@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { 
   User, FileText, CheckCircle, 
-  ArrowLeft, Search, Trash2, Edit, Camera, 
+  ChevronLeft, Search, Trash2, Edit, Camera, 
   Upload, X, RefreshCw, Plus, UserCheck, Database, IndianRupee
 } from "lucide-react";
 import { OnboardingRecord, User as UserSession, CITIES } from "../types";
@@ -501,39 +501,37 @@ export default function OperatorOnboardingForm({
   return (
     <div className="min-h-screen flex flex-col bg-bg text-text">
       {/* HEADER */}
-      <header className="sticky top-0 z-50 bg-white border-b border-border shadow-xs">
-        <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-4">
+      <header className="sticky top-0 z-50 border-b border-border bg-white shadow-xs">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-3">
             <button 
-              onClick={onBackToSelector} 
-              className="flex items-center gap-2 rounded-full hover:bg-slate-100 p-2 text-text-muted transition-colors cursor-pointer"
+              type="button"
+              onClick={onBackToSelector}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-slate-100 hover:text-primary transition-all cursor-pointer"
+              title="Back to Form Selector"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ChevronLeft className="h-5 w-5" />
             </button>
-            <div className="h-6 w-px bg-border" />
-            
-            {/* Logo + Badge */}
-            <div className="flex items-center gap-3">
-              <img
-                src="https://letzryd.com/replica-assets/letzryd-long-png-logo-Aq2o3DNOw1i2kBMB-7ab04eaa76.png"
-                alt="LetzRyd logo"
-                className="h-7 w-auto object-contain"
-                referrerPolicy="no-referrer"
-              />
-              <span className="hidden sm:inline px-2 py-0.5 rounded border border-primary/20 bg-primary/5 text-primary text-[10px] font-extrabold tracking-widest uppercase">
-                Operator Onboarding
-              </span>
-            </div>
+            <img
+              src="https://letzryd.com/replica-assets/letzryd-long-png-logo-Aq2o3DNOw1i2kBMB-7ab04eaa76.png"
+              alt="LetzRyd logo"
+              className="h-8 w-auto object-contain"
+              referrerPolicy="no-referrer"
+            />
+            <span className="hidden h-5 border-l border-border sm:inline-block" />
+            <span className="hidden font-sans text-xs font-medium text-text-muted tracking-wider uppercase sm:inline-block">
+              Operator Onboarding
+            </span>
           </div>
 
-          {/* Tab Selection */}
-          <nav className="flex items-center gap-1.5 rounded-2xl bg-slate-100 p-1">
+          {/* Tab Navigation */}
+          <nav className="flex gap-2">
             <button 
               onClick={() => setActiveTab("form")}
               className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
                 activeTab === "form" 
                   ? "bg-primary text-white shadow-sm shadow-primary/20" 
-                  : "text-text-muted hover:bg-slate-200 hover:text-primary"
+                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
               }`}
             >
               <FileText className="h-4 w-4" />
@@ -544,7 +542,7 @@ export default function OperatorOnboardingForm({
               className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
                 activeTab === "registry" 
                   ? "bg-primary text-white shadow-sm shadow-primary/20" 
-                  : "text-text-muted hover:bg-slate-200 hover:text-primary"
+                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
               }`}
             >
               <Database className="h-4 w-4" />
@@ -558,9 +556,7 @@ export default function OperatorOnboardingForm({
               <span className="block text-[9px] font-bold text-text-dim tracking-wider uppercase">Current Time (IST)</span>
               <span className="font-mono text-xs font-extrabold text-green">{currentTime}</span>
             </div>
-            
             <span className="h-5 border-l border-border" />
-            
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white uppercase">
                 {initials}
@@ -570,10 +566,10 @@ export default function OperatorOnboardingForm({
                 <span className="font-mono text-[10px] text-text-muted mt-0.5 leading-none">{user.role || "Executive"}</span>
               </div>
             </div>
-
+            <span className="h-5 border-l border-border" />
             <button
               onClick={onLogout}
-              className="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-white px-3 font-sans text-xs font-medium text-text-muted hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors cursor-pointer"
+              className="flex h-8 items-center justify-center gap-1.5 rounded-lg border border-border bg-white px-2.5 font-sans text-xs font-medium text-text-muted hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors cursor-pointer"
             >
               Sign Out
             </button>
@@ -581,7 +577,7 @@ export default function OperatorOnboardingForm({
         </div>
       </header>
 
-      <main className="flex-grow mx-auto w-full max-w-[1400px] px-4 sm:px-6 py-8">
+      <main className="flex-grow mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         
         {activeTab === "form" && (
           <div className="max-w-4xl mx-auto">
