@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { 
-  Plus, Trash2, Search, ArrowLeft, RefreshCw, Car, Info, Settings
-} from "lucide-react";
+import { Plus, Trash2, Search, ArrowLeft, RefreshCw, Car, Info, Settings, ChevronLeft, FileText } from "lucide-react";
 import { User as UserSession } from "../types";
 
 interface VehicleModelsFormProps {

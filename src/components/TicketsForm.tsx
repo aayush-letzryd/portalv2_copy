@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  TicketIcon, ArrowLeft, RefreshCw, Plus, CheckCircle, Clock,
-  Search, Filter, ChevronDown, X, AlertCircle, Users, Building,
-  Wrench, MessageSquare
-} from "lucide-react";
+import { TicketIcon, ArrowLeft, RefreshCw, Plus, CheckCircle, Clock, Search, Filter, ChevronDown, X, AlertCircle, Users, Building, Wrench, MessageSquare, ChevronLeft, FileText } from "lucide-react";
 import { User as UserSession } from "../types";
 
 interface TicketsFormProps {

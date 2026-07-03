@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Users, ArrowLeft, RefreshCw, Plus, Trash2, Search,
-  Edit, X, CheckCircle, Info, Phone, Mail, Building,
-  MapPin, Calendar, BadgeCheck, UserCircle
-} from "lucide-react";
+import { Users, ArrowLeft, RefreshCw, Plus, Trash2, Search, Edit, X, CheckCircle, Info, Phone, Mail, Building, MapPin, Calendar, BadgeCheck, UserCircle, ChevronLeft, FileText } from "lucide-react";
 import { User as UserSession, CITIES } from "../types";
 
 interface EmployeesFormProps {

@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { 
-  Users, ArrowLeft, Trash2, Search, UserPlus, ShieldAlert,
-  Info, CheckCircle, RefreshCw, Key, Eye, EyeOff, Edit
-} from "lucide-react";
+import { Users, ArrowLeft, Trash2, Search, UserPlus, ShieldAlert, Info, CheckCircle, RefreshCw, Key, Eye, EyeOff, Edit, ChevronLeft, FileText, Plus } from "lucide-react";
 import { User as UserSession } from "../types";
 
 interface UsersFormProps {

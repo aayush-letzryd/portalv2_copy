@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { 
-  ShieldCheck, ArrowLeft, RefreshCw, Plus, Trash2, Shield, Info, Check, X
-} from "lucide-react";
+import { ShieldCheck, ArrowLeft, RefreshCw, Plus, Trash2, Shield, Info, Check, X, ChevronLeft, FileText } from "lucide-react";
 import { User as UserSession } from "../types";
 
 interface RolesPermissionsFormProps {
