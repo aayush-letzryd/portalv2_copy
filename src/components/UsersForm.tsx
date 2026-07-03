@@ -24,7 +24,7 @@ interface AppRole {
 
 export default function UsersForm({ 
   user, 
-  onBackToSelector, 
+  onBackToSelector,
   onLogout
 }: UsersFormProps) {
   const [activeTab, setActiveTab] = useState<"form" | "registry">("form");

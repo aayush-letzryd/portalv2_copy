@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Trash2, Search, ArrowLeft, RefreshCw, Car, Info, Settings, ChevronLeft, FileText } from "lucide-react";
+import { Plus, Trash2, Search, ArrowLeft, RefreshCw, Car, Info, Settings, ChevronLeft, FileText, Truck } from "lucide-react";
 import { User as UserSession } from "../types";
 
 interface VehicleModelsFormProps {
@@ -20,7 +20,7 @@ interface VehicleModel {
 
 export default function VehicleModelsForm({ 
   user, 
-  onBackToSelector, 
+  onBackToSelector,
   onLogout
 }: VehicleModelsFormProps) {
   const [activeTab, setActiveTab] = useState<"form" | "registry">("form");

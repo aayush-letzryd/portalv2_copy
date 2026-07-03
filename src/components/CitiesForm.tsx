@@ -16,7 +16,7 @@ interface OperatingCity {
 
 export default function CitiesForm({ 
   user, 
-  onBackToSelector, 
+  onBackToSelector,
   onLogout
 }: CitiesFormProps) {
   const [activeTab, setActiveTab] = useState<"form" | "registry">("form");

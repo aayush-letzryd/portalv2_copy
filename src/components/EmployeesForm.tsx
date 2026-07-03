@@ -54,6 +54,7 @@ const STATUS_STYLES: Record<string, string> = {
 export default function EmployeesForm({
   user,
   onBackToSelector,
+  onLogout,
 }: EmployeesFormProps) {
   const [activeTab, setActiveTab] = useState<"form" | "registry">("form");
   const [employees, setEmployees] = useState<Employee[]>([]);

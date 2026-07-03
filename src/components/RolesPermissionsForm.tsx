@@ -37,7 +37,7 @@ const AVAILABLE_PERMISSIONS = [
 
 export default function RolesPermissionsForm({ 
   user, 
-  onBackToSelector, 
+  onBackToSelector,
   onLogout
 }: RolesPermissionsFormProps) {
   const [activeTab, setActiveTab] = useState<"form" | "registry">("form");

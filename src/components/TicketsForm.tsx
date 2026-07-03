@@ -51,6 +51,7 @@ const SOURCE_COLORS: Record<string, string> = {
 export default function TicketsForm({
   user,
   onBackToSelector,
+  onLogout,
 }: TicketsFormProps) {
   const [activeTab, setActiveTab] = useState<"list" | "new">("list");
   const [tickets, setTickets] = useState<Ticket[]>([]);
