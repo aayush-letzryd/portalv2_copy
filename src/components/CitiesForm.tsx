@@ -339,7 +339,7 @@ export default function CitiesForm({
             </form>
           </div>
         ) : (
-          <div className="mx-auto max-w-lg rounded-2xl border border-border bg-white shadow-sm overflow-hidden">
+          <div className="mx-auto max-w-4xl rounded-2xl border border-border bg-white shadow-sm overflow-hidden">
             <div className="border-b border-border bg-slate-50/50 px-8 py-6">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
