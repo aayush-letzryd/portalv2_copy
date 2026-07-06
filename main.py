@@ -36,7 +36,7 @@ def get_user_for_log(request: Request) -> str:
     try:
         conn = postgreSQL_pool.getconn()
         cur = conn.cursor()
-        cur.execute("SELECT au.username, au.id FROM app_sessions s JOIN app_users au ON au.id = s.user_id WHERE s.token = %s;", (token,))
+        cur.execute("SELECT au.username, au.id FROM copy_app_sessions s JOIN copy_app_users au ON au.id = s.user_id WHERE s.token = %s;", (token,))
         row = cur.fetchone()
         if row:
             return f"@{row[0]} (ID: {row[1]})"
@@ -126,43 +126,43 @@ def startup_event():
     try:
         cur = conn.cursor()
 
-        # ── cities ──────────────────────────────────────
+        # ── copy_cities ──────────────────────────────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS cities (
+            CREATE TABLE IF NOT EXISTS copy_cities (
                 id   SERIAL PRIMARY KEY,
                 name VARCHAR(255) NOT NULL UNIQUE
             );
         """)
-        cur.execute("SELECT COUNT(*) FROM cities;")
+        cur.execute("SELECT COUNT(*) FROM copy_cities;")
         if cur.fetchone()[0] == 0:
             cur.execute("""
-                INSERT INTO cities (name) VALUES
+                INSERT INTO copy_cities (name) VALUES
                 ('Hyderabad'), ('Bangalore'), ('Mumbai'), ('Chennai'), ('Delhi')
                 ON CONFLICT (name) DO NOTHING;
             """)
             print("[OK] Cities seeded")
 
-        # ── users (executives / employees) ───────────────
+        # ── copy_users (executives / employees) ───────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS users (
+            CREATE TABLE IF NOT EXISTS copy_users (
                 id   SERIAL PRIMARY KEY,
                 name VARCHAR(255) NOT NULL
             );
         """)
-        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(255) DEFAULT 'Executive';")
-        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50);")
-        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255);")
-        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS company_email VARCHAR(255);")
-        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS department VARCHAR(255);")
-        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS city VARCHAR(255);")
-        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS joining_date VARCHAR(50);")
-        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS employee_id VARCHAR(100);")
-        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'Active';")
+        cur.execute("ALTER TABLE copy_users ADD COLUMN IF NOT EXISTS role VARCHAR(255) DEFAULT 'Executive';")
+        cur.execute("ALTER TABLE copy_users ADD COLUMN IF NOT EXISTS phone VARCHAR(50);")
+        cur.execute("ALTER TABLE copy_users ADD COLUMN IF NOT EXISTS email VARCHAR(255);")
+        cur.execute("ALTER TABLE copy_users ADD COLUMN IF NOT EXISTS company_email VARCHAR(255);")
+        cur.execute("ALTER TABLE copy_users ADD COLUMN IF NOT EXISTS department VARCHAR(255);")
+        cur.execute("ALTER TABLE copy_users ADD COLUMN IF NOT EXISTS city VARCHAR(255);")
+        cur.execute("ALTER TABLE copy_users ADD COLUMN IF NOT EXISTS joining_date VARCHAR(50);")
+        cur.execute("ALTER TABLE copy_users ADD COLUMN IF NOT EXISTS employee_id VARCHAR(100);")
+        cur.execute("ALTER TABLE copy_users ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'Active';")
 
-        cur.execute("SELECT COUNT(*) FROM users;")
+        cur.execute("SELECT COUNT(*) FROM copy_users;")
         if cur.fetchone()[0] == 0:
             cur.execute("""
-                INSERT INTO users (name, role) VALUES
+                INSERT INTO copy_users (name, role) VALUES
                 ('D Shiva',      'Driver Relations Manager'),
                 ('Arshad Khan',  'Onboarding Specialist'),
                 ('Priya Sharma', 'Partner Onboarding Lead'),
@@ -171,14 +171,14 @@ def startup_event():
             """)
             print("[OK] Executives seeded")
 
-        # ── walkins ──────────────────────────────────────
+        # ── copy_walkins ──────────────────────────────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS walkins (
+            CREATE TABLE IF NOT EXISTS copy_walkins (
                 id             SERIAL PRIMARY KEY,
                 visitor_type   VARCHAR(50),
                 event_date     VARCHAR(20),
                 city           VARCHAR(255),
-                executive_id   INTEGER REFERENCES users(id),
+                executive_id   INTEGER REFERENCES copy_users(id),
                 person_name    VARCHAR(255),
                 person_number  VARCHAR(50),
                 aadhaar_number VARCHAR(20),
@@ -197,11 +197,11 @@ def startup_event():
             "dl_image       TEXT",
             "created_at     TIMESTAMP DEFAULT NOW()",
         ]:
-            cur.execute(f"ALTER TABLE walkins ADD COLUMN IF NOT EXISTS {col};")
+            cur.execute(f"ALTER TABLE copy_walkins ADD COLUMN IF NOT EXISTS {col};")
 
-        # ── driver_onboarding ───────────────────────────
+        # ── copy_driver_onboarding ───────────────────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS driver_onboarding (
+            CREATE TABLE IF NOT EXISTS copy_driver_onboarding (
                 id SERIAL PRIMARY KEY,
                 driver_name VARCHAR(255),
                 phone_number VARCHAR(50),
@@ -226,19 +226,19 @@ def startup_event():
             );
         """)
 
-        # ── walkin_onboarding_links ──────────────────────
+        # ── copy_walkin_onboarding_links ──────────────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS walkin_onboarding_links (
+            CREATE TABLE IF NOT EXISTS copy_walkin_onboarding_links (
                 id SERIAL PRIMARY KEY,
-                walkin_id INTEGER REFERENCES walkins(id),
-                onboarding_id INTEGER REFERENCES driver_onboarding(id),
+                walkin_id INTEGER REFERENCES copy_walkins(id),
+                onboarding_id INTEGER REFERENCES copy_driver_onboarding(id),
                 created_at TIMESTAMP DEFAULT NOW()
             );
         """)
 
-        # ── form_onboarding ───────────────────────────
+        # ── copy_form_onboarding ───────────────────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS form_onboarding (
+            CREATE TABLE IF NOT EXISTS copy_form_onboarding (
                 id SERIAL PRIMARY KEY,
                 vendor_type VARCHAR(50),
                 driver_id VARCHAR(50),
@@ -278,11 +278,11 @@ def startup_event():
 
         # Add columns if migrating an existing table
         for col in ["vendor_type VARCHAR(50)", "driver_id VARCHAR(50)", "custom_rent_amount VARCHAR(50)"]:
-            cur.execute(f"ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS {col};")
+            cur.execute(f"ALTER TABLE copy_form_onboarding ADD COLUMN IF NOT EXISTS {col};")
 
-        # ── rents ───────────────────────────────────────
+        # ── copy_rents ───────────────────────────────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS rents (
+            CREATE TABLE IF NOT EXISTS copy_rents (
                 id SERIAL PRIMARY KEY,
                 level VARCHAR(50) DEFAULT 'model',
                 vehicle_model VARCHAR(100),
@@ -294,35 +294,35 @@ def startup_event():
                 created_at TIMESTAMP DEFAULT NOW()
             );
         """)
-        cur.execute("ALTER TABLE rents ADD COLUMN IF NOT EXISTS level VARCHAR(50) DEFAULT 'model';")
-        cur.execute("ALTER TABLE rents ADD COLUMN IF NOT EXISTS vehicle_number VARCHAR(100);")
+        cur.execute("ALTER TABLE copy_rents ADD COLUMN IF NOT EXISTS level VARCHAR(50) DEFAULT 'model';")
+        cur.execute("ALTER TABLE copy_rents ADD COLUMN IF NOT EXISTS vehicle_number VARCHAR(100);")
 
-        # ── walkin_form_links ──────────────────────
+        # ── copy_walkin_form_links ──────────────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS walkin_form_links (
+            CREATE TABLE IF NOT EXISTS copy_walkin_form_links (
                 id SERIAL PRIMARY KEY,
-                walkin_id INTEGER REFERENCES walkins(id),
-                onboarding_id INTEGER REFERENCES form_onboarding(id),
+                walkin_id INTEGER REFERENCES copy_walkins(id),
+                onboarding_id INTEGER REFERENCES copy_form_onboarding(id),
                 created_at TIMESTAMP DEFAULT NOW()
             );
         """)
 
         # Add operating_place & vendor & aadhaar photo fields gracefully
-        cur.execute("ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS operating_place VARCHAR(255);")
-        cur.execute("ALTER TABLE walkins ADD COLUMN IF NOT EXISTS operating_place VARCHAR(255);")
-        cur.execute("ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS vendor_name VARCHAR(255);")
-        cur.execute("ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS vendor_id VARCHAR(50);")
-        cur.execute("ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS aadhaar_card_photo TEXT;")
-        cur.execute("ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS father_name VARCHAR(255);")
-        cur.execute("ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS bank_name VARCHAR(255);")
-        cur.execute("ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS other_bank_name VARCHAR(255);")
-        cur.execute("ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS account_number VARCHAR(100);")
-        cur.execute("ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS ifsc_code VARCHAR(50);")
-        cur.execute("ALTER TABLE form_onboarding ADD COLUMN IF NOT EXISTS upi_id VARCHAR(100);")
+        cur.execute("ALTER TABLE copy_form_onboarding ADD COLUMN IF NOT EXISTS operating_place VARCHAR(255);")
+        cur.execute("ALTER TABLE copy_walkins ADD COLUMN IF NOT EXISTS operating_place VARCHAR(255);")
+        cur.execute("ALTER TABLE copy_form_onboarding ADD COLUMN IF NOT EXISTS vendor_name VARCHAR(255);")
+        cur.execute("ALTER TABLE copy_form_onboarding ADD COLUMN IF NOT EXISTS vendor_id VARCHAR(50);")
+        cur.execute("ALTER TABLE copy_form_onboarding ADD COLUMN IF NOT EXISTS aadhaar_card_photo TEXT;")
+        cur.execute("ALTER TABLE copy_form_onboarding ADD COLUMN IF NOT EXISTS father_name VARCHAR(255);")
+        cur.execute("ALTER TABLE copy_form_onboarding ADD COLUMN IF NOT EXISTS bank_name VARCHAR(255);")
+        cur.execute("ALTER TABLE copy_form_onboarding ADD COLUMN IF NOT EXISTS other_bank_name VARCHAR(255);")
+        cur.execute("ALTER TABLE copy_form_onboarding ADD COLUMN IF NOT EXISTS account_number VARCHAR(100);")
+        cur.execute("ALTER TABLE copy_form_onboarding ADD COLUMN IF NOT EXISTS ifsc_code VARCHAR(50);")
+        cur.execute("ALTER TABLE copy_form_onboarding ADD COLUMN IF NOT EXISTS upi_id VARCHAR(100);")
 
-        # ── partner_adjustment ───────────────────────────
+        # ── copy_partner_adjustment ───────────────────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS partner_adjustment (
+            CREATE TABLE IF NOT EXISTS copy_partner_adjustment (
                 id SERIAL PRIMARY KEY,
                 partner_name VARCHAR(255),
                 partner_code VARCHAR(100),
@@ -347,7 +347,7 @@ def startup_event():
             );
         """)
         
-        # Run migrations for partner_adjustment table columns
+        # Run migrations for copy_partner_adjustment table columns
         for col in [
             "driver_id VARCHAR(50)",
             "vehicle_number VARCHAR(100)",
@@ -361,14 +361,14 @@ def startup_event():
             "adjustment_nature VARCHAR(50)",
             "time_duration VARCHAR(50)"
         ]:
-            cur.execute(f"ALTER TABLE partner_adjustment ADD COLUMN IF NOT EXISTS {col};")
+            cur.execute(f"ALTER TABLE copy_partner_adjustment ADD COLUMN IF NOT EXISTS {col};")
 
-        cur.execute("ALTER TABLE rents ADD COLUMN IF NOT EXISTS vehicle_manufacturer VARCHAR(100);")
+        cur.execute("ALTER TABLE copy_rents ADD COLUMN IF NOT EXISTS vehicle_manufacturer VARCHAR(100);")
 
-        cur.execute("SELECT COUNT(*) FROM partner_adjustment;")
+        cur.execute("SELECT COUNT(*) FROM copy_partner_adjustment;")
         if cur.fetchone()[0] == 0:
             adj_sql = """
-                INSERT INTO partner_adjustment (
+                INSERT INTO copy_partner_adjustment (
                     partner_name, partner_code, driver_id, partner_number, vehicle_number, city_name, 
                     partner_type, adjustment_type, adjustment_date, enter_amount, 
                     remittance_towards, adjustment_related_to, remarks, first_level_approval_by, 
@@ -391,9 +391,9 @@ def startup_event():
                 cur.execute(adj_sql, r)
             print("[OK] Partner adjustments seeded")
 
-        # ── vehicle_allocation ───────────────────────────
+        # ── copy_vehicle_allocation ───────────────────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS vehicle_allocation (
+            CREATE TABLE IF NOT EXISTS copy_vehicle_allocation (
                 id SERIAL PRIMARY KEY,
                 allocation_date VARCHAR(50),
                 allocation_type VARCHAR(50),
@@ -414,7 +414,7 @@ def startup_event():
             );
         """)
         
-        # Run migrations for vehicle_allocation table columns
+        # Run migrations for copy_vehicle_allocation table columns
         for col in [
             "driver_plan VARCHAR(100)",
             "type_of_plan VARCHAR(100)",
@@ -424,12 +424,12 @@ def startup_event():
             "dropoff_remarks TEXT",
             "dropoff_photo TEXT"
         ]:
-            cur.execute(f"ALTER TABLE vehicle_allocation ADD COLUMN IF NOT EXISTS {col};")
+            cur.execute(f"ALTER TABLE copy_vehicle_allocation ADD COLUMN IF NOT EXISTS {col};")
 
-        cur.execute("SELECT COUNT(*) FROM vehicle_allocation;")
+        cur.execute("SELECT COUNT(*) FROM copy_vehicle_allocation;")
         if cur.fetchone()[0] == 0:
             alloc_sql = """
-                INSERT INTO vehicle_allocation (
+                INSERT INTO copy_vehicle_allocation (
                     allocation_date, allocation_type, city_name, driver_id, driver_name, 
                     driver_phone, driver_plan, type_of_plan, car_model, vehicle_number, 
                     old_vehicle_number, dropoff_odometer, dropoff_remarks
@@ -451,9 +451,9 @@ def startup_event():
                 cur.execute(alloc_sql, r)
             print("[OK] Vehicle allocations seeded")
 
-        # ── partner_expenses ───────────────────────────
+        # ── copy_partner_expenses ───────────────────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS partner_expenses (
+            CREATE TABLE IF NOT EXISTS copy_partner_expenses (
                 id SERIAL PRIMARY KEY,
                 expense_date VARCHAR(50),
                 driver_name VARCHAR(255),
@@ -467,7 +467,7 @@ def startup_event():
             );
         """)
         
-        # Run migrations for partner_expenses table columns
+        # Run migrations for copy_partner_expenses table columns
         for col in [
             "expense_date VARCHAR(50)",
             "driver_name VARCHAR(255)",
@@ -477,12 +477,12 @@ def startup_event():
             "amount_paid VARCHAR(50)",
             "reference_photo TEXT"
         ]:
-            cur.execute(f"ALTER TABLE partner_expenses ADD COLUMN IF NOT EXISTS {col};")
+            cur.execute(f"ALTER TABLE copy_partner_expenses ADD COLUMN IF NOT EXISTS {col};")
 
-        cur.execute("SELECT COUNT(*) FROM partner_expenses;")
+        cur.execute("SELECT COUNT(*) FROM copy_partner_expenses;")
         if cur.fetchone()[0] == 0:
             exp_sql = """
-                INSERT INTO partner_expenses (
+                INSERT INTO copy_partner_expenses (
                     expense_date, driver_name, phone_number, vehicle_number, 
                     expenses_type, amount_paid, reference_photo
                 ) VALUES (%s,%s,%s,%s,%s,%s,%s);
@@ -505,12 +505,12 @@ def startup_event():
 
 
         # Seed walk-ins if empty
-        cur.execute("SELECT COUNT(*) FROM walkins;")
+        cur.execute("SELECT COUNT(*) FROM copy_walkins;")
         if cur.fetchone()[0] == 0:
 
             # Seed sample Operator and Drivers
             cur.execute("""
-                INSERT INTO form_onboarding (
+                INSERT INTO copy_form_onboarding (
                     driver_name, phone_number, dob, city, operating_place, 
                     present_address, permanent_address, emergency_name, emergency_phone, 
                     dl_number, pan_number, aadhaar_number, pan_aadhaar_linked, 
@@ -523,7 +523,7 @@ def startup_event():
 
             # Seed drivers under OP-7788
             cur.execute("""
-                INSERT INTO form_onboarding (
+                INSERT INTO copy_form_onboarding (
                     driver_name, phone_number, dl_number, custom_rent_amount, driver_id,
                     vendor_name, vendor_id, vendor_type,
                     whatsapp_number, dob, city, present_address, permanent_address, 
@@ -535,7 +535,7 @@ def startup_event():
             """)
             
             cur.execute("""
-                INSERT INTO form_onboarding (
+                INSERT INTO copy_form_onboarding (
                     driver_name, phone_number, dl_number, custom_rent_amount, driver_id,
                     vendor_name, vendor_id, vendor_type,
                     whatsapp_number, dob, city, present_address, permanent_address, 
@@ -546,11 +546,11 @@ def startup_event():
                           'Satish Babu', '9876543211', 'ABCDE9876B', '987654321099', 'Satish Babu');
             """)
 
-            cur.execute("SELECT id, name FROM cities ORDER BY id;")
+            cur.execute("SELECT id, name FROM copy_cities ORDER BY id;")
             city_map = {n: i for i, n in cur.fetchall()}
             
             w_sql = """
-                INSERT INTO walkins (visitor_type, event_date, city, person_name, person_number, dl_number, visiting_reason, joined_status, executive_name, executive_id)
+                INSERT INTO copy_walkins (visitor_type, event_date, city, person_name, person_number, dl_number, visiting_reason, joined_status, executive_name, executive_id)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id;
             """
             cur.execute(w_sql, ("Operator", "2026-06-24", "Mumbai", "Deepak Mehta", "+91 98001 55667", "MH01 20100098765", "Enquiry", "Not Interested", "Neha Sharma", 18))
@@ -559,10 +559,10 @@ def startup_event():
             cur.execute(w_sql, ("Operator", "2026-06-26", "Hyderabad", "Kavitha Nair", "+91 90123 45678", "TS06 20181234567", "Enquiry", "Onboarded", "Ayush Mahendru", 13))
 
         # Clean seed 10 onboarding records if empty or < 5
-        cur.execute("SELECT COUNT(*) FROM form_onboarding;")
+        cur.execute("SELECT COUNT(*) FROM copy_form_onboarding;")
         if cur.fetchone()[0] < 5:
-            cur.execute("DELETE FROM walkin_form_links;")
-            cur.execute("DELETE FROM form_onboarding;")
+            cur.execute("DELETE FROM copy_walkin_form_links;")
+            cur.execute("DELETE FROM copy_form_onboarding;")
             
             onboarding_records = [
                 ("Kavitha Nair", "9012345678", "1992-05-15", "Hyderabad", "Banjara Hills", "123 Street, Hyderabad", "123 Street, Hyderabad", "Rahul Nair", "9876543210", "TS0620181234567", "ABCDE1234F", "123456789012", "Yes", "FastFleet Logistics", "V-9901", "Gopal Nair"),
@@ -579,7 +579,7 @@ def startup_event():
             
             for item in onboarding_records:
                 cur.execute("""
-                    INSERT INTO form_onboarding (
+                    INSERT INTO copy_form_onboarding (
                         driver_name, phone_number, dob, city, operating_place, 
                         present_address, permanent_address, emergency_name, emergency_phone, 
                         dl_number, pan_number, aadhaar_number, pan_aadhaar_linked, vendor_name, vendor_id, father_name, vendor_type
@@ -588,16 +588,16 @@ def startup_event():
                 onb_id = cur.fetchone()[0]
                 
                 # Link this onboarding record to a walkin if the name matches
-                cur.execute("SELECT id FROM walkins WHERE LOWER(person_name) = LOWER(%s) LIMIT 1;", (item[0],))
+                cur.execute("SELECT id FROM copy_walkins WHERE LOWER(person_name) = LOWER(%s) LIMIT 1;", (item[0],))
                 walkin_row = cur.fetchone()
                 if walkin_row:
                     walkin_id = walkin_row[0]
-                    cur.execute("INSERT INTO walkin_form_links (walkin_id, onboarding_id) VALUES (%s, %s);", (walkin_id, onb_id))
-                    cur.execute("UPDATE walkins SET joined_status = 'Onboarded' WHERE id = %s;", (walkin_id,))
+                    cur.execute("INSERT INTO copy_walkin_form_links (walkin_id, onboarding_id) VALUES (%s, %s);", (walkin_id, onb_id))
+                    cur.execute("UPDATE copy_walkins SET joined_status = 'Onboarded' WHERE id = %s;", (walkin_id,))
 
             # Seed sample Operator and Drivers
             cur.execute("""
-                INSERT INTO form_onboarding (
+                INSERT INTO copy_form_onboarding (
                     driver_name, phone_number, dob, city, operating_place, 
                     present_address, permanent_address, emergency_name, emergency_phone, 
                     dl_number, pan_number, aadhaar_number, pan_aadhaar_linked, 
@@ -610,7 +610,7 @@ def startup_event():
 
             # Seed drivers under OP-7788
             cur.execute("""
-                INSERT INTO form_onboarding (
+                INSERT INTO copy_form_onboarding (
                     driver_name, phone_number, dl_number, custom_rent_amount, driver_id,
                     vendor_name, vendor_id, vendor_type,
                     whatsapp_number, dob, city, present_address, permanent_address, 
@@ -622,7 +622,7 @@ def startup_event():
             """)
             
             cur.execute("""
-                INSERT INTO form_onboarding (
+                INSERT INTO copy_form_onboarding (
                     driver_name, phone_number, dl_number, custom_rent_amount, driver_id,
                     vendor_name, vendor_id, vendor_type,
                     whatsapp_number, dob, city, present_address, permanent_address, 
@@ -633,10 +633,10 @@ def startup_event():
                           'Satish Babu', '9876543211', 'ABCDE9876B', '987654321099', 'Satish Babu');
             """)
 
-            cur.execute("SELECT id, name FROM cities ORDER BY id;")
+            cur.execute("SELECT id, name FROM copy_cities ORDER BY id;")
             city_map = {n: i for i, n in cur.fetchall()}
 
-            cur.execute("SELECT id, name FROM users ORDER BY id;")
+            cur.execute("SELECT id, name FROM copy_users ORDER BY id;")
             user_map = {n: i for i, n in cur.fetchall()}
 
             hyd = str(city_map.get("Hyderabad", 1))
@@ -670,7 +670,7 @@ def startup_event():
             ]
 
             cur.executemany("""
-                INSERT INTO walkins
+                INSERT INTO copy_walkins
                   (visitor_type, event_date, city, executive_id, person_name,
                    person_number, aadhaar_number, dl_number, visiting_reason,
                    joined_status, remarks)
@@ -701,27 +701,27 @@ def startup_event():
             );
         """)
 
-        # ── app_users (login accounts) ───────────────────
+        # ── copy_app_users (login accounts) ───────────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS app_users (
+            CREATE TABLE IF NOT EXISTS copy_app_users (
                 id           SERIAL PRIMARY KEY,
                 username     VARCHAR(100) NOT NULL UNIQUE,
                 password_hash VARCHAR(255) NOT NULL,
-                executive_id INTEGER REFERENCES users(id),
+                executive_id INTEGER REFERENCES copy_users(id),
                 role_id      INTEGER REFERENCES app_roles(id),
                 created_at   TIMESTAMP DEFAULT NOW()
             );
         """)
-        cur.execute("ALTER TABLE app_users ADD COLUMN IF NOT EXISTS raw_password VARCHAR(255);")
-        cur.execute("ALTER TABLE app_users ADD COLUMN IF NOT EXISTS role_id INTEGER REFERENCES app_roles(id);")
-        cur.execute("ALTER TABLE app_users ADD COLUMN IF NOT EXISTS employee_id VARCHAR(100);")
-        cur.execute("ALTER TABLE app_users ADD COLUMN IF NOT EXISTS email VARCHAR(255);")
-        cur.execute("UPDATE app_users SET raw_password = 'letzryd123' WHERE raw_password IS NULL;")
+        cur.execute("ALTER TABLE copy_app_users ADD COLUMN IF NOT EXISTS raw_password VARCHAR(255);")
+        cur.execute("ALTER TABLE copy_app_users ADD COLUMN IF NOT EXISTS role_id INTEGER REFERENCES app_roles(id);")
+        cur.execute("ALTER TABLE copy_app_users ADD COLUMN IF NOT EXISTS employee_id VARCHAR(100);")
+        cur.execute("ALTER TABLE copy_app_users ADD COLUMN IF NOT EXISTS email VARCHAR(255);")
+        cur.execute("UPDATE copy_app_users SET raw_password = 'letzryd123' WHERE raw_password IS NULL;")
         
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS app_sessions (
+            CREATE TABLE IF NOT EXISTS copy_app_sessions (
                 token        VARCHAR(255) PRIMARY KEY,
-                user_id      INTEGER REFERENCES app_users(id),
+                user_id      INTEGER REFERENCES copy_app_users(id),
                 created_at   TIMESTAMP DEFAULT NOW()
             );
         """)
@@ -736,10 +736,10 @@ def startup_event():
             r = cur.fetchone()
             admin_role_id = r[0] if r else None
 
-        # Seed login accounts — only if app_users is empty
-        cur.execute("SELECT COUNT(*) FROM app_users;")
+        # Seed login accounts — only if copy_app_users is empty
+        cur.execute("SELECT COUNT(*) FROM copy_app_users;")
         if cur.fetchone()[0] == 0:
-            cur.execute("SELECT id, name FROM users ORDER BY id;")
+            cur.execute("SELECT id, name FROM copy_users ORDER BY id;")
             exec_rows = cur.fetchall()
             exec_map = {name: uid for uid, name in exec_rows}
 
@@ -752,14 +752,14 @@ def startup_event():
                 ("snehareddy",   default_password_hash, exec_map.get("Sneha Reddy"), 'letzryd123', admin_role_id),
             ]
             cur.executemany(
-                "INSERT INTO app_users (username, password_hash, executive_id, raw_password, role_id) VALUES (%s,%s,%s,%s,%s);",
+                "INSERT INTO copy_app_users (username, password_hash, executive_id, raw_password, role_id) VALUES (%s,%s,%s,%s,%s);",
                 login_accounts
             )
             print("[OK] Login accounts seeded (password: letzryd123)")
 
-        # ── vehicle_models ─────────────────────────────────
+        # ── copy_vehicle_models ─────────────────────────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS vehicle_models (
+            CREATE TABLE IF NOT EXISTS copy_vehicle_models (
                 id         SERIAL PRIMARY KEY,
                 brand      VARCHAR(255) NOT NULL,
                 model_name VARCHAR(255) NOT NULL,
@@ -771,7 +771,7 @@ def startup_event():
         """)
         
         # Seed vehicle models if table is empty
-        cur.execute("SELECT COUNT(*) FROM vehicle_models;")
+        cur.execute("SELECT COUNT(*) FROM copy_vehicle_models;")
         if cur.fetchone()[0] == 0:
             models_to_seed = [
                 ("Maruti Suzuki", "WagonR", "VXI", "CNG", 2023),
@@ -782,14 +782,14 @@ def startup_event():
                 ("Hyundai", "Grand i10", "Sportz", "Petrol", 2022)
             ]
             cur.executemany(
-                "INSERT INTO vehicle_models (brand, model_name, variant, fuel_type, make_year) VALUES (%s,%s,%s,%s,%s);",
+                "INSERT INTO copy_vehicle_models (brand, model_name, variant, fuel_type, make_year) VALUES (%s,%s,%s,%s,%s);",
                 models_to_seed
             )
             print("[OK] Vehicle models seeded")
 
-        # ── operating_cities ───────────────────────────────
+        # ── copy_operating_cities ───────────────────────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS operating_cities (
+            CREATE TABLE IF NOT EXISTS copy_operating_cities (
                 id         SERIAL PRIMARY KEY,
                 name       VARCHAR(255) UNIQUE NOT NULL,
                 state      VARCHAR(255) NOT NULL,
@@ -798,8 +798,8 @@ def startup_event():
             );
         """)
 
-        # Seed cities if table is empty
-        cur.execute("SELECT COUNT(*) FROM operating_cities;")
+        # Seed copy_cities if table is empty
+        cur.execute("SELECT COUNT(*) FROM copy_operating_cities;")
         if cur.fetchone()[0] == 0:
             cities_to_seed = [
                 ("Hyderabad", "Telangana", "Active"),
@@ -807,36 +807,36 @@ def startup_event():
                 ("Mumbai", "Maharashtra", "Active")
             ]
             cur.executemany(
-                "INSERT INTO operating_cities (name, state, status) VALUES (%s,%s,%s);",
+                "INSERT INTO copy_operating_cities (name, state, status) VALUES (%s,%s,%s);",
                 cities_to_seed
             )
-            print("[OK] Operating cities seeded")
+            print("[OK] Operating copy_cities seeded")
 
-        # ── tickets ───────────────────────────────────────
+        # ── copy_tickets ───────────────────────────────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS tickets (
+            CREATE TABLE IF NOT EXISTS copy_tickets (
                 id SERIAL PRIMARY KEY,
                 title VARCHAR(255) NOT NULL,
                 description TEXT NOT NULL,
                 source VARCHAR(50),
                 status VARCHAR(50) DEFAULT 'Open',
                 created_by_name VARCHAR(255),
-                assigned_to INTEGER REFERENCES app_users(id),
+                assigned_to INTEGER REFERENCES copy_app_users(id),
                 created_at TIMESTAMP DEFAULT NOW(),
                 resolved_at TIMESTAMP,
                 resolution_notes TEXT
             );
         """)
-        cur.execute("ALTER TABLE tickets ADD COLUMN IF NOT EXISTS assigned_to INTEGER REFERENCES app_users(id);")
+        cur.execute("ALTER TABLE copy_tickets ADD COLUMN IF NOT EXISTS assigned_to INTEGER REFERENCES copy_app_users(id);")
 
         # ── Drop existing tables for demo schema changes ──────
-        cur.execute("DROP TABLE IF EXISTS vehicle_onboarding CASCADE;")
-        cur.execute("DROP TABLE IF EXISTS workshop_vendors CASCADE;")
-        cur.execute("DROP TABLE IF EXISTS hubs_parking CASCADE;")
+        cur.execute("DROP TABLE IF EXISTS copy_vehicle_onboarding CASCADE;")
+        cur.execute("DROP TABLE IF EXISTS copy_workshop_vendors CASCADE;")
+        cur.execute("DROP TABLE IF EXISTS copy_hubs_parking CASCADE;")
 
-        # ── vehicle_onboarding ─────────────────────────────
+        # ── copy_vehicle_onboarding ─────────────────────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS vehicle_onboarding (
+            CREATE TABLE IF NOT EXISTS copy_vehicle_onboarding (
                 id SERIAL PRIMARY KEY,
                 vehicle_number VARCHAR(100),
                 letzryd_unique_no VARCHAR(100),
@@ -888,10 +888,10 @@ def startup_event():
                 created_at TIMESTAMP DEFAULT NOW()
             );
         """)
-        cur.execute("SELECT COUNT(*) FROM vehicle_onboarding;")
+        cur.execute("SELECT COUNT(*) FROM copy_vehicle_onboarding;")
         if cur.fetchone()[0] == 0:
             v_sql = """
-                INSERT INTO vehicle_onboarding (
+                INSERT INTO copy_vehicle_onboarding (
                     vehicle_number, letzryd_unique_no, city_name, model, received_allocated, delivery_month,
                     registration_date, rto_tax_validity, permit_validity, fitness_validity, pollution_validity, insurance_validity,
                     kms_reading, tracking_device_vendor, tracking_device_type, cng_installed, jack, jack_rod, spanner,
@@ -907,9 +907,9 @@ def startup_event():
                 cur.execute(v_sql, r)
             print("[OK] Vehicles onboarding seeded")
 
-        # ── workshop_vendors ───────────────────────────────
+        # ── copy_workshop_vendors ───────────────────────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS workshop_vendors (
+            CREATE TABLE IF NOT EXISTS copy_workshop_vendors (
                 id SERIAL PRIMARY KEY,
                 vendor_name VARCHAR(255),
                 workshop_type VARCHAR(100),
@@ -934,10 +934,10 @@ def startup_event():
                 created_at TIMESTAMP DEFAULT NOW()
             );
         """)
-        cur.execute("SELECT COUNT(*) FROM workshop_vendors;")
+        cur.execute("SELECT COUNT(*) FROM copy_workshop_vendors;")
         if cur.fetchone()[0] == 0:
             ws_sql = """
-                INSERT INTO workshop_vendors (
+                INSERT INTO copy_workshop_vendors (
                     vendor_name, workshop_type, city_name, address, gst_number,
                     contact_person, mobile_number, email_id, pan_card, bank_name,
                     account_number, ifsc_code, workshop_status, contact_person_2,
@@ -953,9 +953,9 @@ def startup_event():
                 cur.execute(ws_sql, r)
             print("[OK] Workshop vendors seeded")
 
-        # ── hubs_parking ──────────────────────────────────
+        # ── copy_hubs_parking ──────────────────────────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS hubs_parking (
+            CREATE TABLE IF NOT EXISTS copy_hubs_parking (
                 id SERIAL PRIMARY KEY,
                 hub_name VARCHAR(255),
                 city_name VARCHAR(100),
@@ -975,10 +975,10 @@ def startup_event():
                 created_at TIMESTAMP DEFAULT NOW()
             );
         """)
-        cur.execute("SELECT COUNT(*) FROM hubs_parking;")
+        cur.execute("SELECT COUNT(*) FROM copy_hubs_parking;")
         if cur.fetchone()[0] == 0:
             hub_sql = """
-                INSERT INTO hubs_parking (
+                INSERT INTO copy_hubs_parking (
                     hub_name, city_name, address, pincode, facility_type,
                     total_capacity, ev_charging, security_cctv, hub_manager,
                     manager_phone, operating_hours, contact_person, designation
@@ -994,10 +994,10 @@ def startup_event():
             print("[OK] Hubs and parking seeded")
 
         # ── Seed operator onboarding records ─────────────
-        cur.execute("SELECT COUNT(*) FROM form_onboarding WHERE vendor_type = 'Operator';")
+        cur.execute("SELECT COUNT(*) FROM copy_form_onboarding WHERE vendor_type = 'Operator';")
         if cur.fetchone()[0] == 0:
             op_sql = """
-                INSERT INTO form_onboarding (
+                INSERT INTO copy_form_onboarding (
                     driver_name, phone_number, whatsapp_number, dob, city, operating_place,
                     present_address, permanent_address, emergency_name, emergency_phone,
                     pan_number, aadhaar_number, vendor_name, vendor_id, vendor_type,
@@ -1026,10 +1026,10 @@ def startup_event():
             print("[OK] Operator onboarding records seeded")
 
         # ── Seed rent plans ──────────────────────────────
-        cur.execute("SELECT COUNT(*) FROM rents;")
+        cur.execute("SELECT COUNT(*) FROM copy_rents;")
         if cur.fetchone()[0] == 0:
             rent_sql = """
-                INSERT INTO rents (level, vehicle_model, vehicle_number, vehicle_age, vendor_id, driver_id, rent_amount)
+                INSERT INTO copy_rents (level, vehicle_model, vehicle_number, vehicle_age, vendor_id, driver_id, rent_amount)
                 VALUES (%s, %s, %s, %s, %s, %s, %s);
             """
             rent_records = [
@@ -1058,9 +1058,9 @@ def startup_event():
                 cur.execute(rent_sql, r)
             print("[OK] Rent plans seeded")
 
-        # ── accidents_registry ───────────────────────────
+        # ── copy_accidents_registry ───────────────────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS accidents_registry (
+            CREATE TABLE IF NOT EXISTS copy_accidents_registry (
                 id SERIAL PRIMARY KEY,
                 vehicle_number VARCHAR(100),
                 vendor_id VARCHAR(100),
@@ -1094,10 +1094,10 @@ def startup_event():
         """)
         
         # Seed 5 records if empty
-        cur.execute("SELECT COUNT(*) FROM accidents_registry;")
+        cur.execute("SELECT COUNT(*) FROM copy_accidents_registry;")
         if cur.fetchone()[0] == 0:
             acc_sql = """
-                INSERT INTO accidents_registry (
+                INSERT INTO copy_accidents_registry (
                     vehicle_number, vendor_id, vendor_name, city_name, date_of_accident, time_of_accident, place_of_accident, vehicle_status,
                     driver_id, driver_name, no_of_persons, third_party_involvement, fir_filed,
                     accident_reason, accident_inspection, insurance_status, repair_cost, toeing_cost, challan_amount, fine_amount, comments
@@ -1114,9 +1114,9 @@ def startup_event():
                 cur.execute(acc_sql, r)
             print("[OK] Accident records seeded")
 
-        # ── inspections ───────────────────────────
+        # ── copy_inspections ───────────────────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS inspections (
+            CREATE TABLE IF NOT EXISTS copy_inspections (
                 id SERIAL PRIMARY KEY,
                 vehicle_number VARCHAR(100),
                 inspection_date VARCHAR(50),
@@ -1157,14 +1157,14 @@ def startup_event():
         ]
         for col in new_cols:
             try:
-                cur.execute(f"ALTER TABLE inspections ADD COLUMN IF NOT EXISTS {col} TEXT;")
+                cur.execute(f"ALTER TABLE copy_inspections ADD COLUMN IF NOT EXISTS {col} TEXT;")
             except Exception as e:
-                print(f"[Migration Warning] Failed to alter inspections column {col}: {e}")
+                print(f"[Migration Warning] Failed to alter copy_inspections column {col}: {e}")
 
-        cur.execute("SELECT COUNT(*) FROM inspections;")
+        cur.execute("SELECT COUNT(*) FROM copy_inspections;")
         if cur.fetchone()[0] == 0:
             insp_sql = """
-                INSERT INTO inspections (
+                INSERT INTO copy_inspections (
                     vehicle_number, inspection_date, odometer_reading, jack, jack_rod, spanner, 
                     parking_triangle, fire_extinguishers, seat_cover, floor_carpet, remarks
                 ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
@@ -1179,9 +1179,9 @@ def startup_event():
                 cur.execute(insp_sql, r)
             print("[OK] Inspections seeded")
 
-        # ── maintenance_registry ───────────────────────────
+        # ── copy_maintenance_registry ───────────────────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS maintenance_registry (
+            CREATE TABLE IF NOT EXISTS copy_maintenance_registry (
                 id SERIAL PRIMARY KEY,
                 vehicle_number VARCHAR(100),
                 city_name VARCHAR(100),
@@ -1248,9 +1248,9 @@ def startup_event():
                 created_at TIMESTAMP DEFAULT NOW()
             );
         """)
-        cur.execute("ALTER TABLE maintenance_registry ADD COLUMN IF NOT EXISTS invoices TEXT;")
-        cur.execute("ALTER TABLE maintenance_registry ADD COLUMN IF NOT EXISTS maintenance_steps TEXT;")
-        cur.execute("SELECT COUNT(*) FROM maintenance_registry;")
+        cur.execute("ALTER TABLE copy_maintenance_registry ADD COLUMN IF NOT EXISTS invoices TEXT;")
+        cur.execute("ALTER TABLE copy_maintenance_registry ADD COLUMN IF NOT EXISTS maintenance_steps TEXT;")
+        cur.execute("SELECT COUNT(*) FROM copy_maintenance_registry;")
         if cur.fetchone()[0] == 0:
             maint_records = [
                 (2001, "TS09 EA 9999", "Hyderabad", "Tata Tigor EV", "18400", "General Service", "Hitech City, HYD", "2026-06-25T16:20", "", "LetzRyd Direct Hub", "2026-06-25", "2026-06-25", "3500", "No", "", "", "Rohan Verma", "2026-06-25", "Delivered", "2026-06-25", "Servicing completed successfully.", "2026-06-25", "2026-06-25", "Completed", "0", "Completed", "INV-1001", "2026-06-25", "3500", "0", "3500", "Paid", "UPI", "UTR11223344", "Settled", "Available", "Available", "Available", "Available", "Available", "Available", "Available", "Available", "Available", "2", "Good", "Good", "Good", "Good"),
@@ -1260,7 +1260,7 @@ def startup_event():
                 (2005, "TS09 EA 1111", "Bangalore", "Tata Tigor EV", "12500", "General Service", "Koramangala, BLR", "2026-07-03T10:30", "AC cooling issue", "ZoomRx Garage", "2026-07-03", "2026-07-04", "4500", "No", "", "", "Arshad Khan", "2026-07-03", "Repairing", "2026-07-03", "AC gas recharge in progress.", "", "", "", "", "Pending", "", "", "", "", "", "Pending", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
             ]
             maint_sql = """
-                INSERT INTO maintenance_registry (
+                INSERT INTO copy_maintenance_registry (
                     id, vehicle_number, city_name, model, vehicle_k_m_s, repair_type, vehicle_location, vehicle_in_date, initial_remarks,
                     workshop_name, allocation_date, estimated_delivery_date, estimated_amount, insurance_claimed, claim_number, insurance_brokerage, approved_by, approval_date,
                     maintenance_status, vehicle_status_date, daily_vehicle_remarks, rfd_date, delivered_date, final_status, tat, pdi_status,
@@ -1274,9 +1274,9 @@ def startup_event():
             cur.execute("SELECT setval('maintenance_registry_id_seq', 2005, true);")
             print("[OK] Maintenance registry seeded")
 
-        # ── rent_ledger ──────────────────────────────────
+        # ── copy_rent_ledger ──────────────────────────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS rent_ledger (
+            CREATE TABLE IF NOT EXISTS copy_rent_ledger (
                 id SERIAL PRIMARY KEY,
                 entity_type VARCHAR(50),
                 entity_id VARCHAR(100),
@@ -1289,7 +1289,7 @@ def startup_event():
             );
         """)
 
-        cur.execute("SELECT COUNT(*) FROM rent_ledger;")
+        cur.execute("SELECT COUNT(*) FROM copy_rent_ledger;")
         if cur.fetchone()[0] == 0:
             ledger_seed = [
                 ("Model",   "Tata Tigor EV",   "Created", 0,    900,  "Rohan Verma",  "2026-05-01"),
@@ -1305,14 +1305,14 @@ def startup_event():
             ]
             for lr in ledger_seed:
                 cur.execute("""
-                    INSERT INTO rent_ledger (entity_type, entity_id, change_type, old_amount, new_amount, modified_by, effective_date)
+                    INSERT INTO copy_rent_ledger (entity_type, entity_id, change_type, old_amount, new_amount, modified_by, effective_date)
                     VALUES (%s, %s, %s, %s, %s, %s, %s);
                 """, lr)
             print("[OK] Rent ledger seeded")
 
-        # ── traffic_challans ─────────────────────────────
+        # ── copy_traffic_challans ─────────────────────────────
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS traffic_challans (
+            CREATE TABLE IF NOT EXISTS copy_traffic_challans (
                 id SERIAL PRIMARY KEY,
                 challan_number VARCHAR(100) NOT NULL UNIQUE,
                 vehicle_number VARCHAR(100) NOT NULL,
@@ -1330,8 +1330,8 @@ def startup_event():
             );
         """)
         # Add internal_fine_amount if it doesn't exist (for already-created tables)
-        cur.execute("ALTER TABLE traffic_challans ADD COLUMN IF NOT EXISTS internal_fine_amount INTEGER DEFAULT 0;")
-        cur.execute("SELECT COUNT(*) FROM traffic_challans;")
+        cur.execute("ALTER TABLE copy_traffic_challans ADD COLUMN IF NOT EXISTS internal_fine_amount INTEGER DEFAULT 0;")
+        cur.execute("SELECT COUNT(*) FROM copy_traffic_challans;")
         if cur.fetchone()[0] == 0:
             challan_records = [
                 ("CHL-8822912", "TS09 EA 9999",  "DR-9001", "Suresh Kumar",  "2026-07-01", "Gachibowli X Roads, Hyderabad",      500,  "Pending",   0,   "Over-speeding violation caught by speed camera."),
@@ -1344,7 +1344,7 @@ def startup_event():
             ]
             for cr in challan_records:
                 cur.execute("""
-                    INSERT INTO traffic_challans (challan_number, vehicle_number, driver_id, driver_name, violation_date, violation_location, challan_amount, recovery_status, recovered_amount, remarks)
+                    INSERT INTO copy_traffic_challans (challan_number, vehicle_number, driver_id, driver_name, violation_date, violation_location, challan_amount, recovery_status, recovered_amount, remarks)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
                 """, cr)
             print("[OK] Traffic challans seeded")
@@ -1373,9 +1373,9 @@ def get_current_user(authorization: Optional[str] = Header(None)):
         cur = conn.cursor()
         cur.execute("""
             SELECT au.id, au.executive_id, u.name, COALESCE(ar.name, u.role, 'Executive'), au.username, au.role_id
-            FROM app_sessions s
-            JOIN app_users au ON au.id = s.user_id
-            LEFT JOIN users u ON u.id = au.executive_id
+            FROM copy_app_sessions s
+            JOIN copy_app_users au ON au.id = s.user_id
+            LEFT JOIN copy_users u ON u.id = au.executive_id
             LEFT JOIN app_roles ar ON ar.id = au.role_id
             WHERE s.token = %s;
         """, (token,))
@@ -1695,8 +1695,8 @@ def login(req: LoginRequest):
         cur = conn.cursor()
         cur.execute("""
             SELECT au.id, au.password_hash, au.executive_id, u.name, COALESCE(ar.name, u.role, 'Executive'), au.username, au.role_id
-            FROM app_users au
-            LEFT JOIN users u ON u.id = au.executive_id
+            FROM copy_app_users au
+            LEFT JOIN copy_users u ON u.id = au.executive_id
             LEFT JOIN app_roles ar ON ar.id = au.role_id
             WHERE au.username = %s;
         """, (req.username.strip().lower(),))
@@ -1710,7 +1710,7 @@ def login(req: LoginRequest):
         # Create session token
         token = secrets.token_urlsafe(32)
         cur.execute(
-            "INSERT INTO app_sessions (token, user_id) VALUES (%s, %s);",
+            "INSERT INTO copy_app_sessions (token, user_id) VALUES (%s, %s);",
             (token, user_id)
         )
         
@@ -1744,11 +1744,11 @@ def login(req: LoginRequest):
 @app.get("/api/auth/me")
 def get_me(authorization: Optional[str] = Header(None)):
     user = get_current_user(authorization)
-    # Get executive id from users table for display
+    # Get executive id from copy_users table for display
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT id FROM users WHERE id = %s;", (user["executive_id"],))
+        cur.execute("SELECT id FROM copy_users WHERE id = %s;", (user["executive_id"],))
         row = cur.fetchone()
         exec_display_id = row[0] if row else None
         return {
@@ -1771,7 +1771,7 @@ def logout(authorization: Optional[str] = Header(None)):
         conn = postgreSQL_pool.getconn()
         try:
             cur = conn.cursor()
-            cur.execute("DELETE FROM app_sessions WHERE token = %s;", (token,))
+            cur.execute("DELETE FROM copy_app_sessions WHERE token = %s;", (token,))
             conn.commit()
         finally:
             postgreSQL_pool.putconn(conn)
@@ -1796,7 +1796,7 @@ class AppUserUpdateData(BaseModel):
     employee_id: Optional[str] = None
     email: Optional[str] = None
 
-@app.get("/api/users")
+@app.get("/api/copy_users")
 def list_app_users(authorization: Optional[str] = Header(None)):
     get_current_user(authorization)
     conn = postgreSQL_pool.getconn()
@@ -1805,8 +1805,8 @@ def list_app_users(authorization: Optional[str] = Header(None)):
         cur.execute("""
             SELECT au.id, au.username, u.name, u.role, au.created_at, au.raw_password, 
                    au.role_id, ar.name, COALESCE(au.employee_id, u.employee_id), COALESCE(au.email, u.email)
-            FROM app_users au
-            JOIN users u ON u.id = au.executive_id
+            FROM copy_app_users au
+            JOIN copy_users u ON u.id = au.executive_id
             LEFT JOIN app_roles ar ON ar.id = au.role_id
             ORDER BY au.id DESC;
         """)
@@ -1829,7 +1829,7 @@ def list_app_users(authorization: Optional[str] = Header(None)):
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.post("/api/users")
+@app.post("/api/copy_users")
 def create_app_user(req: AppUserData, authorization: Optional[str] = Header(None)):
     get_current_user(authorization)
     username_cleaned = req.username.strip().lower()
@@ -1839,33 +1839,33 @@ def create_app_user(req: AppUserData, authorization: Optional[str] = Header(None
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT id FROM app_users WHERE username = %s;", (username_cleaned,))
+        cur.execute("SELECT id FROM copy_app_users WHERE username = %s;", (username_cleaned,))
         if cur.fetchone():
             raise HTTPException(status_code=400, detail="Username already exists")
         
-        # Search if a user with this employee_id already exists in the users table
+        # Search if a user with this employee_id already exists in the copy_users table
         executive_id = None
         if req.employee_id and req.employee_id.strip():
-            cur.execute("SELECT id FROM users WHERE employee_id = %s;", (req.employee_id.strip(),))
+            cur.execute("SELECT id FROM copy_users WHERE employee_id = %s;", (req.employee_id.strip(),))
             row = cur.fetchone()
             if row:
                 executive_id = row[0]
-                # Update details in the existing users row
+                # Update details in the existing copy_users row
                 cur.execute(
-                    "UPDATE users SET name = %s, role = %s, email = COALESCE(email, %s) WHERE id = %s;",
+                    "UPDATE copy_users SET name = %s, role = %s, email = COALESCE(email, %s) WHERE id = %s;",
                     (req.name.strip(), req.role.strip(), req.email, executive_id)
                 )
 
         if not executive_id:
             cur.execute(
-                "INSERT INTO users (name, role, employee_id, email) VALUES (%s, %s, %s, %s) RETURNING id;",
+                "INSERT INTO copy_users (name, role, employee_id, email) VALUES (%s, %s, %s, %s) RETURNING id;",
                 (req.name.strip(), req.role.strip(), req.employee_id, req.email)
             )
             executive_id = cur.fetchone()[0]
         
         hashed_password = pwd_context.hash(req.password)
         cur.execute(
-            """INSERT INTO app_users (username, password_hash, executive_id, raw_password, role_id, employee_id, email) 
+            """INSERT INTO copy_app_users (username, password_hash, executive_id, raw_password, role_id, employee_id, email) 
                VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id;""",
             (username_cleaned, hashed_password, executive_id, req.password, req.role_id, req.employee_id, req.email)
         )
@@ -1881,7 +1881,7 @@ def create_app_user(req: AppUserData, authorization: Optional[str] = Header(None
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.put("/api/users/{id}")
+@app.put("/api/copy_users/{id}")
 def update_app_user(id: int, req: AppUserUpdateData, authorization: Optional[str] = Header(None)):
     get_current_user(authorization)
     username_cleaned = req.username.strip().lower()
@@ -1891,53 +1891,53 @@ def update_app_user(id: int, req: AppUserUpdateData, authorization: Optional[str
         cur = conn.cursor()
         
         # Check if user exists
-        cur.execute("SELECT executive_id FROM app_users WHERE id = %s;", (id,))
+        cur.execute("SELECT executive_id FROM copy_app_users WHERE id = %s;", (id,))
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="User not found")
         exec_id = row[0]
         
         # Check username conflicts
-        cur.execute("SELECT id FROM app_users WHERE username = %s AND id != %s;", (username_cleaned, id))
+        cur.execute("SELECT id FROM copy_app_users WHERE username = %s AND id != %s;", (username_cleaned, id))
         if cur.fetchone():
             raise HTTPException(status_code=400, detail="Username already exists")
             
         # Check if we should update or switch executive_id if employee_id has changed
         if req.employee_id and req.employee_id.strip():
-            cur.execute("SELECT id FROM users WHERE employee_id = %s;", (req.employee_id.strip(),))
+            cur.execute("SELECT id FROM copy_users WHERE employee_id = %s;", (req.employee_id.strip(),))
             emp_row = cur.fetchone()
             if emp_row:
                 new_exec_id = emp_row[0]
                 if new_exec_id != exec_id:
                     # Point app_user to this existing user row
-                    cur.execute("UPDATE app_users SET executive_id = %s WHERE id = %s;", (new_exec_id, id))
+                    cur.execute("UPDATE copy_app_users SET executive_id = %s WHERE id = %s;", (new_exec_id, id))
                     exec_id = new_exec_id
                 cur.execute(
-                    "UPDATE users SET name = %s, role = %s, email = COALESCE(email, %s) WHERE id = %s;",
+                    "UPDATE copy_users SET name = %s, role = %s, email = COALESCE(email, %s) WHERE id = %s;",
                     (req.name.strip(), req.role.strip(), req.email, exec_id)
                 )
             else:
                 cur.execute(
-                    "UPDATE users SET name = %s, role = %s, employee_id = %s, email = %s WHERE id = %s;",
+                    "UPDATE copy_users SET name = %s, role = %s, employee_id = %s, email = %s WHERE id = %s;",
                     (req.name.strip(), req.role.strip(), req.employee_id, req.email, exec_id)
                 )
         else:
             cur.execute(
-                "UPDATE users SET name = %s, role = %s WHERE id = %s;",
+                "UPDATE copy_users SET name = %s, role = %s WHERE id = %s;",
                 (req.name.strip(), req.role.strip(), exec_id)
             )
         
-        # Update app_users table (username, role_id, employee_id, email)
+        # Update copy_app_users table (username, role_id, employee_id, email)
         if req.password:
             hashed_password = pwd_context.hash(req.password)
             cur.execute(
-                """UPDATE app_users SET username = %s, password_hash = %s, raw_password = %s, 
+                """UPDATE copy_app_users SET username = %s, password_hash = %s, raw_password = %s, 
                           role_id = %s, employee_id = %s, email = %s WHERE id = %s;""",
                 (username_cleaned, hashed_password, req.password, req.role_id, req.employee_id, req.email, id)
             )
         else:
             cur.execute(
-                "UPDATE app_users SET username = %s, role_id = %s, employee_id = %s, email = %s WHERE id = %s;",
+                "UPDATE copy_app_users SET username = %s, role_id = %s, employee_id = %s, email = %s WHERE id = %s;",
                 (username_cleaned, req.role_id, req.employee_id, req.email, id)
             )
             
@@ -1951,7 +1951,7 @@ def update_app_user(id: int, req: AppUserUpdateData, authorization: Optional[str
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.delete("/api/users/{id}")
+@app.delete("/api/copy_users/{id}")
 def delete_app_user(id: int, authorization: Optional[str] = Header(None)):
     user = get_current_user(authorization)
     if user["user_id"] == id:
@@ -1960,22 +1960,22 @@ def delete_app_user(id: int, authorization: Optional[str] = Header(None)):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT executive_id FROM app_users WHERE id = %s;", (id,))
+        cur.execute("SELECT executive_id FROM copy_app_users WHERE id = %s;", (id,))
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="User not found")
         exec_id = row[0]
         
-        cur.execute("DELETE FROM app_sessions WHERE user_id = %s;", (id,))
-        cur.execute("DELETE FROM app_users WHERE id = %s;", (id,))
+        cur.execute("DELETE FROM copy_app_sessions WHERE user_id = %s;", (id,))
+        cur.execute("DELETE FROM copy_app_users WHERE id = %s;", (id,))
         
         try:
-            cur.execute("DELETE FROM users WHERE id = %s;", (exec_id,))
+            cur.execute("DELETE FROM copy_users WHERE id = %s;", (exec_id,))
         except Exception:
             conn.rollback()
             cur = conn.cursor()
-            cur.execute("DELETE FROM app_sessions WHERE user_id = %s;", (id,))
-            cur.execute("DELETE FROM app_users WHERE id = %s;", (id,))
+            cur.execute("DELETE FROM copy_app_sessions WHERE user_id = %s;", (id,))
+            cur.execute("DELETE FROM copy_app_users WHERE id = %s;", (id,))
             
         conn.commit()
         return {"success": True}
@@ -2003,7 +2003,7 @@ def list_vehicle_models(authorization: Optional[str] = Header(None)):
         cur = conn.cursor()
         cur.execute("""
             SELECT id, brand, model_name, variant, fuel_type, make_year, created_at
-            FROM vehicle_models
+            FROM copy_vehicle_models
             ORDER BY brand, model_name, variant, make_year DESC;
         """)
         rows = cur.fetchall()
@@ -2029,7 +2029,7 @@ def create_vehicle_model(req: VehicleModelData, authorization: Optional[str] = H
     try:
         cur = conn.cursor()
         cur.execute(
-            "INSERT INTO vehicle_models (brand, model_name, variant, fuel_type, make_year) VALUES (%s, %s, %s, %s, %s) RETURNING id;",
+            "INSERT INTO copy_vehicle_models (brand, model_name, variant, fuel_type, make_year) VALUES (%s, %s, %s, %s, %s) RETURNING id;",
             (req.brand.strip(), req.model_name.strip(), req.variant.strip(), req.fuel_type.strip(), req.make_year)
         )
         model_id = cur.fetchone()[0]
@@ -2047,7 +2047,7 @@ def delete_vehicle_model(id: int, authorization: Optional[str] = Header(None)):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("DELETE FROM vehicle_models WHERE id = %s RETURNING id;", (id,))
+        cur.execute("DELETE FROM copy_vehicle_models WHERE id = %s RETURNING id;", (id,))
         deleted = cur.fetchone()
         if not deleted:
             raise HTTPException(status_code=404, detail="Vehicle model not found")
@@ -2070,7 +2070,7 @@ def get_all_executives():
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT id, name, COALESCE(role,'Executive') FROM users ORDER BY id;")
+        cur.execute("SELECT id, name, COALESCE(role,'Executive') FROM copy_users ORDER BY id;")
         rows = cur.fetchall()
         return [{"value": r[0], "text": f"{r[1]}  (ID {r[0]})"} for r in rows]
     finally:
@@ -2082,7 +2082,7 @@ def get_executive(user_id: int):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT name, COALESCE(role,'Executive') FROM users WHERE id=%s;", (user_id,))
+        cur.execute("SELECT name, COALESCE(role,'Executive') FROM copy_users WHERE id=%s;", (user_id,))
         r = cur.fetchone()
         if r:
             return {"id": user_id, "name": r[0], "role": r[1]}
@@ -2116,7 +2116,7 @@ def get_employees(authorization: Optional[str] = Header(None)):
         cur.execute("""
             SELECT id, name, COALESCE(role,'Executive'), phone, email, company_email,
                    department, city, joining_date, employee_id, COALESCE(status,'Active')
-            FROM users ORDER BY id;
+            FROM copy_users ORDER BY id;
         """)
         keys = ["id","name","role","phone","email","company_email","department","city","joining_date","employee_id","status"]
         return [dict(zip(keys, row)) for row in cur.fetchall()]
@@ -2130,7 +2130,7 @@ def create_employee(req: EmployeeData, authorization: Optional[str] = Header(Non
     try:
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO users (name, role, phone, email, company_email, department, city, joining_date, employee_id, status)
+            INSERT INTO copy_users (name, role, phone, email, company_email, department, city, joining_date, employee_id, status)
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id;
         """, (req.name.strip(), req.role.strip(), req.phone, req.email, req.company_email, req.department,
               req.city, req.joining_date, req.employee_id, req.status or "Active"))
@@ -2150,7 +2150,7 @@ def update_employee(id: int, req: EmployeeData, authorization: Optional[str] = H
     try:
         cur = conn.cursor()
         cur.execute("""
-            UPDATE users SET name=%s, role=%s, phone=%s, email=%s, company_email=%s, department=%s,
+            UPDATE copy_users SET name=%s, role=%s, phone=%s, email=%s, company_email=%s, department=%s,
                 city=%s, joining_date=%s, employee_id=%s, status=%s
             WHERE id=%s RETURNING id;
         """, (req.name.strip(), req.role.strip(), req.phone, req.email, req.company_email, req.department,
@@ -2174,12 +2174,12 @@ def delete_employee(id: int, authorization: Optional[str] = Header(None)):
     try:
         cur = conn.cursor()
         # Don't delete if linked to an app_user (just deactivate instead)
-        cur.execute("SELECT id FROM app_users WHERE executive_id = %s;", (id,))
+        cur.execute("SELECT id FROM copy_app_users WHERE executive_id = %s;", (id,))
         if cur.fetchone():
-            cur.execute("UPDATE users SET status = 'Inactive' WHERE id = %s;", (id,))
+            cur.execute("UPDATE copy_users SET status = 'Inactive' WHERE id = %s;", (id,))
             conn.commit()
             return {"success": True, "deactivated": True, "message": "Employee deactivated (has a portal login — not permanently deleted)"}
-        cur.execute("DELETE FROM users WHERE id = %s RETURNING id;", (id,))
+        cur.execute("DELETE FROM copy_users WHERE id = %s RETURNING id;", (id,))
         if not cur.fetchone():
             raise HTTPException(status_code=404, detail="Employee not found")
         conn.commit()
@@ -2200,7 +2200,7 @@ class CityData(BaseModel):
     country: Optional[str] = "India"
     status: Optional[str] = "Active"
 
-@app.get("/api/cities")
+@app.get("/api/copy_cities")
 def get_all_cities():
     conn = postgreSQL_pool.getconn()
     try:
@@ -2218,7 +2218,7 @@ def get_all_cities():
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.post("/api/cities")
+@app.post("/api/copy_cities")
 def create_city(req: CityData, authorization: Optional[str] = Header(None)):
     get_current_user(authorization)
     name_cleaned = req.name.strip()
@@ -2245,11 +2245,11 @@ def create_city(req: CityData, authorization: Optional[str] = Header(None)):
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.put("/api/cities/{id}")
+@app.put("/api/copy_cities/{id}")
 def update_city(id: int, req: CityData, authorization: Optional[str] = Header(None)):
     get_current_user(authorization)
     if id <= 3:
-        raise HTTPException(status_code=400, detail="Pre-existing operating cities cannot be edited")
+        raise HTTPException(status_code=400, detail="Pre-existing operating copy_cities cannot be edited")
         
     name_cleaned = req.name.strip()
     if not name_cleaned:
@@ -2276,11 +2276,11 @@ def update_city(id: int, req: CityData, authorization: Optional[str] = Header(No
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.delete("/api/cities/{id}")
+@app.delete("/api/copy_cities/{id}")
 def delete_city(id: int, authorization: Optional[str] = Header(None)):
     get_current_user(authorization)
     if id <= 3:
-        raise HTTPException(status_code=400, detail="Pre-existing operating cities cannot be deleted")
+        raise HTTPException(status_code=400, detail="Pre-existing operating copy_cities cannot be deleted")
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
@@ -2307,17 +2307,17 @@ def get_stats():
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT COUNT(*) FROM walkins;")
+        cur.execute("SELECT COUNT(*) FROM copy_walkins;")
         total = cur.fetchone()[0]
-        cur.execute("SELECT COUNT(*) FROM walkins WHERE joined_status='Joined';")
+        cur.execute("SELECT COUNT(*) FROM copy_walkins WHERE joined_status='Joined';")
         joined = cur.fetchone()[0]
-        cur.execute("SELECT COUNT(*) FROM walkins WHERE joined_status='Pending';")
+        cur.execute("SELECT COUNT(*) FROM copy_walkins WHERE joined_status='Pending';")
         pending = cur.fetchone()[0]
-        cur.execute("SELECT COUNT(*) FROM walkins WHERE joined_status='Not Interested';")
+        cur.execute("SELECT COUNT(*) FROM copy_walkins WHERE joined_status='Not Interested';")
         not_interested = cur.fetchone()[0]
-        cur.execute("SELECT COUNT(*) FROM walkins WHERE visitor_type='Individual';")
+        cur.execute("SELECT COUNT(*) FROM copy_walkins WHERE visitor_type='Individual';")
         individuals = cur.fetchone()[0]
-        cur.execute("SELECT COUNT(*) FROM walkins WHERE visitor_type='Operator';")
+        cur.execute("SELECT COUNT(*) FROM copy_walkins WHERE visitor_type='Operator';")
         operators = cur.fetchone()[0]
         conversion = round(joined / total * 100, 1) if total > 0 else 0.0
         return {
@@ -2336,7 +2336,7 @@ def get_stats():
 # ─────────────────────────────────────────────────────────
 # Walk-ins — List
 # ─────────────────────────────────────────────────────────
-@app.get("/api/walkins")
+@app.get("/api/copy_walkins")
 def get_all_walkins(
     search: Optional[str] = None,
     city: Optional[str] = "all",
@@ -2364,9 +2364,9 @@ def get_all_walkins(
                 w.joined_status,
                 w.remarks,
                 w.created_at
-            FROM walkins w
-            LEFT JOIN cities c ON c.id::text = w.city::text
-            LEFT JOIN users  u ON u.id = w.executive_id
+            FROM copy_walkins w
+            LEFT JOIN copy_cities c ON c.id::text = w.city::text
+            LEFT JOIN copy_users  u ON u.id = w.executive_id
             WHERE 1=1
         """
         
@@ -2418,7 +2418,7 @@ def get_all_walkins(
 # ─────────────────────────────────────────────────────────
 # Walk-ins — Search for Linking
 # ─────────────────────────────────────────────────────────
-@app.get("/api/walkins/search")
+@app.get("/api/copy_walkins/search")
 def search_walkins(q: str):
     """Search for walk-ins by ID, phone, or DL to prepopulate Onboarding."""
     conn = postgreSQL_pool.getconn()
@@ -2427,7 +2427,7 @@ def search_walkins(q: str):
         search_pattern = f"%{q}%"
         cur.execute("""
             SELECT id, person_name, person_number, city, dl_number, aadhaar_number
-            FROM walkins
+            FROM copy_walkins
             WHERE id::text = %s OR person_number ILIKE %s OR dl_number ILIKE %s
             ORDER BY id DESC LIMIT 5;
         """, (q, search_pattern, search_pattern))
@@ -2442,7 +2442,7 @@ def search_walkins(q: str):
 # ─────────────────────────────────────────────────────────
 # Walk-ins — Single
 # ─────────────────────────────────────────────────────────
-@app.get("/api/walkins/{walkin_id}")
+@app.get("/api/copy_walkins/{walkin_id}")
 def get_walkin(walkin_id: int):
     conn = postgreSQL_pool.getconn()
     try:
@@ -2453,8 +2453,8 @@ def get_walkin(walkin_id: int):
                 w.person_name, w.person_number, w.aadhaar_number, w.dl_number,
                 w.visiting_reason, w.joined_status, w.remarks,
                 COALESCE(u.name, '') AS executive_name
-            FROM walkins w
-            LEFT JOIN users u ON u.id = w.executive_id
+            FROM copy_walkins w
+            LEFT JOIN copy_users u ON u.id = w.executive_id
             WHERE w.id = %s;
         """, (walkin_id,))
         r = cur.fetchone()
@@ -2474,7 +2474,7 @@ def get_walkin(walkin_id: int):
 # ─────────────────────────────────────────────────────────
 # Walk-ins — Create
 # ─────────────────────────────────────────────────────────
-@app.post("/api/walkins")
+@app.post("/api/copy_walkins")
 def create_walkin(data: WalkinData, authorization: Optional[str] = Header(None)):
     # Get executive_id from session if available
     exec_id_from_session = None
@@ -2491,7 +2491,7 @@ def create_walkin(data: WalkinData, authorization: Optional[str] = Header(None))
     try:
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO walkins
+            INSERT INTO copy_walkins
               (visitor_type, event_date, city, operating_place, executive_id, person_name,
                person_number, aadhaar_number, dl_number, aadhaar_image,
                dl_image, visiting_reason, joined_status, remarks)
@@ -2526,7 +2526,7 @@ def create_walkin(data: WalkinData, authorization: Optional[str] = Header(None))
 # ─────────────────────────────────────────────────────────
 # Walk-ins — Update
 # ─────────────────────────────────────────────────────────
-@app.put("/api/walkins/{walkin_id}")
+@app.put("/api/copy_walkins/{walkin_id}")
 def update_walkin(walkin_id: int, data: WalkinData, authorization: Optional[str] = Header(None)):
     exec_id_from_session = None
     if authorization and authorization.startswith("Bearer "):
@@ -2545,12 +2545,12 @@ def update_walkin(walkin_id: int, data: WalkinData, authorization: Optional[str]
         new_aadhaar = extract_image(data.aadhaar_image)
         new_dl      = extract_image(data.dl_image)
         if new_aadhaar:
-            cur.execute("UPDATE walkins SET aadhaar_image=%s WHERE id=%s;", (new_aadhaar, walkin_id))
+            cur.execute("UPDATE copy_walkins SET aadhaar_image=%s WHERE id=%s;", (new_aadhaar, walkin_id))
         if new_dl:
-            cur.execute("UPDATE walkins SET dl_image=%s WHERE id=%s;", (new_dl, walkin_id))
+            cur.execute("UPDATE copy_walkins SET dl_image=%s WHERE id=%s;", (new_dl, walkin_id))
 
         cur.execute("""
-            UPDATE walkins SET
+            UPDATE copy_walkins SET
                 visitor_type=%s, event_date=%s, city=%s, operating_place=%s, executive_id=%s,
                 person_name=%s, person_number=%s, aadhaar_number=%s, dl_number=%s,
                 visiting_reason=%s, joined_status=%s, remarks=%s
@@ -2579,12 +2579,12 @@ def update_walkin(walkin_id: int, data: WalkinData, authorization: Optional[str]
 # ─────────────────────────────────────────────────────────
 # Walk-ins — Delete
 # ─────────────────────────────────────────────────────────
-@app.delete("/api/walkins/{walkin_id}")
+@app.delete("/api/copy_walkins/{walkin_id}")
 def delete_walkin(walkin_id: int):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("DELETE FROM walkins WHERE id = %s RETURNING id;", (walkin_id,))
+        cur.execute("DELETE FROM copy_walkins WHERE id = %s RETURNING id;", (walkin_id,))
         deleted = cur.fetchone()
         if not deleted:
             raise HTTPException(status_code=404, detail="Walkin not found")
@@ -2602,7 +2602,7 @@ def get_all_onboarding(search: Optional[str] = None, city: Optional[str] = None,
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        base_query = "SELECT * FROM form_onboarding WHERE 1=1"
+        base_query = "SELECT * FROM copy_form_onboarding WHERE 1=1"
         params = []
         if search:
             base_query += """
@@ -2634,7 +2634,7 @@ def create_onboarding(data: OnboardingData):
     try:
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO form_onboarding (
+            INSERT INTO copy_form_onboarding (
                 driver_name, phone_number, whatsapp_number, dob, city, operating_place,
                 present_address, permanent_address, emergency_name, emergency_phone, 
                 dl_number, dl_expiry_date, lead_source, 
@@ -2663,19 +2663,19 @@ def create_onboarding(data: OnboardingData):
         # Link to walk-in if provided
         if data.walkin_id:
             cur.execute("""
-                INSERT INTO walkin_form_links (walkin_id, onboarding_id)
+                INSERT INTO copy_walkin_form_links (walkin_id, onboarding_id)
                 VALUES (%s, %s);
             """, (data.walkin_id, new_id))
             
             cur.execute("""
-                UPDATE walkins SET joined_status = 'Onboarded' WHERE id = %s;
+                UPDATE copy_walkins SET joined_status = 'Onboarded' WHERE id = %s;
             """, (data.walkin_id,))
 
         # Add operator drivers if present
         if data.vendor_type == "Operator" and data.operator_drivers:
             for drv in data.operator_drivers:
                 cur.execute("""
-                    INSERT INTO form_onboarding (
+                    INSERT INTO copy_form_onboarding (
                         driver_name, phone_number, dl_number, custom_rent_amount, driver_id,
                         vendor_name, vendor_id, vendor_type,
                         whatsapp_number, dob, city, present_address, permanent_address, 
@@ -2710,7 +2710,7 @@ def get_onboarding(id: int):
                 account_number, ifsc_code, upi_id,
                 selfie_photo, dl_front, dl_back, pan_card_photo,
                 vendor_type, driver_id, custom_rent_amount
-            FROM form_onboarding
+            FROM copy_form_onboarding
             WHERE id = %s;
         """, (id,))
         r = cur.fetchone()
@@ -2737,7 +2737,7 @@ def get_onboarding(id: int):
                         whatsapp_number, dob, present_address, permanent_address, 
                         emergency_name, emergency_phone, pan_number, aadhaar_number, father_name,
                         selfie_photo, dl_front, dl_back, pan_card_photo, aadhaar_card_photo
-                    FROM form_onboarding
+                    FROM copy_form_onboarding
                     WHERE vendor_id = %s AND vendor_type = 'Operator' AND driver_id IS NOT NULL;
                 """, (r[17],))
                 drivers_rows = cur.fetchall()
@@ -2761,12 +2761,12 @@ def update_onboarding(id: int, data: OnboardingData):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT id FROM form_onboarding WHERE id = %s;", (id,))
+        cur.execute("SELECT id FROM copy_form_onboarding WHERE id = %s;", (id,))
         if not cur.fetchone():
             raise HTTPException(status_code=404, detail="Onboarding record not found")
             
         cur.execute("""
-            UPDATE form_onboarding SET
+            UPDATE copy_form_onboarding SET
                 driver_name=%s, phone_number=%s, whatsapp_number=%s, dob=%s, city=%s, operating_place=%s,
                 present_address=%s, permanent_address=%s, emergency_name=%s, emergency_phone=%s, 
                 dl_number=%s, dl_expiry_date=%s, lead_source=%s, 
@@ -2794,20 +2794,20 @@ def update_onboarding(id: int, data: OnboardingData):
         new_aadhaar_img = extract_image(data.aadhaar_card_photo)
         
         if new_selfie:
-            cur.execute("UPDATE form_onboarding SET selfie_photo=%s WHERE id=%s;", (new_selfie, id))
+            cur.execute("UPDATE copy_form_onboarding SET selfie_photo=%s WHERE id=%s;", (new_selfie, id))
         if new_dl_front:
-            cur.execute("UPDATE form_onboarding SET dl_front=%s WHERE id=%s;", (new_dl_front, id))
+            cur.execute("UPDATE copy_form_onboarding SET dl_front=%s WHERE id=%s;", (new_dl_front, id))
         if new_dl_back:
-            cur.execute("UPDATE form_onboarding SET dl_back=%s WHERE id=%s;", (new_dl_back, id))
+            cur.execute("UPDATE copy_form_onboarding SET dl_back=%s WHERE id=%s;", (new_dl_back, id))
         if new_pan:
-            cur.execute("UPDATE form_onboarding SET pan_card_photo=%s WHERE id=%s;", (new_pan, id))
+            cur.execute("UPDATE copy_form_onboarding SET pan_card_photo=%s WHERE id=%s;", (new_pan, id))
         if new_aadhaar_img:
-            cur.execute("UPDATE form_onboarding SET aadhaar_card_photo=%s WHERE id=%s;", (new_aadhaar_img, id))
+            cur.execute("UPDATE copy_form_onboarding SET aadhaar_card_photo=%s WHERE id=%s;", (new_aadhaar_img, id))
             
         if data.walkin_id:
-            cur.execute("DELETE FROM walkin_form_links WHERE onboarding_id = %s;", (id,))
-            cur.execute("INSERT INTO walkin_form_links (walkin_id, onboarding_id) VALUES (%s, %s);", (data.walkin_id, id))
-            cur.execute("UPDATE walkins SET joined_status = 'Onboarded' WHERE id = %s;", (data.walkin_id,))
+            cur.execute("DELETE FROM copy_walkin_form_links WHERE onboarding_id = %s;", (id,))
+            cur.execute("INSERT INTO copy_walkin_form_links (walkin_id, onboarding_id) VALUES (%s, %s);", (data.walkin_id, id))
+            cur.execute("UPDATE copy_walkins SET joined_status = 'Onboarded' WHERE id = %s;", (data.walkin_id,))
             
         conn.commit()
         return {"success": True}
@@ -2820,20 +2820,20 @@ def get_onboarding_stats():
     try:
         cur = conn.cursor()
         
-        cur.execute("SELECT COUNT(*) FROM form_onboarding;")
+        cur.execute("SELECT COUNT(*) FROM copy_form_onboarding;")
         total_onboarded = cur.fetchone()[0]
         
-        cur.execute("SELECT COUNT(DISTINCT vendor_id) FROM form_onboarding WHERE vendor_id IS NOT NULL AND vendor_id <> '';")
+        cur.execute("SELECT COUNT(DISTINCT vendor_id) FROM copy_form_onboarding WHERE vendor_id IS NOT NULL AND vendor_id <> '';")
         vendor_count = cur.fetchone()[0]
         
-        cur.execute("SELECT MAX(created_at) FROM form_onboarding;")
+        cur.execute("SELECT MAX(created_at) FROM copy_form_onboarding;")
         latest_time = cur.fetchone()[0]
         if latest_time:
             latest_str = latest_time.strftime("%d-%m-%Y")
         else:
             latest_str = "-"
             
-        cur.execute("SELECT COUNT(*) FROM form_onboarding WHERE created_at >= NOW() - INTERVAL '7 days';")
+        cur.execute("SELECT COUNT(*) FROM copy_form_onboarding WHERE created_at >= NOW() - INTERVAL '7 days';")
         last_7_days_count = cur.fetchone()[0]
             
         return {
@@ -2850,7 +2850,7 @@ def delete_onboarding(id: int):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("DELETE FROM form_onboarding WHERE id = %s RETURNING id;", (id,))
+        cur.execute("DELETE FROM copy_form_onboarding WHERE id = %s RETURNING id;", (id,))
         deleted = cur.fetchone()
         if not deleted:
             raise HTTPException(status_code=404, detail="Record not found")
@@ -2874,7 +2874,7 @@ def get_adjustments(
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        base_query = "SELECT * FROM partner_adjustment WHERE 1=1"
+        base_query = "SELECT * FROM copy_partner_adjustment WHERE 1=1"
         params = []
         
         if query:
@@ -2914,7 +2914,7 @@ def get_adjustment_stats():
         cur = conn.cursor()
         
         # Total count
-        cur.execute("SELECT COUNT(*) FROM partner_adjustment;")
+        cur.execute("SELECT COUNT(*) FROM copy_partner_adjustment;")
         total = cur.fetchone()[0]
         
         # Total Amount (sum of casted float)
@@ -2922,16 +2922,16 @@ def get_adjustment_stats():
             SELECT COALESCE(SUM(CASE 
                 WHEN enter_amount ~ '^[0-9]+(\\.[0-9]+)?$' THEN CAST(enter_amount AS DOUBLE PRECISION)
                 ELSE 0 
-            END), 0) FROM partner_adjustment;
+            END), 0) FROM copy_partner_adjustment;
         """)
         total_amount = cur.fetchone()[0]
         
         # Approved count
-        cur.execute("SELECT COUNT(*) FROM partner_adjustment WHERE finance_team_status = 'Approved';")
+        cur.execute("SELECT COUNT(*) FROM copy_partner_adjustment WHERE finance_team_status = 'Approved';")
         approved = cur.fetchone()[0]
         
         # Completed count
-        cur.execute("SELECT COUNT(*) FROM partner_adjustment WHERE status = 'Completed';")
+        cur.execute("SELECT COUNT(*) FROM copy_partner_adjustment WHERE status = 'Completed';")
         completed = cur.fetchone()[0]
         
         return {
@@ -2948,7 +2948,7 @@ def get_adjustment(id: int):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT * FROM partner_adjustment WHERE id = %s;", (id,))
+        cur.execute("SELECT * FROM copy_partner_adjustment WHERE id = %s;", (id,))
         r = cur.fetchone()
         if not r:
             raise HTTPException(status_code=404, detail="Adjustment record not found")
@@ -2963,7 +2963,7 @@ def create_adjustment(data: AdjustmentData):
     try:
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO partner_adjustment (
+            INSERT INTO copy_partner_adjustment (
                 partner_name, partner_code, driver_id, partner_number, vehicle_number, city_name, 
                 partner_type, adjustment_level, adjustment_nature, time_duration, adjustment_type, adjustment_date, enter_amount, 
                 remittance_towards, adjustment_related_to, remarks, first_level_approval_by, 
@@ -2989,7 +2989,7 @@ def update_adjustment(id: int, data: AdjustmentData):
     try:
         cur = conn.cursor()
         cur.execute("""
-            UPDATE partner_adjustment SET
+            UPDATE copy_partner_adjustment SET
                 partner_name=%s, partner_code=%s, driver_id=%s, partner_number=%s, vehicle_number=%s, city_name=%s, 
                 partner_type=%s, adjustment_level=%s, adjustment_nature=%s, time_duration=%s, adjustment_type=%s, adjustment_date=%s, enter_amount=%s, 
                 remittance_towards=%s, adjustment_related_to=%s, remarks=%s, first_level_approval_by=%s, 
@@ -3016,7 +3016,7 @@ def delete_adjustment(id: int):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("DELETE FROM partner_adjustment WHERE id = %s RETURNING id;", (id,))
+        cur.execute("DELETE FROM copy_partner_adjustment WHERE id = %s RETURNING id;", (id,))
         deleted = cur.fetchone()
         if not deleted:
             raise HTTPException(status_code=404, detail="Adjustment record not found")
@@ -3039,7 +3039,7 @@ def get_allocations(
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        base_query = "SELECT * FROM vehicle_allocation WHERE 1=1"
+        base_query = "SELECT * FROM copy_vehicle_allocation WHERE 1=1"
         params = []
         
         if query:
@@ -3075,19 +3075,19 @@ def get_allocation_stats():
         cur = conn.cursor()
         
         # Total
-        cur.execute("SELECT COUNT(*) FROM vehicle_allocation;")
+        cur.execute("SELECT COUNT(*) FROM copy_vehicle_allocation;")
         total = cur.fetchone()[0]
         
         # New Allocation
-        cur.execute("SELECT COUNT(*) FROM vehicle_allocation WHERE allocation_type = 'New Allocation';")
+        cur.execute("SELECT COUNT(*) FROM copy_vehicle_allocation WHERE allocation_type = 'New Allocation';")
         new_alloc = cur.fetchone()[0]
         
         # Car Swap
-        cur.execute("SELECT COUNT(*) FROM vehicle_allocation WHERE allocation_type = 'Car Swap';")
+        cur.execute("SELECT COUNT(*) FROM copy_vehicle_allocation WHERE allocation_type = 'Car Swap';")
         swap_alloc = cur.fetchone()[0]
         
         # Reallocation
-        cur.execute("SELECT COUNT(*) FROM vehicle_allocation WHERE allocation_type = 'Reallocation';")
+        cur.execute("SELECT COUNT(*) FROM copy_vehicle_allocation WHERE allocation_type = 'Reallocation';")
         realloc = cur.fetchone()[0]
         
         return {
@@ -3104,7 +3104,7 @@ def get_allocation_record(id: int):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT * FROM vehicle_allocation WHERE id = %s;", (id,))
+        cur.execute("SELECT * FROM copy_vehicle_allocation WHERE id = %s;", (id,))
         r = cur.fetchone()
         if not r:
             raise HTTPException(status_code=404, detail="Allocation record not found")
@@ -3119,7 +3119,7 @@ def create_allocation_record(data: AllocationData):
     try:
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO vehicle_allocation (
+            INSERT INTO copy_vehicle_allocation (
                 allocation_date, allocation_type, city_name, driver_id, driver_name, 
                 driver_phone, driver_plan, type_of_plan, car_model, vehicle_number, 
                 old_vehicle_number, dropoff_odometer, dropoff_remarks, dropoff_photo
@@ -3143,7 +3143,7 @@ def update_allocation_record(id: int, data: AllocationData):
     try:
         cur = conn.cursor()
         cur.execute("""
-            UPDATE vehicle_allocation SET
+            UPDATE copy_vehicle_allocation SET
                 allocation_date=%s, allocation_type=%s, city_name=%s, driver_id=%s, driver_name=%s, 
                 driver_phone=%s, driver_plan=%s, type_of_plan=%s, car_model=%s, vehicle_number=%s, 
                 old_vehicle_number=%s, dropoff_odometer=%s, dropoff_remarks=%s, dropoff_photo=%s
@@ -3168,7 +3168,7 @@ def delete_allocation_record(id: int):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("DELETE FROM vehicle_allocation WHERE id = %s RETURNING id;", (id,))
+        cur.execute("DELETE FROM copy_vehicle_allocation WHERE id = %s RETURNING id;", (id,))
         deleted = cur.fetchone()
         if not deleted:
             raise HTTPException(status_code=404, detail="Allocation record not found")
@@ -3190,7 +3190,7 @@ def get_expenses(
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        base_query = "SELECT * FROM partner_expenses WHERE 1=1"
+        base_query = "SELECT * FROM copy_partner_expenses WHERE 1=1"
         params = []
         
         if query:
@@ -3220,19 +3220,19 @@ def get_expense_stats():
         cur = conn.cursor()
         
         # Total overall expenses
-        cur.execute("SELECT amount_paid FROM partner_expenses;")
+        cur.execute("SELECT amount_paid FROM copy_partner_expenses;")
         total = sum(float(r[0]) for r in cur.fetchall() if r[0] and r[0].replace('.', '', 1).isdigit())
         
         # CNG
-        cur.execute("SELECT amount_paid FROM partner_expenses WHERE expenses_type = 'CNG';")
+        cur.execute("SELECT amount_paid FROM copy_partner_expenses WHERE expenses_type = 'CNG';")
         cng = sum(float(r[0]) for r in cur.fetchall() if r[0] and r[0].replace('.', '', 1).isdigit())
         
         # Toll
-        cur.execute("SELECT amount_paid FROM partner_expenses WHERE expenses_type = 'Toll';")
+        cur.execute("SELECT amount_paid FROM copy_partner_expenses WHERE expenses_type = 'Toll';")
         toll = sum(float(r[0]) for r in cur.fetchall() if r[0] and r[0].replace('.', '', 1).isdigit())
         
         # Other (OLA + Paid to Company)
-        cur.execute("SELECT amount_paid FROM partner_expenses WHERE expenses_type IN ('OLA - CL Balance', 'Paid to Company');")
+        cur.execute("SELECT amount_paid FROM copy_partner_expenses WHERE expenses_type IN ('OLA - CL Balance', 'Paid to Company');")
         other = sum(float(r[0]) for r in cur.fetchall() if r[0] and r[0].replace('.', '', 1).isdigit())
         
         return {
@@ -3249,7 +3249,7 @@ def get_expense_record(id: int):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT * FROM partner_expenses WHERE id = %s;", (id,))
+        cur.execute("SELECT * FROM copy_partner_expenses WHERE id = %s;", (id,))
         r = cur.fetchone()
         if not r:
             raise HTTPException(status_code=404, detail="Expense record not found")
@@ -3264,7 +3264,7 @@ def create_expense_record(data: ExpenseData):
     try:
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO partner_expenses (
+            INSERT INTO copy_partner_expenses (
                 expense_date, driver_name, phone_number, vehicle_number, 
                 expenses_type, amount_paid, reference_photo
             ) VALUES (%s,%s,%s,%s,%s,%s,%s)
@@ -3285,7 +3285,7 @@ def update_expense_record(id: int, data: ExpenseData):
     try:
         cur = conn.cursor()
         cur.execute("""
-            UPDATE partner_expenses SET
+            UPDATE copy_partner_expenses SET
                 expense_date=%s, driver_name=%s, phone_number=%s, vehicle_number=%s, 
                 expenses_type=%s, amount_paid=%s, reference_photo=%s
             WHERE id=%s RETURNING id;
@@ -3307,7 +3307,7 @@ def delete_expense_record(id: int):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("DELETE FROM partner_expenses WHERE id = %s RETURNING id;", (id,))
+        cur.execute("DELETE FROM copy_partner_expenses WHERE id = %s RETURNING id;", (id,))
         deleted = cur.fetchone()
         if not deleted:
             raise HTTPException(status_code=404, detail="Expense record not found")
@@ -3326,7 +3326,7 @@ def get_all_vehicles(search: Optional[str] = None, city: Optional[str] = None, t
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        query = "SELECT * FROM vehicle_onboarding WHERE 1=1"
+        query = "SELECT * FROM copy_vehicle_onboarding WHERE 1=1"
         params = []
         if search:
             query += " AND (vehicle_number ILIKE %s OR model ILIKE %s OR letzryd_unique_no ILIKE %s)"
@@ -3350,13 +3350,13 @@ def get_vehicle_stats(authorization: Optional[str] = Header(None)):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT COUNT(*) FROM vehicle_onboarding;")
+        cur.execute("SELECT COUNT(*) FROM copy_vehicle_onboarding;")
         total = cur.fetchone()[0]
-        cur.execute("SELECT COUNT(*) FROM vehicle_onboarding WHERE received_allocated = 'Receiving';")
+        cur.execute("SELECT COUNT(*) FROM copy_vehicle_onboarding WHERE received_allocated = 'Receiving';")
         receiving = cur.fetchone()[0]
-        cur.execute("SELECT COUNT(*) FROM vehicle_onboarding WHERE received_allocated = 'Allocation';")
+        cur.execute("SELECT COUNT(*) FROM copy_vehicle_onboarding WHERE received_allocated = 'Allocation';")
         allocation = cur.fetchone()[0]
-        cur.execute("SELECT COUNT(*) FROM vehicle_onboarding WHERE cng_installed = 'Yes';")
+        cur.execute("SELECT COUNT(*) FROM copy_vehicle_onboarding WHERE cng_installed = 'Yes';")
         cng = cur.fetchone()[0]
         return {
             "total_fleet": total,
@@ -3373,7 +3373,7 @@ def get_single_vehicle(id: int, authorization: Optional[str] = Header(None)):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT * FROM vehicle_onboarding WHERE id = %s;", (id,))
+        cur.execute("SELECT * FROM copy_vehicle_onboarding WHERE id = %s;", (id,))
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Vehicle record not found")
@@ -3389,7 +3389,7 @@ def create_vehicle_record(data: VehicleOnboardingData, authorization: Optional[s
     try:
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO vehicle_onboarding (
+            INSERT INTO copy_vehicle_onboarding (
                 vehicle_number, letzryd_unique_no, city_name, model, received_allocated, delivery_month,
                 registration_date, rto_tax_validity, permit_validity, fitness_validity, pollution_validity, insurance_validity, authorization_certificate, insurance_mapping,
                 kms_reading, tracking_device_vendor, tracking_device_type, cng_installed, cng_plate, cng_installation_date, jack, jack_rod, spanner, parking_triangle, fire_extinguishers, seat_cover, floor_carpet, key_quantity,
@@ -3422,7 +3422,7 @@ def update_vehicle_record(id: int, data: VehicleOnboardingData, authorization: O
     try:
         cur = conn.cursor()
         cur.execute("""
-            UPDATE vehicle_onboarding SET
+            UPDATE copy_vehicle_onboarding SET
                 vehicle_number=%s, letzryd_unique_no=%s, city_name=%s, model=%s, received_allocated=%s, delivery_month=%s,
                 registration_date=%s, rto_tax_validity=%s, permit_validity=%s, fitness_validity=%s, pollution_validity=%s, insurance_validity=%s, authorization_certificate=%s, insurance_mapping=%s,
                 kms_reading=%s, tracking_device_vendor=%s, tracking_device_type=%s, cng_installed=%s, cng_plate=%s, cng_installation_date=%s, jack=%s, jack_rod=%s, spanner=%s, parking_triangle=%s, fire_extinguishers=%s, seat_cover=%s, floor_carpet=%s, key_quantity=%s,
@@ -3452,7 +3452,7 @@ def delete_vehicle_record(id: int, authorization: Optional[str] = Header(None)):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("DELETE FROM vehicle_onboarding WHERE id = %s RETURNING id;", (id,))
+        cur.execute("DELETE FROM copy_vehicle_onboarding WHERE id = %s RETURNING id;", (id,))
         deleted = cur.fetchone()
         if not deleted:
             raise HTTPException(status_code=404, detail="Vehicle record not found")
@@ -3471,7 +3471,7 @@ def get_all_workshops(search: Optional[str] = None, city: Optional[str] = None, 
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        query = "SELECT * FROM workshop_vendors WHERE 1=1"
+        query = "SELECT * FROM copy_workshop_vendors WHERE 1=1"
         params = []
         if search:
             query += " AND (vendor_name ILIKE %s OR contact_person ILIKE %s OR owner_name ILIKE %s)"
@@ -3495,13 +3495,13 @@ def get_workshop_stats(authorization: Optional[str] = Header(None)):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT COUNT(*) FROM workshop_vendors;")
+        cur.execute("SELECT COUNT(*) FROM copy_workshop_vendors;")
         total = cur.fetchone()[0]
-        cur.execute("SELECT COUNT(*) FROM workshop_vendors WHERE workshop_status = 'Active';")
+        cur.execute("SELECT COUNT(*) FROM copy_workshop_vendors WHERE workshop_status = 'Active';")
         active = cur.fetchone()[0]
-        cur.execute("SELECT COUNT(*) FROM workshop_vendors WHERE workshop_type = 'EV Specialist';")
+        cur.execute("SELECT COUNT(*) FROM copy_workshop_vendors WHERE workshop_type = 'EV Specialist';")
         ev_specialist = cur.fetchone()[0]
-        cur.execute("SELECT COUNT(*) FROM workshop_vendors WHERE workshop_status = 'Onboarding';")
+        cur.execute("SELECT COUNT(*) FROM copy_workshop_vendors WHERE workshop_status = 'Onboarding';")
         onboarding = cur.fetchone()[0]
         return {
             "total_workshops": total,
@@ -3518,7 +3518,7 @@ def get_single_workshop(id: int, authorization: Optional[str] = Header(None)):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT * FROM workshop_vendors WHERE id = %s;", (id,))
+        cur.execute("SELECT * FROM copy_workshop_vendors WHERE id = %s;", (id,))
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Workshop vendor not found")
@@ -3534,7 +3534,7 @@ def create_workshop_record(data: WorkshopData, authorization: Optional[str] = He
     try:
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO workshop_vendors (
+            INSERT INTO copy_workshop_vendors (
                 vendor_name, workshop_type, city_name, address, gst_number,
                 contact_person, mobile_number, email_id, pan_card, bank_name,
                 account_number, ifsc_code, workshop_status, workshop_photo,
@@ -3559,7 +3559,7 @@ def update_workshop_record(id: int, data: WorkshopData, authorization: Optional[
     try:
         cur = conn.cursor()
         cur.execute("""
-            UPDATE workshop_vendors SET
+            UPDATE copy_workshop_vendors SET
                 vendor_name=%s, workshop_type=%s, city_name=%s, address=%s, gst_number=%s,
                 contact_person=%s, mobile_number=%s, email_id=%s, pan_card=%s, bank_name=%s,
                 account_number=%s, ifsc_code=%s, workshop_status=%s, workshop_photo=%s,
@@ -3586,7 +3586,7 @@ def delete_workshop_record(id: int, authorization: Optional[str] = Header(None))
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("DELETE FROM workshop_vendors WHERE id = %s RETURNING id;", (id,))
+        cur.execute("DELETE FROM copy_workshop_vendors WHERE id = %s RETURNING id;", (id,))
         deleted = cur.fetchone()
         if not deleted:
             raise HTTPException(status_code=404, detail="Workshop vendor not found")
@@ -3605,7 +3605,7 @@ def get_all_hubs(search: Optional[str] = None, city: Optional[str] = None, type:
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        query = "SELECT * FROM hubs_parking WHERE 1=1"
+        query = "SELECT * FROM copy_hubs_parking WHERE 1=1"
         params = []
         if search:
             query += " AND (hub_name ILIKE %s OR address ILIKE %s OR hub_manager ILIKE %s)"
@@ -3629,13 +3629,13 @@ def get_hub_stats(authorization: Optional[str] = Header(None)):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT COUNT(*) FROM hubs_parking;")
+        cur.execute("SELECT COUNT(*) FROM copy_hubs_parking;")
         total = cur.fetchone()[0]
-        cur.execute("SELECT COALESCE(SUM(CAST(NULLIF(total_capacity, '') AS INTEGER)), 0) FROM hubs_parking;")
+        cur.execute("SELECT COALESCE(SUM(CAST(NULLIF(total_capacity, '') AS INTEGER)), 0) FROM copy_hubs_parking;")
         capacity = cur.fetchone()[0]
-        cur.execute("SELECT COUNT(*) FROM hubs_parking WHERE ev_charging = 'Yes';")
+        cur.execute("SELECT COUNT(*) FROM copy_hubs_parking WHERE ev_charging = 'Yes';")
         ev = cur.fetchone()[0]
-        cur.execute("SELECT COUNT(*) FROM hubs_parking WHERE security_cctv = 'Yes';")
+        cur.execute("SELECT COUNT(*) FROM copy_hubs_parking WHERE security_cctv = 'Yes';")
         cctv = cur.fetchone()[0]
         return {
             "total_hubs": total,
@@ -3652,7 +3652,7 @@ def get_single_hub(id: int, authorization: Optional[str] = Header(None)):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT * FROM hubs_parking WHERE id = %s;", (id,))
+        cur.execute("SELECT * FROM copy_hubs_parking WHERE id = %s;", (id,))
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Hub record not found")
@@ -3668,7 +3668,7 @@ def create_hub_record(data: HubData, authorization: Optional[str] = Header(None)
     try:
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO hubs_parking (
+            INSERT INTO copy_hubs_parking (
                 hub_name, city_name, address, pincode, facility_type,
                 total_capacity, ev_charging, security_cctv, hub_manager,
                 manager_phone, operating_hours, hub_photo, contact_person, designation
@@ -3692,7 +3692,7 @@ def update_hub_record(id: int, data: HubData, authorization: Optional[str] = Hea
     try:
         cur = conn.cursor()
         cur.execute("""
-            UPDATE hubs_parking SET
+            UPDATE copy_hubs_parking SET
                 hub_name=%s, city_name=%s, address=%s, pincode=%s, facility_type=%s,
                 total_capacity=%s, ev_charging=%s, security_cctv=%s, hub_manager=%s,
                 manager_phone=%s, operating_hours=%s, hub_photo=%s, contact_person=%s, designation=%s
@@ -3718,7 +3718,7 @@ def delete_hub_record(id: int, authorization: Optional[str] = Header(None)):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("DELETE FROM hubs_parking WHERE id = %s RETURNING id;", (id,))
+        cur.execute("DELETE FROM copy_hubs_parking WHERE id = %s RETURNING id;", (id,))
         deleted = cur.fetchone()
         if not deleted:
             raise HTTPException(status_code=404, detail="Hub record not found")
@@ -3732,7 +3732,7 @@ def delete_hub_record(id: int, authorization: Optional[str] = Header(None)):
 # ─────────────────────────────────────────────────────────
 # Rents
 # ─────────────────────────────────────────────────────────
-@app.get("/api/rents")
+@app.get("/api/copy_rents")
 def get_rents(
     search: Optional[str] = None,
     level: Optional[str] = None,
@@ -3742,7 +3742,7 @@ def get_rents(
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        query = "SELECT * FROM rents WHERE 1=1"
+        query = "SELECT * FROM copy_rents WHERE 1=1"
         params = []
         if search:
             query += " AND (vehicle_model ILIKE %s OR vehicle_number ILIKE %s OR vendor_id ILIKE %s OR driver_id ILIKE %s)"
@@ -3758,19 +3758,19 @@ def get_rents(
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.post("/api/rents")
+@app.post("/api/copy_rents")
 def create_rent(data: RentData, authorization: Optional[str] = Header(None)):
     user = get_current_user(authorization)
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO rents (level, vehicle_manufacturer, vehicle_model, vehicle_number, vehicle_age, vendor_id, driver_id, rent_amount)
+            INSERT INTO copy_rents (level, vehicle_manufacturer, vehicle_model, vehicle_number, vehicle_age, vendor_id, driver_id, rent_amount)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id;
         """, (data.level, data.vehicle_manufacturer, data.vehicle_model, data.vehicle_number, data.vehicle_age, data.vendor_id, data.driver_id, data.rent_amount))
         new_id = cur.fetchone()[0]
 
-        # Log to rent_ledger
+        # Log to copy_rent_ledger
         entity_type = data.level.capitalize()
         entity_id = ""
         if data.level == "driver": entity_id = data.driver_id or ""
@@ -3782,7 +3782,7 @@ def create_rent(data: RentData, authorization: Optional[str] = Header(None)):
         today_str = date.today().isoformat()
 
         cur.execute("""
-            INSERT INTO rent_ledger (entity_type, entity_id, change_type, old_amount, new_amount, modified_by, effective_date)
+            INSERT INTO copy_rent_ledger (entity_type, entity_id, change_type, old_amount, new_amount, modified_by, effective_date)
             VALUES (%s, %s, %s, %s, %s, %s, %s);
         """, (entity_type, entity_id, "Created", 0, data.rent_amount, user.get("name") or user.get("username"), today_str))
 
@@ -3791,26 +3791,26 @@ def create_rent(data: RentData, authorization: Optional[str] = Header(None)):
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.put("/api/rents/{id}")
+@app.put("/api/copy_rents/{id}")
 def update_rent(id: int, data: RentData, authorization: Optional[str] = Header(None)):
     user = get_current_user(authorization)
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
         # Fetch old rent amount
-        cur.execute("SELECT rent_amount, level, driver_id, vendor_id, vehicle_number, vehicle_model FROM rents WHERE id = %s;", (id,))
+        cur.execute("SELECT rent_amount, level, driver_id, vendor_id, vehicle_number, vehicle_model FROM copy_rents WHERE id = %s;", (id,))
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Rent record not found")
         old_rent_amount, old_level, old_driver_id, old_vendor_id, old_vehicle_number, old_vehicle_model = row
 
         cur.execute("""
-            UPDATE rents SET level=%s, vehicle_manufacturer=%s, vehicle_model=%s, vehicle_number=%s, vehicle_age=%s, vendor_id=%s, driver_id=%s, rent_amount=%s
+            UPDATE copy_rents SET level=%s, vehicle_manufacturer=%s, vehicle_model=%s, vehicle_number=%s, vehicle_age=%s, vendor_id=%s, driver_id=%s, rent_amount=%s
             WHERE id=%s RETURNING id;
         """, (data.level, data.vehicle_manufacturer, data.vehicle_model, data.vehicle_number, data.vehicle_age, data.vendor_id, data.driver_id, data.rent_amount, id))
         cur.fetchone()
 
-        # Log to rent_ledger
+        # Log to copy_rent_ledger
         entity_type = data.level.capitalize()
         entity_id = ""
         if data.level == "driver": entity_id = data.driver_id or ""
@@ -3822,7 +3822,7 @@ def update_rent(id: int, data: RentData, authorization: Optional[str] = Header(N
         today_str = date.today().isoformat()
 
         cur.execute("""
-            INSERT INTO rent_ledger (entity_type, entity_id, change_type, old_amount, new_amount, modified_by, effective_date)
+            INSERT INTO copy_rent_ledger (entity_type, entity_id, change_type, old_amount, new_amount, modified_by, effective_date)
             VALUES (%s, %s, %s, %s, %s, %s, %s);
         """, (entity_type, entity_id, "Updated", old_rent_amount, data.rent_amount, user.get("name") or user.get("username"), today_str))
 
@@ -3831,23 +3831,23 @@ def update_rent(id: int, data: RentData, authorization: Optional[str] = Header(N
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.delete("/api/rents/{id}")
+@app.delete("/api/copy_rents/{id}")
 def delete_rent(id: int, authorization: Optional[str] = Header(None)):
     user = get_current_user(authorization)
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
         # Fetch old rent amount
-        cur.execute("SELECT rent_amount, level, driver_id, vendor_id, vehicle_number, vehicle_model FROM rents WHERE id = %s;", (id,))
+        cur.execute("SELECT rent_amount, level, driver_id, vendor_id, vehicle_number, vehicle_model FROM copy_rents WHERE id = %s;", (id,))
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Rent record not found")
         old_rent_amount, old_level, old_driver_id, old_vendor_id, old_vehicle_number, old_vehicle_model = row
 
-        cur.execute("DELETE FROM rents WHERE id = %s RETURNING id;", (id,))
+        cur.execute("DELETE FROM copy_rents WHERE id = %s RETURNING id;", (id,))
         cur.fetchone()
 
-        # Log to rent_ledger
+        # Log to copy_rent_ledger
         entity_type = old_level.capitalize() if old_level else "Model"
         entity_id = ""
         if old_level == "driver": entity_id = old_driver_id or ""
@@ -3859,7 +3859,7 @@ def delete_rent(id: int, authorization: Optional[str] = Header(None)):
         today_str = date.today().isoformat()
 
         cur.execute("""
-            INSERT INTO rent_ledger (entity_type, entity_id, change_type, old_amount, new_amount, modified_by, effective_date)
+            INSERT INTO copy_rent_ledger (entity_type, entity_id, change_type, old_amount, new_amount, modified_by, effective_date)
             VALUES (%s, %s, %s, %s, %s, %s, %s);
         """, (entity_type, entity_id, "Deleted", old_rent_amount, 0, user.get("name") or user.get("username"), today_str))
 
@@ -3874,7 +3874,7 @@ def get_rent_ledger(authorization: Optional[str] = Header(None)):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT * FROM rent_ledger ORDER BY id DESC;")
+        cur.execute("SELECT * FROM copy_rent_ledger ORDER BY id DESC;")
         cols = [d[0] for d in cur.description]
         return [dict(zip(cols, row)) for row in cur.fetchall()]
     finally:
@@ -3898,7 +3898,7 @@ def get_accidents(
         query = """
             SELECT id, vehicle_number, vendor_name, city_name, date_of_accident, 
                    time_of_accident, driver_name, vehicle_status, repair_cost, created_at 
-            FROM accidents_registry WHERE 1=1
+            FROM copy_accidents_registry WHERE 1=1
         """
         params = []
         if search:
@@ -3925,16 +3925,16 @@ def get_accident_stats(authorization: Optional[str] = Header(None)):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT COUNT(*), COALESCE(SUM(CAST(NULLIF(repair_cost, '') AS NUMERIC)), 0) FROM accidents_registry;")
+        cur.execute("SELECT COUNT(*), COALESCE(SUM(CAST(NULLIF(repair_cost, '') AS NUMERIC)), 0) FROM copy_accidents_registry;")
         total, total_cost = cur.fetchone()
         
-        cur.execute("SELECT COUNT(*) FROM accidents_registry WHERE vehicle_status = 'Drivable';")
+        cur.execute("SELECT COUNT(*) FROM copy_accidents_registry WHERE vehicle_status = 'Drivable';")
         drivable = cur.fetchone()[0]
         
-        cur.execute("SELECT COUNT(*) FROM accidents_registry WHERE vehicle_status = 'Needs Towing';")
+        cur.execute("SELECT COUNT(*) FROM copy_accidents_registry WHERE vehicle_status = 'Needs Towing';")
         needs_towing = cur.fetchone()[0]
 
-        cur.execute("SELECT COUNT(*) FROM accidents_registry WHERE vehicle_status = 'Impounded by Police';")
+        cur.execute("SELECT COUNT(*) FROM copy_accidents_registry WHERE vehicle_status = 'Impounded by Police';")
         impounded = cur.fetchone()[0]
         
         return {
@@ -3953,7 +3953,7 @@ def get_accident(id: int, authorization: Optional[str] = Header(None)):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT * FROM accidents_registry WHERE id = %s;", (id,))
+        cur.execute("SELECT * FROM copy_accidents_registry WHERE id = %s;", (id,))
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Accident record not found")
@@ -3969,7 +3969,7 @@ def create_accident(data: AccidentData, authorization: Optional[str] = Header(No
     try:
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO accidents_registry (
+            INSERT INTO copy_accidents_registry (
                 vehicle_number, vendor_id, vendor_name, city_name, date_of_accident, time_of_accident, place_of_accident, vehicle_status,
                 driver_id, driver_name, no_of_persons, third_party_involvement, fir_filed,
                 accident_reason, accident_inspection, insurance_status, repair_cost, toeing_cost, challan_amount, fine_amount, comments,
@@ -4002,7 +4002,7 @@ def update_accident(id: int, data: AccidentData, authorization: Optional[str] = 
     try:
         cur = conn.cursor()
         cur.execute("""
-            UPDATE accidents_registry SET 
+            UPDATE copy_accidents_registry SET 
                 vehicle_number=%s, vendor_id=%s, vendor_name=%s, city_name=%s, date_of_accident=%s, time_of_accident=%s, place_of_accident=%s, vehicle_status=%s,
                 driver_id=%s, driver_name=%s, no_of_persons=%s, third_party_involvement=%s, fir_filed=%s,
                 accident_reason=%s, accident_inspection=%s, insurance_status=%s, repair_cost=%s, toeing_cost=%s, challan_amount=%s, fine_amount=%s, comments=%s,
@@ -4032,7 +4032,7 @@ def delete_accident(id: int, authorization: Optional[str] = Header(None)):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("DELETE FROM accidents_registry WHERE id = %s RETURNING id;", (id,))
+        cur.execute("DELETE FROM copy_accidents_registry WHERE id = %s RETURNING id;", (id,))
         deleted = cur.fetchone()
         if not deleted:
             raise HTTPException(status_code=404, detail="Accident record not found")
@@ -4054,7 +4054,7 @@ def get_inspections(
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        query = "SELECT * FROM inspections WHERE 1=1"
+        query = "SELECT * FROM copy_inspections WHERE 1=1"
         params = []
         if search:
             query += " AND (vehicle_number ILIKE %s OR remarks ILIKE %s)"
@@ -4073,7 +4073,7 @@ def get_inspection_stats(authorization: Optional[str] = Header(None)):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT COUNT(*), COUNT(DISTINCT vehicle_number) FROM inspections;")
+        cur.execute("SELECT COUNT(*), COUNT(DISTINCT vehicle_number) FROM copy_inspections;")
         total, unique_vehicles = cur.fetchone()
         return {
             "total_inspections": total,
@@ -4088,7 +4088,7 @@ def get_last_inspection(vehicle_number: str, authorization: Optional[str] = Head
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT * FROM inspections WHERE vehicle_number ILIKE %s ORDER BY id DESC LIMIT 1;", (vehicle_number.strip(),))
+        cur.execute("SELECT * FROM copy_inspections WHERE vehicle_number ILIKE %s ORDER BY id DESC LIMIT 1;", (vehicle_number.strip(),))
         row = cur.fetchone()
         if not row:
             return None
@@ -4103,7 +4103,7 @@ def get_inspection(id: int, authorization: Optional[str] = Header(None)):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT * FROM inspections WHERE id = %s;", (id,))
+        cur.execute("SELECT * FROM copy_inspections WHERE id = %s;", (id,))
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Inspection record not found")
@@ -4119,7 +4119,7 @@ def create_inspection(data: InspectionData, authorization: Optional[str] = Heade
     try:
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO inspections (
+            INSERT INTO copy_inspections (
                 vehicle_number, inspection_date, odometer_reading, jack, jack_rod, spanner, 
                 parking_triangle, fire_extinguishers, seat_cover, floor_carpet, key_quantity,
                 photo_front, photo_back, photo_lh, photo_rh, photo_engine_chassis, photo_battery, 
@@ -4153,7 +4153,7 @@ def update_inspection(id: int, data: InspectionData, authorization: Optional[str
     try:
         cur = conn.cursor()
         cur.execute("""
-            UPDATE inspections SET 
+            UPDATE copy_inspections SET 
                 vehicle_number=%s, inspection_date=%s, odometer_reading=%s, jack=%s, jack_rod=%s, spanner=%s, 
                 parking_triangle=%s, fire_extinguishers=%s, seat_cover=%s, floor_carpet=%s, key_quantity=%s,
                 photo_front=%s, photo_back=%s, photo_lh=%s, photo_rh=%s, photo_engine_chassis=%s, photo_battery=%s, 
@@ -4188,7 +4188,7 @@ def delete_inspection(id: int, authorization: Optional[str] = Header(None)):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("DELETE FROM inspections WHERE id = %s RETURNING id;", (id,))
+        cur.execute("DELETE FROM copy_inspections WHERE id = %s RETURNING id;", (id,))
         deleted = cur.fetchone()
         if not deleted:
             raise HTTPException(status_code=404, detail="Inspection record not found")
@@ -4286,7 +4286,7 @@ class TicketData(BaseModel):
     status: Optional[str] = "Open"
     assigned_to: Optional[int] = None
 
-@app.get("/api/tickets")
+@app.get("/api/copy_tickets")
 def get_tickets(authorization: Optional[str] = Header(None)):
     get_current_user(authorization)
     conn = postgreSQL_pool.getconn()
@@ -4296,9 +4296,9 @@ def get_tickets(authorization: Optional[str] = Header(None)):
             SELECT t.id, t.title, t.description, t.source, t.status, 
                    t.created_by_name, t.assigned_to, u.name as assignee_name, 
                    t.created_at, t.resolved_at, t.resolution_notes
-            FROM tickets t
-            LEFT JOIN app_users au ON au.id = t.assigned_to
-            LEFT JOIN users u ON u.id = au.executive_id
+            FROM copy_tickets t
+            LEFT JOIN copy_app_users au ON au.id = t.assigned_to
+            LEFT JOIN copy_users u ON u.id = au.executive_id
             ORDER BY t.created_at DESC;
         """)
         keys = ["id", "title", "description", "source", "status", "created_by_name", "assigned_to", "assignee_name", "created_at", "resolved_at", "resolution_notes"]
@@ -4306,14 +4306,14 @@ def get_tickets(authorization: Optional[str] = Header(None)):
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.post("/api/tickets")
+@app.post("/api/copy_tickets")
 def create_ticket(req: TicketData, authorization: Optional[str] = Header(None)):
     user = get_current_user(authorization)
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO tickets (title, description, source, status, created_by_name, assigned_to)
+            INSERT INTO copy_tickets (title, description, source, status, created_by_name, assigned_to)
             VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;
         """, (req.title, req.description, req.source, req.status, user["name"], req.assigned_to))
         ticket_id = cur.fetchone()[0]
@@ -4325,7 +4325,7 @@ def create_ticket(req: TicketData, authorization: Optional[str] = Header(None)):
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.put("/api/tickets/{id}/resolve")
+@app.put("/api/copy_tickets/{id}/resolve")
 def resolve_ticket(id: int, data: dict, authorization: Optional[str] = Header(None)):
     get_current_user(authorization)
     notes = data.get("resolution_notes", "")
@@ -4333,7 +4333,7 @@ def resolve_ticket(id: int, data: dict, authorization: Optional[str] = Header(No
     try:
         cur = conn.cursor()
         cur.execute("""
-            UPDATE tickets 
+            UPDATE copy_tickets 
             SET status = 'Resolved', resolved_at = NOW(), resolution_notes = %s 
             WHERE id = %s RETURNING id;
         """, (notes, id))
@@ -4435,7 +4435,7 @@ def get_all_maintenance_jobs(authorization: Optional[str] = Header(None)):
         cur.execute("""
             SELECT id, vehicle_in_date, vehicle_number, workshop_name, repair_type, 
                    city_name, estimated_amount, maintenance_status, created_at 
-            FROM maintenance_registry ORDER BY id DESC;
+            FROM copy_maintenance_registry ORDER BY id DESC;
         """)
         cols = [d[0] for d in cur.description]
         result = [dict(zip(cols, row)) for row in cur.fetchall()]
@@ -4449,7 +4449,7 @@ def get_maintenance_job(id: int, authorization: Optional[str] = Header(None)):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT * FROM maintenance_registry WHERE id = %s;", (id,))
+        cur.execute("SELECT * FROM copy_maintenance_registry WHERE id = %s;", (id,))
         r = cur.fetchone()
         if not r: raise HTTPException(status_code=404, detail="Record not found")
         cols = [d[0] for d in cur.description]
@@ -4464,7 +4464,7 @@ def create_maintenance_job(data: MaintenanceData, authorization: Optional[str] =
     try:
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO maintenance_registry (
+            INSERT INTO copy_maintenance_registry (
                 vehicle_number, city_name, model, vehicle_k_m_s, repair_type, vehicle_location, vehicle_in_date, initial_remarks, vehicle_damage_photos,
                 workshop_name, allocation_date, estimated_delivery_date, estimated_amount, insurance_claimed, claim_number, insurance_brokerage, approved_by, approval_date, approval_file,
                 maintenance_status, vehicle_status_date, daily_vehicle_remarks, rfd_date, delivered_date, final_status, tat, pdi_status,
@@ -4505,7 +4505,7 @@ def update_maintenance_job(id: int, data: MaintenanceData, authorization: Option
     try:
         cur = conn.cursor()
         cur.execute("""
-            UPDATE maintenance_registry SET 
+            UPDATE copy_maintenance_registry SET 
                 vehicle_number=%s, city_name=%s, model=%s, vehicle_k_m_s=%s, repair_type=%s, vehicle_location=%s, vehicle_in_date=%s, initial_remarks=%s, vehicle_damage_photos=%s,
                 workshop_name=%s, allocation_date=%s, estimated_delivery_date=%s, estimated_amount=%s, insurance_claimed=%s, claim_number=%s, insurance_brokerage=%s, approved_by=%s, approval_date=%s, approval_file=%s,
                 maintenance_status=%s, vehicle_status_date=%s, daily_vehicle_remarks=%s, rfd_date=%s, delivered_date=%s, final_status=%s, tat=%s, pdi_status=%s,
@@ -4541,7 +4541,7 @@ def delete_maintenance_job(id: int, authorization: Optional[str] = Header(None))
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("DELETE FROM maintenance_registry WHERE id = %s RETURNING id;", (id,))
+        cur.execute("DELETE FROM copy_maintenance_registry WHERE id = %s RETURNING id;", (id,))
         deleted = cur.fetchone()
         if not deleted:
             raise HTTPException(status_code=404, detail="Maintenance job not found")
@@ -4577,7 +4577,7 @@ def get_all_challans(authorization: Optional[str] = Header(None)):
             SELECT id, challan_number, vehicle_number, driver_id, driver_name, 
                    violation_date, violation_location, challan_amount, internal_fine_amount,
                    recovery_status, recovered_amount, remarks, created_at
-            FROM traffic_challans ORDER BY id DESC;
+            FROM copy_traffic_challans ORDER BY id DESC;
         """)
         cols = [d[0] for d in cur.description]
         return [dict(zip(cols, row)) for row in cur.fetchall()]
@@ -4590,7 +4590,7 @@ def get_challan(id: int, authorization: Optional[str] = Header(None)):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT * FROM traffic_challans WHERE id = %s;", (id,))
+        cur.execute("SELECT * FROM copy_traffic_challans WHERE id = %s;", (id,))
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Challan not found")
@@ -4606,12 +4606,12 @@ def create_challan(data: ChallanData, authorization: Optional[str] = Header(None
     try:
         cur = conn.cursor()
         # Verify uniqueness
-        cur.execute("SELECT id FROM traffic_challans WHERE challan_number = %s;", (data.challan_number,))
+        cur.execute("SELECT id FROM copy_traffic_challans WHERE challan_number = %s;", (data.challan_number,))
         if cur.fetchone():
             raise HTTPException(status_code=400, detail="Challan number already exists")
 
         cur.execute("""
-            INSERT INTO traffic_challans (
+            INSERT INTO copy_traffic_challans (
                 challan_number, vehicle_number, driver_id, driver_name, 
                 violation_date, violation_location, challan_amount, internal_fine_amount,
                 recovery_status, recovered_amount, remarks, challan_photo
@@ -4637,7 +4637,7 @@ def update_challan(id: int, data: ChallanData, authorization: Optional[str] = He
     try:
         cur = conn.cursor()
         cur.execute("""
-            UPDATE traffic_challans SET 
+            UPDATE copy_traffic_challans SET 
                 challan_number=%s, vehicle_number=%s, driver_id=%s, driver_name=%s, 
                 violation_date=%s, violation_location=%s, challan_amount=%s, internal_fine_amount=%s,
                 recovery_status=%s, recovered_amount=%s, remarks=%s, challan_photo=%s
@@ -4664,7 +4664,7 @@ def delete_challan(id: int, authorization: Optional[str] = Header(None)):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        cur.execute("DELETE FROM traffic_challans WHERE id = %s RETURNING id;", (id,))
+        cur.execute("DELETE FROM copy_traffic_challans WHERE id = %s RETURNING id;", (id,))
         if not cur.fetchone():
             raise HTTPException(status_code=404, detail="Challan not found")
         conn.commit()
