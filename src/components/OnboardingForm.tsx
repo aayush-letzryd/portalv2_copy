@@ -68,6 +68,7 @@ export default function OnboardingForm({
   const [dlNumber, setDlNumber] = useState("");
   const [dlExpiryDate, setDlExpiryDate] = useState("");
   const [leadSource, setLeadSource] = useState("");
+  const [sourceDetails, setSourceDetails] = useState("");
   const [panNumber, setPanNumber] = useState("");
   const [aadhaarNumber, setAadhaarNumber] = useState("");
   const [panAadhaarLinked, setPanAadhaarLinked] = useState("Yes");
@@ -204,7 +205,7 @@ export default function OnboardingForm({
       emergency_phone: emergencyPhone.trim(),
       dl_number: dlNumber.trim().toUpperCase(),
       dl_expiry_date: dlExpiryDate,
-      lead_source: leadSource.trim() || undefined,
+      lead_source: leadSource ? `${leadSource}${sourceDetails ? ' - ' + sourceDetails : ''}` : undefined,
       pan_number: panNumber.trim().toUpperCase(),
       aadhaar_number: aadhaarNumber.replace(/\s/g, "").replace(/(\d{4})(\d{4})(\d{4})/, "$1 $2 $3"),
       pan_aadhaar_linked: panAadhaarLinked,
@@ -314,6 +315,7 @@ export default function OnboardingForm({
     setDlNumber("");
     setDlExpiryDate("");
     setLeadSource("");
+    setSourceDetails("");
     setPanNumber("");
     setAadhaarNumber("");
     setPanAadhaarLinked("Yes");
@@ -395,7 +397,9 @@ export default function OnboardingForm({
       setEmergencyPhone(data.emergency_phone || "");
       setDlNumber(data.dl_number || "");
       setDlExpiryDate(data.dl_expiry_date || "");
-      setLeadSource(data.lead_source || "");
+      const [lsource, ...lsdetails] = (data.lead_source || "").split(" - ");
+      setLeadSource(lsource || "");
+      setSourceDetails(lsdetails.join(" - ") || "");
       setPanNumber(data.pan_number || "");
       setAadhaarNumber(data.aadhaar_number || "");
       setPanAadhaarLinked(data.pan_aadhaar_linked || "Yes");
@@ -465,7 +469,7 @@ export default function OnboardingForm({
       if (window.confirm(`Found Walk-in: ${record.person_name} (${record.person_number}). Link and autofill?`)) {
         setLinkedWalkinId(record.id);
         if (record.person_name) setDriverName(record.person_name);
-        if (record.person_number) setPhoneNumber(record.person_number.replace(/\D/g, '').slice(-10));
+        if (record.person_number) setPhoneNumber(record.person_number.replace(/\D/g, '').slice(0, 10));
         if (record.city) {
           // Attempt to match city string or id to CITIES, default to Hyderabad if not found
           const matchedCity = CITIES.find(c => c.value === record.city || c.text === record.city);
@@ -704,34 +708,47 @@ export default function OnboardingForm({
                     <div className="bg-slate-50 border border-border/80 rounded-xl p-5 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div>
                         <h4 className="font-sans text-sm font-bold text-primary flex items-center gap-2">
-                          <Search className="h-4 w-4 text-green" /> Link to Walk-in Record
+                          {linkedWalkinId ? <CheckCircle className="h-4 w-4 text-green" /> : <Search className="h-4 w-4 text-green" />} 
+                          Link to Walk-in Record
                         </h4>
                         <p className="font-sans text-xs text-text-muted mt-1">
-                          Fetch driver details from the Walk-In registry by ID, Phone, or DL Number.
+                          {linkedWalkinId 
+                            ? `Successfully linked to Walk-in ID: ${linkedWalkinId}` 
+                            : "Fetch driver details from the Walk-In registry by ID, Phone, or DL Number."}
                         </p>
                       </div>
-                      <div className="flex w-full sm:w-auto">
-                        <input
-                          type="text"
-                          placeholder="Search Walk-Ins..."
-                          value={walkinSearchInput}
-                          onChange={(e) => setWalkinSearchInput(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              handleWalkinSearch();
-                            }
-                          }}
-                          className="h-10 w-full sm:w-64 rounded-l-lg border border-border bg-white px-3 text-sm focus:border-primary outline-none transition-colors"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleWalkinSearch}
-                          className="h-10 rounded-r-lg bg-primary px-4 text-xs font-bold text-white hover:bg-primary-hover transition-colors"
+                      {!linkedWalkinId ? (
+                        <div className="flex w-full sm:w-auto">
+                          <input
+                            type="text"
+                            placeholder="Search Walk-Ins..."
+                            value={walkinSearchInput}
+                            onChange={(e) => setWalkinSearchInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleWalkinSearch();
+                              }
+                            }}
+                            className="h-10 w-full sm:w-64 rounded-l-lg border border-border bg-white px-3 text-sm focus:border-primary outline-none transition-colors"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleWalkinSearch}
+                            className="h-10 rounded-r-lg bg-primary px-4 text-xs font-bold text-white hover:bg-primary-hover transition-colors"
+                          >
+                            Search
+                          </button>
+                        </div>
+                      ) : (
+                        <button 
+                          type="button" 
+                          onClick={() => setLinkedWalkinId(null)}
+                          className="text-xs text-red-500 font-semibold hover:underline bg-red-50 px-3 py-1.5 rounded border border-red-200"
                         >
-                          Fetch
+                          Unlink
                         </button>
-                      </div>
+                      )}
                     </div>
                   )}
 
@@ -755,7 +772,7 @@ export default function OnboardingForm({
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-text-muted">Phone Number *</label>
-                        <input type="tel" required value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="10-digit mobile" />
+                        <input type="tel" required value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="10-digit mobile" maxLength={10} />
                         <p className="text-[10px] text-text-muted italic">Used for login and verification.</p>
                       </div>
                       <div className="space-y-2">
@@ -771,7 +788,7 @@ export default function OnboardingForm({
                             Different from Phone?
                           </label>
                         </div>
-                        <input type="tel" disabled={!differentWhatsapp} value={differentWhatsapp ? whatsappNumber : phoneNumber} onChange={(e) => setWhatsappNumber(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="Same as phone" />
+                        <input type="tel" disabled={!differentWhatsapp} value={differentWhatsapp ? whatsappNumber : phoneNumber} onChange={(e) => setWhatsappNumber(e.target.value.replace(/\D/g, '').slice(0, 10))} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="Same as phone" maxLength={10} />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-text-muted">Date of Birth *</label>
@@ -967,11 +984,15 @@ export default function OnboardingForm({
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-text-muted">PAN Number *</label>
-                        <input type="text" required value={panNumber} onChange={(e) => setPanNumber(e.target.value.toUpperCase())} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm font-mono focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="ABCDE1234F" />
+                        <input type="text" required value={panNumber} onChange={(e) => setPanNumber(e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 10))} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm font-mono focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="ABCDE1234F" maxLength={10} />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-text-muted">Aadhaar Number *</label>
-                        <input type="text" required value={aadhaarNumber} onChange={(e) => setAadhaarNumber(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm font-mono focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="0000 0000 0000" />
+                        <input type="text" required value={aadhaarNumber} onChange={(e) => {
+                          let val = e.target.value.replace(/\D/g, '').slice(0, 12);
+                          val = val.replace(/(\d{4})(?=\d)/g, "$1 ");
+                          setAadhaarNumber(val);
+                        }} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm font-mono focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="0000 0000 0000" maxLength={14} />
                       </div>
                       
                       <div className="space-y-2 lg:col-span-2">
@@ -983,7 +1004,18 @@ export default function OnboardingForm({
                       </div>
                       <div className="space-y-2 lg:col-span-1">
                         <label className="text-xs font-bold text-text-muted">Lead Source</label>
-                        <input type="text" value={leadSource} onChange={(e) => setLeadSource(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="e.g. Facebook" />
+                        <select value={leadSource} onChange={(e) => setLeadSource(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all">
+                          <option value="">Select Source...</option>
+                          <option value="Social Media">Social Media</option>
+                          <option value="Person">Person / Referral</option>
+                          <option value="Agency">Agency</option>
+                          <option value="Direct">Direct</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2 lg:col-span-1">
+                        <label className="text-xs font-bold text-text-muted">Source Details</label>
+                        <input type="text" value={sourceDetails} onChange={(e) => setSourceDetails(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="e.g. Facebook, John Doe" />
                       </div>
                     </div>
                     
