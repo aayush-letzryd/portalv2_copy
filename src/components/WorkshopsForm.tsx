@@ -340,7 +340,7 @@ export default function WorkshopsForm({
               referrerPolicy="no-referrer"
             />
             <span className="hidden h-5 border-l border-border sm:inline-block" />
-            <span className="hidden font-sans text-xs font-medium text-text-muted tracking-wider uppercase sm:inline-block">
+            <span className="hidden font-sans text-xs font-medium text-text-muted sm:inline-block">
               Workshops Form
             </span>
           </div>
@@ -349,22 +349,14 @@ export default function WorkshopsForm({
           <nav className="flex gap-2">
             <button
               onClick={() => setActiveTab("form")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "form" 
-                  ? "bg-primary text-white shadow-sm shadow-primary/20" 
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "form" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <FileText className="h-4 w-4" />
               Registration Form
             </button>
             <button
               onClick={() => setActiveTab("registry")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "registry" 
-                  ? "bg-primary text-white shadow-sm shadow-primary/20" 
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "registry" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <Plus className="h-4 w-4" />
               Workshops Registry
@@ -374,14 +366,14 @@ export default function WorkshopsForm({
           {/* Clock & Profile Pill */}
           <div className="hidden items-center gap-4 lg:flex">
             <div className="text-right">
-              <span className="block text-[9px] font-bold text-text-dim tracking-wider uppercase">Current Time (IST)</span>
+              <span className="block text-[9px] font-bold text-text-dim">Current Time (IST)</span>
               <span className="font-mono text-xs font-extrabold text-green">{currentTime}</span>
             </div>
             
             <span className="h-5 border-l border-border" />
             
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white uppercase">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white">
                 {initials}
               </div>
               <div className="flex flex-col">
@@ -417,7 +409,7 @@ export default function WorkshopsForm({
               <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold text-white tracking-widest uppercase">
+                    <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold text-white tracking-widest">
                       LetzRyd Desk
                     </span>
                     <span className="text-white/40 text-xs">•</span>
@@ -471,7 +463,7 @@ export default function WorkshopsForm({
               
               {/* Panel 1: Identity & Location */}
               <div className="space-y-4">
-                <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase mb-2 flex items-center gap-1.5 border-b border-slate-100 pb-2">
+                <h3 className="font-sans text-xs font-bold text-primary mb-2 flex items-center gap-1.5 border-b border-slate-100 pb-2">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">1</span>
                   Workshop Identity & Location
                 </h3>
@@ -541,7 +533,7 @@ export default function WorkshopsForm({
 
               {/* Panel 2: Owner & Contact Details */}
               <div className="space-y-4">
-                <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase mb-2 flex items-center gap-1.5 border-b border-slate-100 pb-2 mt-2">
+                <h3 className="font-sans text-xs font-bold text-primary mb-2 flex items-center gap-1.5 border-b border-slate-100 pb-2 mt-2">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">2</span>
                   Owner & Contact Information
                 </h3>
@@ -635,7 +627,7 @@ export default function WorkshopsForm({
 
               {/* Panel 3: Banking & Operations */}
               <div className="space-y-4 col-span-1 md:col-span-2">
-                <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase mb-2 flex items-center gap-1.5 border-b border-slate-100 pb-2 mt-2">
+                <h3 className="font-sans text-xs font-bold text-primary mb-2 flex items-center gap-1.5 border-b border-slate-100 pb-2 mt-2">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">3</span>
                   Banking & Operations
                 </h3>
@@ -706,7 +698,7 @@ export default function WorkshopsForm({
 
               {/* Photo Upload / Verification */}
               <div className="border-t border-border/60 pt-6 mt-4 col-span-1 md:col-span-2">
-                <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase mb-2 flex items-center gap-1.5">
+                <h3 className="font-sans text-xs font-bold text-primary mb-2 flex items-center gap-1.5">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">4</span>
                   Secure Document Uploads (Optional)
                 </h3>
@@ -771,7 +763,7 @@ export default function WorkshopsForm({
               {/* Form Actions Footer */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 border-t border-border/40 pt-6">
                 <div className="flex flex-col gap-1 max-w-sm">
-                  <p className="text-[10px] font-bold text-red-500 uppercase">* means mandatory</p>
+                  <p className="text-[10px] font-bold text-red-500">* means mandatory</p>
                 </div>
                 <div className="flex justify-end gap-3">
                   <button
@@ -807,7 +799,7 @@ export default function WorkshopsForm({
                     <Wrench className="h-5 w-5" />
                   </div>
                   <div>
-                    <span className="block font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Total Registered</span>
+                    <span className="block font-sans text-[10px] font-bold text-text-muted">Total Registered</span>
                     <span className="block font-mono text-xl font-extrabold text-text leading-none mt-1">{stats.total_workshops}</span>
                   </div>
                 </div>
@@ -819,7 +811,7 @@ export default function WorkshopsForm({
                     <CheckCircle className="h-5 w-5" />
                   </div>
                   <div>
-                    <span className="block font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Active Centers</span>
+                    <span className="block font-sans text-[10px] font-bold text-text-muted">Active Centers</span>
                     <span className="block font-mono text-xl font-extrabold text-text leading-none mt-1">{stats.active_count}</span>
                   </div>
                 </div>
@@ -831,7 +823,7 @@ export default function WorkshopsForm({
                     <Briefcase className="h-5 w-5" />
                   </div>
                   <div>
-                    <span className="block font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">EV Specialists</span>
+                    <span className="block font-sans text-[10px] font-bold text-text-muted">EV Specialists</span>
                     <span className="block font-mono text-xl font-extrabold text-text leading-none mt-1">{stats.ev_specialist_count}</span>
                   </div>
                 </div>
@@ -843,7 +835,7 @@ export default function WorkshopsForm({
                     <Clock className="h-5 w-5" />
                   </div>
                   <div>
-                    <span className="block font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">In Onboarding</span>
+                    <span className="block font-sans text-[10px] font-bold text-text-muted">In Onboarding</span>
                     <span className="block font-mono text-xl font-extrabold text-text leading-none mt-1">{stats.onboarding_count}</span>
                   </div>
                 </div>
@@ -905,7 +897,7 @@ export default function WorkshopsForm({
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-border bg-slate-50 text-[10px] font-bold text-text-muted uppercase tracking-wider select-none">
+                    <tr className="border-b border-border bg-slate-50 text-[10px] font-bold text-text-muted select-none">
                       <th className="py-3 px-4">ID</th>
                       <th className="py-3 px-4">Vendor & Type</th>
                       <th className="py-3 px-4">City</th>
@@ -936,7 +928,7 @@ export default function WorkshopsForm({
                             <div className="font-semibold text-text">{record.contact_person}</div>
                             <div className="text-[10px] text-text-muted mt-0.5">{record.mobile_number}</div>
                             {record.owner_name && (
-                              <div className="text-[9px] text-primary font-bold mt-1 uppercase">Owner: {record.owner_name}</div>
+                              <div className="text-[9px] text-primary font-bold mt-1">Owner: {record.owner_name}</div>
                             )}
                           </td>
                           <td className="py-4 px-4 font-mono text-[10px]">
@@ -949,13 +941,7 @@ export default function WorkshopsForm({
                             <div className="mt-0.5">IFSC: <span className="font-semibold">{record.ifsc_code}</span></div>
                           </td>
                           <td className="py-4 px-4">
-                            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
-                              record.workshop_status === "Active" 
-                                ? "bg-green-light text-green" 
-                                : record.workshop_status === "Onboarding"
-                                ? "bg-yellow-light text-amber-700"
-                                : "bg-red-50 text-red-600"
-                            }`}>
+                            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${ record.workshop_status === "Active" ? "bg-green-light text-green" : record.workshop_status === "Onboarding" ? "bg-yellow-light text-amber-700" : "bg-red-50 text-red-600" }`}>
                               {record.workshop_status}
                             </span>
                           </td>

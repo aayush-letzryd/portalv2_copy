@@ -407,7 +407,7 @@ export default function AccidentsForm({
               className="h-8 w-auto object-contain"
             />
             <span className="hidden h-5 border-l border-border sm:inline-block" />
-            <span className="hidden font-sans text-xs font-medium text-text-muted tracking-wider uppercase sm:inline-block">
+            <span className="hidden font-sans text-xs font-medium text-text-muted sm:inline-block">
               Accidents & Claims
             </span>
           </div>
@@ -419,11 +419,7 @@ export default function AccidentsForm({
                 setActiveTab("form");
                 resetForm();
               }}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "form"
-                  ? "bg-primary text-white shadow-sm shadow-primary/20"
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "form" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <FileText className="h-4 w-4" />
               Accidents Form
@@ -434,11 +430,7 @@ export default function AccidentsForm({
                 fetchStats();
                 fetchRecords();
               }}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "registry"
-                  ? "bg-primary text-white shadow-sm shadow-primary/20"
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "registry" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <Settings className="h-4 w-4" />
               Accidents Registry
@@ -448,14 +440,14 @@ export default function AccidentsForm({
           {/* Clock & User Profile */}
           <div className="hidden items-center gap-4 lg:flex">
             <div className="text-right">
-              <span className="block text-[9px] font-bold text-text-dim tracking-wider uppercase">Current Time (IST)</span>
+              <span className="block text-[9px] font-bold text-text-dim">Current Time (IST)</span>
               <span className="font-mono text-xs font-extrabold text-green">{currentTime}</span>
             </div>
             
             <span className="h-5 border-l border-border" />
             
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white uppercase">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white">
                 {initials}
               </div>
               <div className="flex flex-col">
@@ -491,8 +483,8 @@ export default function AccidentsForm({
                   <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-2">
                       <img src="https://letzryd.com/replica-assets/letzryd-long-png-logo-Aq2o3DNOw1i2kBMB-7ab04eaa76.png" className="h-8 brightness-0 invert" alt="LetzRyd" referrerPolicy="no-referrer" />
-                      <span className="px-2 py-0.5 rounded border border-white/30 bg-white/20 text-white text-[10px] font-bold tracking-widest uppercase backdrop-blur-sm">
-                        FLEET SAFETY
+                      <span className="px-2 py-0.5 rounded border border-white/30 bg-white/20 text-white text-[10px] font-bold tracking-widest backdrop-blur-sm">
+                        Fleet Safety
                       </span>
                     </div>
                     <h1 className="font-sans text-2xl font-bold tracking-tight text-white leading-tight">
@@ -546,7 +538,7 @@ export default function AccidentsForm({
                   {/* COLUMN 1: VEHICLE & INCIDENT */}
                   <div className="space-y-6">
                     <div className="border-b border-border pb-3">
-                      <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                      <h3 className="font-sans text-sm font-bold text-primary flex items-center gap-2">
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">1</span>
                         Incident & Vehicle
                       </h3>
@@ -554,7 +546,7 @@ export default function AccidentsForm({
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Vehicle Number <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Vehicle Number <span className="text-red-500">*</span></label>
                         <input 
                           type="text" 
                           placeholder="e.g. TS09 EA 1111..."
@@ -566,7 +558,7 @@ export default function AccidentsForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Vendor Name <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Vendor Name <span className="text-red-500">*</span></label>
                         <input 
                           type="text" 
                           placeholder="Enter vendor name..."
@@ -578,7 +570,7 @@ export default function AccidentsForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Vendor ID (Optional)</label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Vendor ID (Optional)</label>
                         <input 
                           type="text" 
                           placeholder="Enter Vendor ID..."
@@ -589,7 +581,7 @@ export default function AccidentsForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">City Name <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">City Name <span className="text-red-500">*</span></label>
                         <select 
                           value={cityName}
                           onChange={(e) => setCityName(e.target.value)}
@@ -603,7 +595,7 @@ export default function AccidentsForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Date of Accident <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Date of Accident <span className="text-red-500">*</span></label>
                         <input 
                           type="date" 
                           value={dateOfAccident}
@@ -614,7 +606,7 @@ export default function AccidentsForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Time of Accident <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Time of Accident <span className="text-red-500">*</span></label>
                         <input 
                           type="time" 
                           value={timeOfAccident}
@@ -625,7 +617,7 @@ export default function AccidentsForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Place of Accident <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Place of Accident <span className="text-red-500">*</span></label>
                         <input 
                           type="text" 
                           placeholder="Landmark or specific location..."
@@ -637,7 +629,7 @@ export default function AccidentsForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Vehicle Status <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Vehicle Status <span className="text-red-500">*</span></label>
                         <select 
                           value={vehicleStatus}
                           onChange={(e) => setVehicleStatus(e.target.value as any)}
@@ -655,7 +647,7 @@ export default function AccidentsForm({
                   {/* COLUMN 2: DRIVER & PASSENGERS */}
                   <div className="space-y-6">
                     <div className="border-b border-border pb-3">
-                      <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                      <h3 className="font-sans text-sm font-bold text-primary flex items-center gap-2">
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">2</span>
                         Driver & Passenger Info
                       </h3>
@@ -663,7 +655,7 @@ export default function AccidentsForm({
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Driver ID <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Driver ID <span className="text-red-500">*</span></label>
                         <input 
                           type="text" 
                           placeholder="e.g. DR-9001..."
@@ -675,7 +667,7 @@ export default function AccidentsForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Driver Name <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Driver Name <span className="text-red-500">*</span></label>
                         <input 
                           type="text" 
                           placeholder="Full legal name..."
@@ -687,7 +679,7 @@ export default function AccidentsForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">No. of Persons in Vehicle <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">No. of Persons in Vehicle <span className="text-red-500">*</span></label>
                         <input 
                           type="number" 
                           min={0}
@@ -699,7 +691,7 @@ export default function AccidentsForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Third-Party Involvement? <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Third-Party Involvement? <span className="text-red-500">*</span></label>
                         <div className="flex gap-4">
                           {["Yes", "No"].map((v) => (
                             <label key={v} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-bold hover:bg-bg cursor-pointer transition-all shadow-2xs">
@@ -717,7 +709,7 @@ export default function AccidentsForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Police FIR Filed? <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Police FIR Filed? <span className="text-red-500">*</span></label>
                         <div className="flex gap-4">
                           {["Yes", "No"].map((v) => (
                             <label key={v} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-bold hover:bg-bg cursor-pointer transition-all shadow-2xs">
@@ -739,7 +731,7 @@ export default function AccidentsForm({
                   {/* COLUMN 3: DAMAGES & FINANCIALS */}
                   <div className="space-y-6">
                     <div className="border-b border-border pb-3">
-                      <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                      <h3 className="font-sans text-sm font-bold text-primary flex items-center gap-2">
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">3</span>
                         Damages & Claims
                       </h3>
@@ -747,7 +739,7 @@ export default function AccidentsForm({
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Accident Reason <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Accident Reason <span className="text-red-500">*</span></label>
                         <input 
                           type="text" 
                           placeholder="e.g. Rear-ended, Skidded..."
@@ -759,7 +751,7 @@ export default function AccidentsForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Inspection (Damage Summary) <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Inspection (Damage Summary) <span className="text-red-500">*</span></label>
                         <textarea 
                           placeholder="Describe the visible damage thoroughly..."
                           value={accidentInspection}
@@ -771,7 +763,7 @@ export default function AccidentsForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Insurance Claim Status <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Insurance Claim Status <span className="text-red-500">*</span></label>
                         <select 
                           value={insuranceStatus}
                           onChange={(e) => setInsuranceStatus(e.target.value as any)}
@@ -787,7 +779,7 @@ export default function AccidentsForm({
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Repair Cost (₹)</label>
+                          <label className="block font-sans text-[10px] font-bold text-text-muted mb-1">Repair Cost (₹)</label>
                           <input 
                             type="number" 
                             placeholder="0"
@@ -797,7 +789,7 @@ export default function AccidentsForm({
                           />
                         </div>
                         <div>
-                          <label className="block font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Towing Cost (₹)</label>
+                          <label className="block font-sans text-[10px] font-bold text-text-muted mb-1">Towing Cost (₹)</label>
                           <input 
                             type="number" 
                             placeholder="0"
@@ -810,7 +802,7 @@ export default function AccidentsForm({
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Challan Amount (₹)</label>
+                          <label className="block font-sans text-[10px] font-bold text-text-muted mb-1">Challan Amount (₹)</label>
                           <input 
                             type="number" 
                             placeholder="0"
@@ -820,7 +812,7 @@ export default function AccidentsForm({
                           />
                         </div>
                         <div>
-                          <label className="block font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Fine Amount (₹)</label>
+                          <label className="block font-sans text-[10px] font-bold text-text-muted mb-1">Fine Amount (₹)</label>
                           <input 
                             type="number" 
                             placeholder="0"
@@ -832,7 +824,7 @@ export default function AccidentsForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Additional Comments</label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Additional Comments</label>
                         <textarea 
                           placeholder="Other operational notes..."
                           value={comments}
@@ -848,7 +840,7 @@ export default function AccidentsForm({
                 {/* ATTACHMENT SECTION */}
                 <div className="border-t border-border pt-10">
                   <div className="border-b border-border pb-3 mb-6">
-                    <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider">
+                    <h3 className="font-sans text-sm font-bold text-primary">
                       4. Photographic Evidence & Proof <span className="text-red-500">*</span>
                     </h3>
                     <p className="font-sans text-xs text-text-muted mt-1">Upload scene photos of all 4 vehicle sides. If FIR is filed, a copy is also mandatory.</p>
@@ -858,7 +850,7 @@ export default function AccidentsForm({
                     
                     {/* Front Photo */}
                     <div className="rounded-xl border border-dashed border-border bg-bg/30 p-4 text-center flex flex-col items-center justify-center">
-                      <span className="text-[10px] font-bold text-text-muted uppercase mb-2">Front Photo</span>
+                      <span className="text-[10px] font-bold text-text-muted mb-2">Front Photo</span>
                       {frontPhoto ? (
                         <div className="relative">
                           <img src={frontPhoto} className="h-24 w-24 object-cover rounded-lg border border-border shadow-xs" />
@@ -874,7 +866,7 @@ export default function AccidentsForm({
 
                     {/* Back Photo */}
                     <div className="rounded-xl border border-dashed border-border bg-bg/30 p-4 text-center flex flex-col items-center justify-center">
-                      <span className="text-[10px] font-bold text-text-muted uppercase mb-2">Back Photo</span>
+                      <span className="text-[10px] font-bold text-text-muted mb-2">Back Photo</span>
                       {backPhoto ? (
                         <div className="relative">
                           <img src={backPhoto} className="h-24 w-24 object-cover rounded-lg border border-border shadow-xs" />
@@ -890,7 +882,7 @@ export default function AccidentsForm({
 
                     {/* Right Photo */}
                     <div className="rounded-xl border border-dashed border-border bg-bg/30 p-4 text-center flex flex-col items-center justify-center">
-                      <span className="text-[10px] font-bold text-text-muted uppercase mb-2">Right Photo</span>
+                      <span className="text-[10px] font-bold text-text-muted mb-2">Right Photo</span>
                       {rightPhoto ? (
                         <div className="relative">
                           <img src={rightPhoto} className="h-24 w-24 object-cover rounded-lg border border-border shadow-xs" />
@@ -906,7 +898,7 @@ export default function AccidentsForm({
 
                     {/* Left Photo */}
                     <div className="rounded-xl border border-dashed border-border bg-bg/30 p-4 text-center flex flex-col items-center justify-center">
-                      <span className="text-[10px] font-bold text-text-muted uppercase mb-2">Left Photo</span>
+                      <span className="text-[10px] font-bold text-text-muted mb-2">Left Photo</span>
                       {leftPhoto ? (
                         <div className="relative">
                           <img src={leftPhoto} className="h-24 w-24 object-cover rounded-lg border border-border shadow-xs" />
@@ -922,7 +914,7 @@ export default function AccidentsForm({
 
                     {/* FIR Doc Copy */}
                     <div className={`rounded-xl border border-dashed border-border bg-bg/30 p-4 text-center flex flex-col items-center justify-center ${firFiled === "No" ? "opacity-40 cursor-not-allowed pointer-events-none" : ""}`}>
-                      <span className="text-[10px] font-bold text-text-muted uppercase mb-2">FIR Document Copy</span>
+                      <span className="text-[10px] font-bold text-text-muted mb-2">FIR Document Copy</span>
                       {firDoc ? (
                         <div className="relative">
                           <img src={firDoc} className="h-24 w-24 object-cover rounded-lg border border-border shadow-xs" />
@@ -967,7 +959,7 @@ export default function AccidentsForm({
               {/* Card 1: Total Accidents */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-sm flex items-center justify-between">
                 <div>
-                  <span className="block font-sans text-[10px] font-extrabold text-text-muted tracking-wider uppercase mb-1">TOTAL ACCIDENTS</span>
+                  <span className="block font-sans text-[10px] font-extrabold text-text-muted mb-1">Total Accidents</span>
                   <span className="block font-sans text-3xl font-extrabold text-brand-blue">{stats.total_accidents}</span>
                   <span className="block font-sans text-[10px] text-text-dim mt-2">Active reported log</span>
                 </div>
@@ -979,7 +971,7 @@ export default function AccidentsForm({
               {/* Card 2: Drivable */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-sm flex items-center justify-between">
                 <div>
-                  <span className="block font-sans text-[10px] font-extrabold text-text-muted tracking-wider uppercase mb-1">DRIVABLE VEHICLES</span>
+                  <span className="block font-sans text-[10px] font-extrabold text-text-muted mb-1">Drivable Vehicles</span>
                   <span className="block font-sans text-3xl font-extrabold text-green">{stats.drivable_count}</span>
                   <span className="block font-sans text-[10px] text-text-dim mt-2">Active on roads</span>
                 </div>
@@ -991,7 +983,7 @@ export default function AccidentsForm({
               {/* Card 3: Needs Towing */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-sm flex items-center justify-between">
                 <div>
-                  <span className="block font-sans text-[10px] font-extrabold text-text-muted tracking-wider uppercase mb-1">NEEDS TOWING</span>
+                  <span className="block font-sans text-[10px] font-extrabold text-text-muted mb-1">Needs Towing</span>
                   <span className="block font-sans text-3xl font-extrabold text-amber-500">{stats.needs_towing_count}</span>
                   <span className="block font-sans text-[10px] text-text-dim mt-2">Workshop repairs needed</span>
                 </div>
@@ -1003,7 +995,7 @@ export default function AccidentsForm({
               {/* Card 4: Impounded */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-sm flex items-center justify-between">
                 <div>
-                  <span className="block font-sans text-[10px] font-extrabold text-text-muted tracking-wider uppercase mb-1">IMPOUNDED</span>
+                  <span className="block font-sans text-[10px] font-extrabold text-text-muted mb-1">Impounded</span>
                   <span className="block font-sans text-3xl font-extrabold text-red-600">{stats.impounded_count}</span>
                   <span className="block font-sans text-[10px] text-text-dim mt-2">Held at police stations</span>
                 </div>
@@ -1015,7 +1007,7 @@ export default function AccidentsForm({
               {/* Card 5: Repair Cost */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-sm flex items-center justify-between">
                 <div>
-                  <span className="block font-sans text-[10px] font-extrabold text-text-muted tracking-wider uppercase mb-1">TOTAL REPAIR COST</span>
+                  <span className="block font-sans text-[10px] font-extrabold text-text-muted mb-1">Total Repair Cost</span>
                   <span className="block font-sans text-2xl font-extrabold text-red-600">₹ {stats.total_repair_cost.toLocaleString()}</span>
                   <span className="block font-sans text-[10px] text-text-dim mt-2">Estimated damage billing</span>
                 </div>
@@ -1095,7 +1087,7 @@ export default function AccidentsForm({
               <div className="overflow-x-auto">
                 <table className="w-full min-w-4xl border-collapse text-left">
                   <thead>
-                    <tr className="border-b border-border bg-slate-50 text-[10px] font-bold text-text-muted tracking-wider uppercase">
+                    <tr className="border-b border-border bg-slate-50 text-[10px] font-bold text-text-muted">
                       <th className="px-8 py-3.5 w-16">ID</th>
                       <th className="px-5 py-3.5">Date / Time</th>
                       <th className="px-5 py-3.5">Vehicle Details</th>
@@ -1129,13 +1121,7 @@ export default function AccidentsForm({
                             </div>
                           </td>
                           <td className="px-5 py-4">
-                            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                              r.vehicle_status === "Drivable" 
-                                ? "bg-green-light text-green"
-                                : r.vehicle_status === "Needs Towing"
-                                ? "bg-yellow-light text-amber-700"
-                                : "bg-red-50 text-red-600"
-                            }`}>
+                            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold ${ r.vehicle_status === "Drivable" ? "bg-green-light text-green" : r.vehicle_status === "Needs Towing" ? "bg-yellow-light text-amber-700" : "bg-red-50 text-red-600" }`}>
                               {r.vehicle_status}
                             </span>
                           </td>

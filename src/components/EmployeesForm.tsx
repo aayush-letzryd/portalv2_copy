@@ -237,8 +237,8 @@ export default function EmployeesForm({
               referrerPolicy="no-referrer"
             />
             <span className="hidden h-5 border-l border-border sm:inline-block" />
-            <span className="hidden font-sans text-xs font-medium text-text-muted tracking-wider uppercase sm:inline-block">
-              EMPLOYEES DESK
+            <span className="hidden font-sans text-xs font-medium text-text-muted sm:inline-block">
+              Employees Desk
             </span>
           </div>
 
@@ -246,22 +246,14 @@ export default function EmployeesForm({
           <nav className="flex gap-2">
             <button
               onClick={() => setActiveTab('form')}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === 'form' 
-                  ? 'bg-primary text-white shadow-sm shadow-primary/20' 
-                  : 'text-text-muted hover:bg-slate-100 hover:text-primary'
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === 'form' ? 'bg-primary text-white shadow-sm shadow-primary/20' : 'text-text-muted hover:bg-slate-100 hover:text-primary' }`}
             >
               <FileText className="h-4 w-4" />
               Employees Desk
             </button>
             <button
               onClick={() => setActiveTab('registry')}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === 'registry' 
-                  ? 'bg-primary text-white shadow-sm shadow-primary/20' 
-                  : 'text-text-muted hover:bg-slate-100 hover:text-primary'
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === 'registry' ? 'bg-primary text-white shadow-sm shadow-primary/20' : 'text-text-muted hover:bg-slate-100 hover:text-primary' }`}
             >
               <UserCircle className="h-4 w-4" />
               Employees Registry
@@ -270,14 +262,14 @@ export default function EmployeesForm({
 
           <div className="hidden items-center gap-4 lg:flex">
             <div className="text-right">
-              <span className="block text-[9px] font-bold text-text-dim tracking-wider uppercase">Current Time (IST)</span>
+              <span className="block text-[9px] font-bold text-text-dim">Current Time (IST)</span>
               <span className="font-mono text-xs font-extrabold text-green">{currentTime}</span>
             </div>
             
             <span className="h-5 border-l border-border" />
             
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white uppercase">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white">
                 {initials}
               </div>
               <div className="flex flex-col">
@@ -311,7 +303,7 @@ export default function EmployeesForm({
               <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold text-white tracking-widest uppercase">
+                    <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold text-white tracking-widest">
                       LetzRyd Desk
                     </span>
                     <span className="text-white/40 text-xs">•</span>
@@ -329,12 +321,12 @@ export default function EmployeesForm({
             <form onSubmit={handleSubmit} className="p-8 space-y-8">
               {/* ── Basic Info ── */}
               <div>
-                <h3 className="font-sans text-xs font-bold text-violet-600 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                <h3 className="font-sans text-xs font-bold text-violet-600 mb-4 flex items-center gap-1.5">
                   <BadgeCheck className="h-4 w-4" /> Basic Information
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="md:col-span-2">
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Full Name <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -348,7 +340,7 @@ export default function EmployeesForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Employee ID
                     </label>
                     <input
@@ -361,7 +353,7 @@ export default function EmployeesForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Status
                     </label>
                     <select
@@ -375,7 +367,7 @@ export default function EmployeesForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Designation / Role <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -395,7 +387,7 @@ export default function EmployeesForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Department
                     </label>
                     <select
@@ -411,7 +403,7 @@ export default function EmployeesForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Joining Date
                     </label>
                     <input
@@ -426,12 +418,12 @@ export default function EmployeesForm({
 
               {/* ── Contact Info ── */}
               <div className="border-t border-border/60 pt-6">
-                <h3 className="font-sans text-xs font-bold text-violet-600 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                <h3 className="font-sans text-xs font-bold text-violet-600 mb-4 flex items-center gap-1.5">
                   <Phone className="h-4 w-4" /> Contact & Location
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Phone Number
                     </label>
                     <input
@@ -444,7 +436,7 @@ export default function EmployeesForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Personal Email Address
                     </label>
                     <input
@@ -457,7 +449,7 @@ export default function EmployeesForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       LetzRyd Email Address
                     </label>
                     <input
@@ -470,7 +462,7 @@ export default function EmployeesForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       City / Base Location
                     </label>
                     <select
@@ -520,19 +512,19 @@ export default function EmployeesForm({
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="rounded-xl border border-border bg-white p-4 shadow-xs">
-                <p className="font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Total Staff</p>
+                <p className="font-sans text-[10px] font-bold text-text-muted">Total Staff</p>
                 <p className="font-sans text-2xl font-extrabold text-text mt-1">{employees.length}</p>
               </div>
               <div className="rounded-xl border border-green-200 bg-green-50 p-4 shadow-xs">
-                <p className="font-sans text-[10px] font-bold text-green-600 uppercase tracking-wider">Active</p>
+                <p className="font-sans text-[10px] font-bold text-green-600">Active</p>
                 <p className="font-sans text-2xl font-extrabold text-green-700 mt-1">{activeCount}</p>
               </div>
               <div className="rounded-xl border border-red-200 bg-red-50 p-4 shadow-xs">
-                <p className="font-sans text-[10px] font-bold text-red-600 uppercase tracking-wider">Inactive</p>
+                <p className="font-sans text-[10px] font-bold text-red-600">Inactive</p>
                 <p className="font-sans text-2xl font-extrabold text-red-700 mt-1">{inactiveCount}</p>
               </div>
               <div className="rounded-xl border border-violet-200 bg-violet-50 p-4 shadow-xs">
-                <p className="font-sans text-[10px] font-bold text-violet-600 uppercase tracking-wider">Departments</p>
+                <p className="font-sans text-[10px] font-bold text-violet-600">Departments</p>
                 <p className="font-sans text-2xl font-extrabold text-violet-700 mt-1">
                   {new Set(employees.filter(e => e.department).map(e => e.department)).size}
                 </p>
@@ -588,13 +580,13 @@ export default function EmployeesForm({
                   <table className="w-full border-collapse text-left">
                     <thead>
                       <tr className="border-b border-border bg-slate-50/70">
-                        <th className="px-5 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Employee</th>
-                        <th className="px-5 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Role / Dept</th>
-                        <th className="px-5 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Contact</th>
-                        <th className="px-5 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Location</th>
-                        <th className="px-5 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Joined</th>
-                        <th className="px-5 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Status</th>
-                        <th className="px-5 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider text-right">Actions</th>
+                        <th className="px-5 py-3.5 font-sans text-[10px] font-bold text-text-muted">Employee</th>
+                        <th className="px-5 py-3.5 font-sans text-[10px] font-bold text-text-muted">Role / Dept</th>
+                        <th className="px-5 py-3.5 font-sans text-[10px] font-bold text-text-muted">Contact</th>
+                        <th className="px-5 py-3.5 font-sans text-[10px] font-bold text-text-muted">Location</th>
+                        <th className="px-5 py-3.5 font-sans text-[10px] font-bold text-text-muted">Joined</th>
+                        <th className="px-5 py-3.5 font-sans text-[10px] font-bold text-text-muted">Status</th>
+                        <th className="px-5 py-3.5 font-sans text-[10px] font-bold text-text-muted text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/60">
@@ -650,7 +642,7 @@ export default function EmployeesForm({
                               : "—"}
                           </td>
                           <td className="px-5 py-4">
-                            <span className={`inline-flex items-center rounded-md px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider ring-1 ring-inset ${STATUS_STYLES[emp.status] || STATUS_STYLES.Active}`}>
+                            <span className={`inline-flex items-center rounded-md px-2.5 py-1 text-[10px] font-extrabold ring-1 ring-inset ${STATUS_STYLES[emp.status] || STATUS_STYLES.Active}`}>
                               {emp.status}
                             </span>
                           </td>

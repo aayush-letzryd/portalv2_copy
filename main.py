@@ -196,6 +196,12 @@ def startup_event():
             "aadhaar_image  TEXT",
             "dl_image       TEXT",
             "created_at     TIMESTAMP DEFAULT NOW()",
+            "first_name     VARCHAR(255)",
+            "last_name      VARCHAR(255)",
+            "enquiry_time   VARCHAR(50)",
+            "mode_of_enquiry VARCHAR(50)",
+            "referred_by_name VARCHAR(255)",
+            "referred_by_phone VARCHAR(50)"
         ]:
             cur.execute(f"ALTER TABLE copy_walkins ADD COLUMN IF NOT EXISTS {col};")
 
@@ -296,6 +302,11 @@ def startup_event():
         """)
         cur.execute("ALTER TABLE copy_rents ADD COLUMN IF NOT EXISTS level VARCHAR(50) DEFAULT 'model';")
         cur.execute("ALTER TABLE copy_rents ADD COLUMN IF NOT EXISTS vehicle_number VARCHAR(100);")
+        cur.execute("ALTER TABLE copy_rents ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'Pending';")
+        cur.execute("ALTER TABLE copy_rents ADD COLUMN IF NOT EXISTS assigned_to VARCHAR(100);")
+        cur.execute("ALTER TABLE copy_rents ADD COLUMN IF NOT EXISTS assigned_by VARCHAR(100);")
+        cur.execute("ALTER TABLE copy_rents ADD COLUMN IF NOT EXISTS assigned_time TIMESTAMP;")
+
 
         # ── copy_walkin_form_links ──────────────────────
         cur.execute("""
@@ -553,10 +564,10 @@ def startup_event():
                 INSERT INTO copy_walkins (visitor_type, event_date, city, person_name, person_number, dl_number, visiting_reason, joined_status, executive_name, executive_id)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id;
             """
-            cur.execute(w_sql, ("Operator", "2026-06-24", "Mumbai", "Deepak Mehta", "+91 98001 55667", "MH01 20100098765", "Enquiry", "Not Interested", "Neha Sharma", 18))
-            cur.execute(w_sql, ("Individual", "2026-06-25", "Bangalore", "Ravi Shankar", "+91 91000 44556", "KA03 20210056789", "Onboarding", "Pending", "Sandeep", 7))
-            cur.execute(w_sql, ("Individual", "2026-06-26", "Hyderabad", "Ajay Deshmukh", "+91 99888 33221", "TS02 20200765432", "Support", "Joined", "SHAIK ABDULLA", 5))
-            cur.execute(w_sql, ("Operator", "2026-06-26", "Hyderabad", "Kavitha Nair", "+91 90123 45678", "TS06 20181234567", "Enquiry", "Onboarded", "Ayush Mahendru", 13))
+            cur.execute(w_sql, ("Operator", "2026-06-24", "Mumbai", "Deepak Mehta", "9800155667", None, "Enquiry", "No Follow Up Required / Closed", "Neha Sharma", 18))
+            cur.execute(w_sql, ("Individual", "2026-06-25", "Bangalore", "Ravi Shankar", "9100044556", "KA03 20210056789", "Onboarding", "Follow Up Required", "Sandeep", 7))
+            cur.execute(w_sql, ("Individual", "2026-06-26", "Hyderabad", "Ajay Deshmukh", "9988833221", "TS02 20200765432", "Support", "Successfully Onboarded", "SHAIK ABDULLA", 5))
+            cur.execute(w_sql, ("Operator", "2026-06-26", "Hyderabad", "Kavitha Nair", "9012345678", None, "Enquiry", "Successfully Onboarded", "Ayush Mahendru", 13))
 
         # Clean seed 10 onboarding records if empty or < 5
         cur.execute("SELECT COUNT(*) FROM copy_form_onboarding;")
@@ -652,21 +663,26 @@ def startup_event():
             sneha  = user_map.get("Sneha Reddy", 5)
 
             records = [
-                ("Driver",  "2026-06-10", hyd,  shiva,  "K Ramesh Kumar",   "+91 98480 22338", "1234 5678 9012", "TS09 20210045612", "Onboarding",  "Joined",         "Completed documentation. Verified Aadhaar and DL. Assigned Citroen EC3."),
-                ("Driver",  "2026-06-11", blr,  arshad, "Sandeep Hegde",    "+91 99000 88221", "2345 6789 0123", "KA03 20198894101", "Onboarding",  "Joined",         "WagonR onboarding done. App installed and first ride completed."),
-                ("Partner", "2026-06-12", mum,  priya,  "Milind Salunkhe",  "+91 98200 44556", "3456 7890 1234", "MH01 20150993811", "Enquiry",     "Pending",        "Interested in fleet model (5 cars). Revenue sharing terms requested."),
-                ("Driver",  "2026-06-13", hyd,  shiva,  "Mohammad Fareed",  "+91 90001 23456", "4567 8901 2345", "TS11 20220938112", "Support",     "Joined",         "App login issue resolved. Password reset done."),
-                ("Driver",  "2026-06-14", hyd,  rohan,  "Anil Konda",       "+91 88866 55443", "5678 9012 3456", "TS08 20183384910", "Onboarding",  "Not Interested", "Left due to minimum daily drive hour requirement."),
-                ("Partner", "2026-06-15", blr,  priya,  "Rajesh Patel",     "+91 98765 43210", "6789 0123 4567", "GJ01 20190012345", "Enquiry",     "Joined",         "Fleet partner confirmed. 3 vehicles registered and active."),
-                ("Driver",  "2026-06-17", hyd,  arshad, "Suresh Kumar",     "+91 91234 56789", "7890 1234 5678", "TS05 20211234567", "Onboarding",  "Pending",        "Background check in progress. Documents under review."),
-                ("Driver",  "2026-06-19", del_, sneha,  "Vikram Singh",     "+91 98888 77766", "8901 2345 6789", "DL01 20178901234", "Onboarding",  "Joined",         "Delhi onboarding complete. Dzire assigned."),
-                ("Partner", "2026-06-21", hyd,  priya,  "Anita Reddy",      "+91 99111 22233", "9012 3456 7890", "TS03 20200987654", "Enquiry",     "Pending",        "Follow-up call scheduled for next week."),
-                ("Driver",  "2026-06-22", hyd,  shiva,  "Bhaskar Rao",      "+91 90909 08080", "0123 4567 8901", "TS07 20220123456", "Support",     "Joined",         "Payment settlement resolved. All dues cleared."),
-                ("Driver",  "2026-06-23", chn,  sneha,  "Pawan Krishnan",   "+91 97777 11122", "1122 3344 5566", "TN22 20191234567", "Onboarding",  "Joined",         "Chennai pilot batch. Hyundai Xcent assigned."),
-                ("Partner", "2026-06-24", mum,  rohan,  "Deepak Mehta",     "+91 98001 55667", "7788 9900 1122", "MH04 20160098765", "Enquiry",     "Not Interested", "Concerned about lock-in period. Did not proceed."),
-                ("Driver",  "2026-06-25", blr,  arshad, "Ravi Shankar",     "+91 91000 44556", "3344 5566 7788", "KA05 20210056789", "Onboarding",  "Pending",        "Documents submitted. Waiting for police verification."),
-                ("Driver",  "2026-06-26", hyd,  shiva,  "Ajay Deshmukh",    "+91 99888 33221", "5566 7788 9900", "TS02 20200765432", "Support",     "Joined",         "Rider rating issue investigated and resolved."),
-                ("Partner", "2026-06-26", hyd,  priya,  "Kavitha Nair",     "+91 90123 45678", "6677 8899 0011", "TS06 20181234567", "Enquiry",     "Joined",         "Signed partner agreement. 2 vehicles onboarded."),
+                ("Driver",  "2026-06-10", hyd,  shiva,  "K Ramesh Kumar",   "9848022338", "1234 5678 9012", "TS09 20210045612", "Onboarding",  "Successfully Onboarded",         "Completed documentation. Verified Aadhaar and DL. Assigned Citroen EC3."),
+                ("Driver",  "2026-06-11", blr,  arshad, "Sandeep Hegde",    "9900088221", "2345 6789 0123", "KA03 20198894101", "Onboarding",  "Successfully Onboarded",         "WagonR onboarding done. App installed and first ride completed."),
+                ("Partner", "2026-06-12", mum,  priya,  "Milind Salunkhe",  "9820044556", None, None, "Enquiry",     "Follow Up Required",        "Interested in fleet model (5 cars). Revenue sharing terms requested."),
+                ("Driver",  "2026-06-13", hyd,  shiva,  "Mohammad Fareed",  "9000123456", "4567 8901 2345", "TS11 20220938112", "Support",     "Successfully Onboarded",         "App login issue resolved. Password reset done."),
+                ("Driver",  "2026-06-14", hyd,  rohan,  "Anil Konda",       "8886655443", "5678 9012 3456", "TS08 20183384910", "Onboarding",  "No Follow Up Required / Closed", "Left due to minimum daily drive hour requirement."),
+                ("Partner", "2026-06-15", blr,  priya,  "Rajesh Patel",     "9876543210", None, None, "Enquiry",     "Successfully Onboarded",         "Fleet partner confirmed. 3 vehicles registered and active."),
+                ("Driver",  "2026-06-17", hyd,  arshad, "Suresh Kumar",     "9123456789", "7890 1234 5678", "TS05 20211234567", "Onboarding",  "Follow Up Required",        "Background check in progress. Documents under review."),
+                ("Driver",  "2026-06-19", del_, sneha,  "Vikram Singh",     "9888877766", "8901 2345 6789", "DL01 20178901234", "Onboarding",  "Successfully Onboarded",         "Delhi onboarding complete. Dzire assigned."),
+                ("Partner", "2026-06-21", hyd,  priya,  "Anita Reddy",      "9911122233", None, None, "Enquiry",     "Follow Up Required",        "Follow-up call scheduled for next week."),
+                ("Driver",  "2026-06-22", hyd,  shiva,  "Bhaskar Rao",      "9090908080", "0123 4567 8901", "TS07 20220123456", "Support",     "Successfully Onboarded",         "Payment settlement resolved. All dues cleared."),
+                ("Driver",  "2026-06-23", chn,  sneha,  "Pawan Krishnan",   "9777711122", "1122 3344 5566", "TN22 20191234567", "Onboarding",  "Successfully Onboarded",         "Chennai pilot batch. Hyundai Xcent assigned."),
+                ("Partner", "2026-06-24", mum,  rohan,  "Deepak Mehta",     "9800155667", None, None, "Enquiry",     "No Follow Up Required / Closed", "Concerned about lock-in period. Did not proceed."),
+                ("Driver",  "2026-06-25", blr,  arshad, "Ravi Shankar",     "9100044556", "3344 5566 7788", "KA05 20210056789", "Onboarding",  "Follow Up Required",        "Documents submitted. Waiting for police verification."),
+                ("Driver",  "2026-06-26", hyd,  shiva,  "Ajay Deshmukh",    "9988833221", "5566 7788 9900", "TS02 20200765432", "Support",     "Successfully Onboarded",         "Rider rating issue investigated and resolved."),
+                ("Partner", "2026-06-26", hyd,  priya,  "Kavitha Nair",     "9012345678", None, None, "Enquiry",     "Successfully Onboarded",         "Signed partner agreement. 2 vehicles onboarded."),
+                ("Driver",  "2026-07-02", hyd,  shiva,  "Rahul Dravid",     "9000011111", "9012 3456 7890", "TS09 20210045612", "Onboarding",  "Onboarding Process Initiated", "Follow up next week"),
+                ("Partner", "2026-07-05", blr,  arshad, "MS Dhoni",         "9000022222", None,             None,               "Enquiry",     "Follow Up Required",         "Wants to know about fleet terms"),
+                ("Operator","2026-07-07", mum,  priya,  "Virat Kohli",      "9000033333", None,             None,               "Enquiry",     "No Follow Up Required / Closed", "Not interested in terms"),
+                ("Driver",  "2026-07-08", chn,  sneha,  "Rohit Sharma",     "9000044444", "2345 6789 0123", "TN22 20191234567", "Onboarding",  "Successfully Onboarded", "Assigned vehicle"),
+
             ]
 
             cur.executemany("""
@@ -1104,11 +1120,11 @@ def startup_event():
                 ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
             """
             acc_records = [
-                ("TS09 EA 1111", "VND-HYD-001", "Hyderabad Fleet Services", "Hyderabad", "2026-06-30", "14:30", "Koramangala, BLR", "Needs Towing", "DR-HYD-001", "Anil Kumble", "2", "No", "No", "Rear-ended by auto", "Rear bumper dented, boot door not locking", "Pending", "14500", "2000", "0", "0", "Awaiting survey"),
+                ("TS09 EA 1111", "VND-HYD-001", "Hyderabad Fleet Services", "Hyderabad", "2026-06-30", "14:30", "Koramangala, BLR", "Needs Towing", "DR-HYD-001", "Anil Kumble", "2", "No", "No", "Rear-ended by auto", "Rear bumper dented, boot door not locking", "Follow Up Required", "14500", "2000", "0", "0", "Awaiting survey"),
                 ("MH02 IJ 1234", "VND-MUM-002", "IAC Transport", "Mumbai", "2026-06-29", "09:15", "Andheri West, MUM", "Drivable", "DR-MUM-001", "Sunil Gavaskar", "1", "No", "No", "Minor side scrape", "Left side mirror cracked", "N/A", "2000", "0", "0", "0", "No major damage"),
                 ("DL02 IJ 7777", "VND-DEL-001", "Delhi Drive Fleet", "Delhi", "2026-06-28", "23:45", "Connaught Place, DEL", "Impounded by Police", "DR-DEL-001", "Kapil Dev", "3", "Yes", "Yes", "Hit pedestrian", "Front glass shattered, police impounded", "Claimed", "45000", "0", "5000", "10000", "FIR lodged. Driver released on bail."),
                 ("TN07 EF 7777", "VND-CHN-001", "BLEND Logistics", "Chennai", "2026-06-25", "18:20", "T-Nagar, CHN", "Drivable", "DR-CHN-001", "Senthil Kumar", "1", "No", "No", "Minor scratch", "Right rear door paint scratch", "N/A", "500", "0", "0", "0", "Buffing will resolve"),
-                ("TS09 EA 9999", "VND-HYD-001", "Hyderabad Fleet Services", "Hyderabad", "2026-06-20", "07:00", "Hitech City, HYD", "Needs Towing", "DR-HYD-002", "Vikram Reddy", "2", "No", "No", "Hit divider", "Right suspension damaged", "Pending", "12000", "1500", "0", "0", "Towed to workshop")
+                ("TS09 EA 9999", "VND-HYD-001", "Hyderabad Fleet Services", "Hyderabad", "2026-06-20", "07:00", "Hitech City, HYD", "Needs Towing", "DR-HYD-002", "Vikram Reddy", "2", "No", "No", "Hit divider", "Right suspension damaged", "Follow Up Required", "12000", "1500", "0", "0", "Towed to workshop")
             ]
             for r in acc_records:
                 cur.execute(acc_sql, r)
@@ -1254,10 +1270,10 @@ def startup_event():
         if cur.fetchone()[0] == 0:
             maint_records = [
                 (2001, "TS09 EA 9999", "Hyderabad", "Tata Tigor EV", "18400", "General Service", "Hitech City, HYD", "2026-06-25T16:20", "", "LetzRyd Direct Hub", "2026-06-25", "2026-06-25", "3500", "No", "", "", "Rohan Verma", "2026-06-25", "Delivered", "2026-06-25", "Servicing completed successfully.", "2026-06-25", "2026-06-25", "Completed", "0", "Completed", "INV-1001", "2026-06-25", "3500", "0", "3500", "Paid", "UPI", "UTR11223344", "Settled", "Available", "Available", "Available", "Available", "Available", "Available", "Available", "Available", "Available", "2", "Good", "Good", "Good", "Good"),
-                (2002, "TN07 EF 7777", "Chennai", "WagonR EV", "24100", "Breakdown", "T-Nagar, CHN", "2026-06-29T09:30", "Motor overheating", "BLEND Repairs", "2026-06-29", "2026-07-01", "8500", "No", "", "", "Sneha Reddy", "2026-06-29", "QC", "2026-06-29", "Undergoing quality testing.", "", "", "", "", "Pending", "", "", "", "", "", "Pending", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""),
-                (2003, "DL02 IJ 7777", "Delhi", "Citroen eC3", "14300", "Running Repair", "Connaught Place, DEL", "2026-07-01T11:45", "Brake pads replacement", "Zypp Auto Service", "2026-07-01", "2026-07-01", "1200", "No", "", "", "Sneha Reddy", "2026-07-01", "Ready", "2026-07-01", "Ready for delivery.", "2026-07-01", "", "", "", "Pending", "", "", "", "", "", "Pending", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""),
-                (2004, "MH02 IJ 1234", "Mumbai", "Citroen eC3", "9800", "Accidental", "Andheri West, MUM", "2026-07-02T14:15", "Left front bumper collision", "IAC Motors", "2026-07-02", "2026-07-10", "35000", "Yes", "CLM9988", "HDFC ERGO", "Priya Sharma", "2026-07-02", "Approval", "2026-07-02", "Awaiting insurance surveyor approval.", "", "", "", "", "Pending", "", "", "", "", "", "Pending", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""),
-                (2005, "TS09 EA 1111", "Bangalore", "Tata Tigor EV", "12500", "General Service", "Koramangala, BLR", "2026-07-03T10:30", "AC cooling issue", "ZoomRx Garage", "2026-07-03", "2026-07-04", "4500", "No", "", "", "Arshad Khan", "2026-07-03", "Repairing", "2026-07-03", "AC gas recharge in progress.", "", "", "", "", "Pending", "", "", "", "", "", "Pending", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
+                (2002, "TN07 EF 7777", "Chennai", "WagonR EV", "24100", "Breakdown", "T-Nagar, CHN", "2026-06-29T09:30", "Motor overheating", "BLEND Repairs", "2026-06-29", "2026-07-01", "8500", "No", "", "", "Sneha Reddy", "2026-06-29", "QC", "2026-06-29", "Undergoing quality testing.", "", "", "", "", "Follow Up Required", "", "", "", "", "", "Follow Up Required", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""),
+                (2003, "DL02 IJ 7777", "Delhi", "Citroen eC3", "14300", "Running Repair", "Connaught Place, DEL", "2026-07-01T11:45", "Brake pads replacement", "Zypp Auto Service", "2026-07-01", "2026-07-01", "1200", "No", "", "", "Sneha Reddy", "2026-07-01", "Ready", "2026-07-01", "Ready for delivery.", "2026-07-01", "", "", "", "Follow Up Required", "", "", "", "", "", "Follow Up Required", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""),
+                (2004, "MH02 IJ 1234", "Mumbai", "Citroen eC3", "9800", "Accidental", "Andheri West, MUM", "2026-07-02T14:15", "Left front bumper collision", "IAC Motors", "2026-07-02", "2026-07-10", "35000", "Yes", "CLM9988", "HDFC ERGO", "Priya Sharma", "2026-07-02", "Approval", "2026-07-02", "Awaiting insurance surveyor approval.", "", "", "", "", "Follow Up Required", "", "", "", "", "", "Follow Up Required", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""),
+                (2005, "TS09 EA 1111", "Bangalore", "Tata Tigor EV", "12500", "General Service", "Koramangala, BLR", "2026-07-03T10:30", "AC cooling issue", "ZoomRx Garage", "2026-07-03", "2026-07-04", "4500", "No", "", "", "Arshad Khan", "2026-07-03", "Repairing", "2026-07-03", "AC gas recharge in progress.", "", "", "", "", "Follow Up Required", "", "", "", "", "", "Follow Up Required", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
             ]
             maint_sql = """
                 INSERT INTO copy_maintenance_registry (
@@ -1334,10 +1350,10 @@ def startup_event():
         cur.execute("SELECT COUNT(*) FROM copy_traffic_challans;")
         if cur.fetchone()[0] == 0:
             challan_records = [
-                ("CHL-8822912", "TS09 EA 9999",  "DR-9001", "Suresh Kumar",  "2026-07-01", "Gachibowli X Roads, Hyderabad",      500,  "Pending",   0,   "Over-speeding violation caught by speed camera."),
+                ("CHL-8822912", "TS09 EA 9999",  "DR-9001", "Suresh Kumar",  "2026-07-01", "Gachibowli X Roads, Hyderabad",      500,  "Follow Up Required",   0,   "Over-speeding violation caught by speed camera."),
                 ("CHL-8833911", "MH02 IJ 1234",  "N/A",     "N/A",           "2026-07-02", "Andheri Link Rd, Mumbai",           1000,  "Disputed",  0,   "Wrong way driving. Driver was not active, checking vehicle custody."),
                 ("CHL-8844910", "DL02 IJ 7777",  "DR-9002", "Mahesh Babu",   "2026-06-30", "Connaught Place, Delhi",             300,  "Recovered", 300, "No seat belt violation. Deducted from driver wallet on request."),
-                ("CHL-8855909", "TN07 EF 7777",  "DR-9003", "Kiran Rao",     "2026-06-28", "Anna Salai, Chennai",                500,  "Pending",   0,   "Signal jumping at Anna Salai intersection. CCTV footage obtained."),
+                ("CHL-8855909", "TN07 EF 7777",  "DR-9003", "Kiran Rao",     "2026-06-28", "Anna Salai, Chennai",                500,  "Follow Up Required",   0,   "Signal jumping at Anna Salai intersection. CCTV footage obtained."),
                 ("CHL-8866908", "TS09 EA 1111",  "DR-9004", "Vijay Sharma",  "2026-06-25", "Koramangala 80ft Rd, Bengaluru",    1500,  "Recovered", 1500,"Parking in no-parking zone. Driver accepted liability and paid."),
                 ("CHL-8877907", "KA01 GH 5432",  "DR-9005", "Ravi Teja",     "2026-07-02", "MG Road, Bengaluru",                 700,  "Disputed",  0,   "Triple seat riding violation. Driver claims vehicle was not under his custody that day."),
                 ("CHL-8888906", "MH02 KL 8888",  "DR-9006", "Aarav Mishra",  "2026-07-03", "Baner Road, Pune",                  2000,  "Waived",    0,   "False challan alert by automated system. District RTO verified and waived on request."),
@@ -1417,9 +1433,12 @@ class LoginRequest(BaseModel):
 class WalkinData(BaseModel):
     visitor_type:    Optional[str] = None
     event_date:      Optional[str] = None
+    enquiry_time:    Optional[str] = None
     city:            Union[str, int, None] = None
     operating_place: Optional[str] = None
     executive_id:    Union[str, int, None] = None
+    first_name:      Optional[str] = None
+    last_name:       Optional[str] = None
     person_name:     Optional[str] = None
     person_number:   Union[str, int, None] = None
     aadhaar_number:  Optional[str] = None
@@ -1427,6 +1446,9 @@ class WalkinData(BaseModel):
     aadhaar_image:   Optional[Any] = None
     dl_image:        Optional[Any] = None
     visiting_reason: Optional[str] = None
+    mode_of_enquiry: Optional[str] = None
+    referred_by_name: Optional[str] = None
+    referred_by_phone: Optional[str] = None
     joined_status:   Optional[str] = None
     remarks:         Optional[str] = None
 
@@ -1796,7 +1818,7 @@ class AppUserUpdateData(BaseModel):
     employee_id: Optional[str] = None
     email: Optional[str] = None
 
-@app.get("/api/copy_users")
+@app.get("/api/users")
 def list_app_users(authorization: Optional[str] = Header(None)):
     get_current_user(authorization)
     conn = postgreSQL_pool.getconn()
@@ -1829,7 +1851,7 @@ def list_app_users(authorization: Optional[str] = Header(None)):
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.post("/api/copy_users")
+@app.post("/api/users")
 def create_app_user(req: AppUserData, authorization: Optional[str] = Header(None)):
     get_current_user(authorization)
     username_cleaned = req.username.strip().lower()
@@ -1881,7 +1903,7 @@ def create_app_user(req: AppUserData, authorization: Optional[str] = Header(None
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.put("/api/copy_users/{id}")
+@app.put("/api/users/{id}")
 def update_app_user(id: int, req: AppUserUpdateData, authorization: Optional[str] = Header(None)):
     get_current_user(authorization)
     username_cleaned = req.username.strip().lower()
@@ -1951,7 +1973,7 @@ def update_app_user(id: int, req: AppUserUpdateData, authorization: Optional[str
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.delete("/api/copy_users/{id}")
+@app.delete("/api/users/{id}")
 def delete_app_user(id: int, authorization: Optional[str] = Header(None)):
     user = get_current_user(authorization)
     if user["user_id"] == id:
@@ -2200,7 +2222,7 @@ class CityData(BaseModel):
     country: Optional[str] = "India"
     status: Optional[str] = "Active"
 
-@app.get("/api/copy_cities")
+@app.get("/api/cities")
 def get_all_cities():
     conn = postgreSQL_pool.getconn()
     try:
@@ -2218,7 +2240,7 @@ def get_all_cities():
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.post("/api/copy_cities")
+@app.post("/api/cities")
 def create_city(req: CityData, authorization: Optional[str] = Header(None)):
     get_current_user(authorization)
     name_cleaned = req.name.strip()
@@ -2245,7 +2267,7 @@ def create_city(req: CityData, authorization: Optional[str] = Header(None)):
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.put("/api/copy_cities/{id}")
+@app.put("/api/cities/{id}")
 def update_city(id: int, req: CityData, authorization: Optional[str] = Header(None)):
     get_current_user(authorization)
     if id <= 3:
@@ -2276,7 +2298,7 @@ def update_city(id: int, req: CityData, authorization: Optional[str] = Header(No
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.delete("/api/copy_cities/{id}")
+@app.delete("/api/cities/{id}")
 def delete_city(id: int, authorization: Optional[str] = Header(None)):
     get_current_user(authorization)
     if id <= 3:
@@ -2309,11 +2331,11 @@ def get_stats():
         cur = conn.cursor()
         cur.execute("SELECT COUNT(*) FROM copy_walkins;")
         total = cur.fetchone()[0]
-        cur.execute("SELECT COUNT(*) FROM copy_walkins WHERE joined_status='Joined';")
+        cur.execute("SELECT COUNT(*) FROM copy_walkins WHERE joined_status IN ('Successfully Onboarded', 'Joined', 'Onboarded');")
         joined = cur.fetchone()[0]
-        cur.execute("SELECT COUNT(*) FROM copy_walkins WHERE joined_status='Pending';")
+        cur.execute("SELECT COUNT(*) FROM copy_walkins WHERE joined_status IN ('Follow Up Required', 'Pending');")
         pending = cur.fetchone()[0]
-        cur.execute("SELECT COUNT(*) FROM copy_walkins WHERE joined_status='Not Interested';")
+        cur.execute("SELECT COUNT(*) FROM copy_walkins WHERE joined_status IN ('No Follow Up Required / Closed', 'Not Interested');")
         not_interested = cur.fetchone()[0]
         cur.execute("SELECT COUNT(*) FROM copy_walkins WHERE visitor_type='Individual';")
         individuals = cur.fetchone()[0]
@@ -2336,12 +2358,16 @@ def get_stats():
 # ─────────────────────────────────────────────────────────
 # Walk-ins — List
 # ─────────────────────────────────────────────────────────
-@app.get("/api/copy_walkins")
+@app.get("/api/walkins")
 def get_all_walkins(
     search: Optional[str] = None,
     city: Optional[str] = "all",
     visitor_type: Optional[str] = "all",
     status: Optional[str] = "all",
+    time_period: Optional[str] = "all",
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    page: Optional[int] = 1,
     limit: Optional[int] = 10
 ):
     conn = postgreSQL_pool.getconn()
@@ -2353,9 +2379,15 @@ def get_all_walkins(
                 w.id,
                 w.visitor_type,
                 w.event_date,
-                COALESCE(c.name, w.city)   AS city_name,
+                w.enquiry_time,
+                w.mode_of_enquiry,
+                w.first_name,
+                w.last_name,
+                w.referred_by_name,
+                w.referred_by_phone,
+                COALESCE(c.name, w.city) AS city_name,
                 w.executive_id,
-                COALESCE(u.name, '—')      AS executive_name,
+                COALESCE(u.name, '-') AS executive_name,
                 w.person_name,
                 w.person_number,
                 w.aadhaar_number,
@@ -2366,7 +2398,7 @@ def get_all_walkins(
                 w.created_at
             FROM copy_walkins w
             LEFT JOIN copy_cities c ON c.id::text = w.city::text
-            LEFT JOIN copy_users  u ON u.id = w.executive_id
+            LEFT JOIN copy_users u ON u.id = w.executive_id
             WHERE 1=1
         """
         
@@ -2376,6 +2408,8 @@ def get_all_walkins(
             base_query += """
                 AND (
                     w.person_name ILIKE %s
+                    OR w.first_name ILIKE %s
+                    OR w.last_name ILIKE %s
                     OR w.person_number ILIKE %s
                     OR w.dl_number ILIKE %s
                     OR w.aadhaar_number ILIKE %s
@@ -2383,9 +2417,7 @@ def get_all_walkins(
                 )
             """
             search_pattern = f"%{search}%"
-            params.extend([search_pattern] * 5)
-            # When searching, we want more results
-            limit = max(limit, 50)
+            params.extend([search_pattern] * 7)
             
         if city and city != "all":
             base_query += " AND COALESCE(c.name, w.city) = %s"
@@ -2399,18 +2431,63 @@ def get_all_walkins(
             base_query += " AND w.joined_status = %s"
             params.append(status)
             
-        base_query += " ORDER BY w.id DESC LIMIT %s;"
-        params.append(limit)
+        # Date filtering based on created_at or event_date. Since event_date is string "YYYY-MM-DD", let's cast it or just filter on created_at
+        if time_period and time_period != "all":
+            from datetime import datetime, timedelta
+            from dateutil.relativedelta import relativedelta
+            
+            today = datetime.now()
+            
+            if time_period == "beginning_of_month":
+                start_dt = today.replace(day=1).strftime("%Y-%m-%d")
+                base_query += " AND w.event_date >= %s"
+                params.append(start_dt)
+            elif time_period == "last_1_month":
+                start_dt = (today - relativedelta(months=1)).strftime("%Y-%m-%d")
+                base_query += " AND w.event_date >= %s"
+                params.append(start_dt)
+            elif time_period == "this_year":
+                start_dt = today.replace(month=1, day=1).strftime("%Y-%m-%d")
+                base_query += " AND w.event_date >= %s"
+                params.append(start_dt)
+            elif time_period == "last_1_year":
+                start_dt = (today - relativedelta(years=1)).strftime("%Y-%m-%d")
+                base_query += " AND w.event_date >= %s"
+                params.append(start_dt)
+            elif time_period == "this_quarter":
+                quarter_month = ((today.month - 1) // 3) * 3 + 1
+                start_dt = today.replace(month=quarter_month, day=1).strftime("%Y-%m-%d")
+                base_query += " AND w.event_date >= %s"
+                params.append(start_dt)
+            elif time_period == "custom" and start_date and end_date:
+                base_query += " AND w.event_date >= %s AND w.event_date <= %s"
+                params.extend([start_date, end_date])
+                
+        # Count total for pagination
+        count_query = f"SELECT COUNT(*) FROM ({base_query}) AS total_count"
+        cur.execute(count_query, params)
+        total_items = cur.fetchone()[0]
+        
+        # Pagination
+        offset = (page - 1) * limit
+        base_query += " ORDER BY w.id DESC LIMIT %s OFFSET %s;"
+        params.extend([limit, offset])
         
         cur.execute(base_query, params)
         cols = [d[0] for d in cur.description]
-        result = []
+        items = []
         for row in cur.fetchall():
             d = dict(zip(cols, row))
             if d.get("created_at"):
                 d["created_at"] = str(d["created_at"])
-            result.append(d)
-        return result
+            items.append(d)
+            
+        return {
+            "items": items,
+            "total": total_items,
+            "page": page,
+            "limit": limit
+        }
     finally:
         postgreSQL_pool.putconn(conn)
 
@@ -2418,7 +2495,7 @@ def get_all_walkins(
 # ─────────────────────────────────────────────────────────
 # Walk-ins — Search for Linking
 # ─────────────────────────────────────────────────────────
-@app.get("/api/copy_walkins/search")
+@app.get("/api/walkins/search")
 def search_walkins(q: str):
     """Search for walk-ins by ID, phone, or DL to prepopulate Onboarding."""
     conn = postgreSQL_pool.getconn()
@@ -2426,11 +2503,16 @@ def search_walkins(q: str):
         cur = conn.cursor()
         search_pattern = f"%{q}%"
         cur.execute("""
-            SELECT id, person_name, person_number, city, dl_number, aadhaar_number
+            SELECT id, first_name, last_name, person_name, person_number, city, dl_number, aadhaar_number
             FROM copy_walkins
-            WHERE id::text = %s OR person_number ILIKE %s OR dl_number ILIKE %s
-            ORDER BY id DESC LIMIT 5;
-        """, (q, search_pattern, search_pattern))
+            WHERE id::text = %s 
+               OR person_number ILIKE %s 
+               OR dl_number ILIKE %s
+               OR first_name ILIKE %s
+               OR last_name ILIKE %s
+               OR person_name ILIKE %s
+            ORDER BY id DESC LIMIT 10;
+        """, (q, search_pattern, search_pattern, search_pattern, search_pattern, search_pattern))
         
         cols = [d[0] for d in cur.description]
         result = [dict(zip(cols, row)) for row in cur.fetchall()]
@@ -2442,7 +2524,7 @@ def search_walkins(q: str):
 # ─────────────────────────────────────────────────────────
 # Walk-ins — Single
 # ─────────────────────────────────────────────────────────
-@app.get("/api/copy_walkins/{walkin_id}")
+@app.get("/api/walkins/{walkin_id}")
 def get_walkin(walkin_id: int):
     conn = postgreSQL_pool.getconn()
     try:
@@ -2474,7 +2556,7 @@ def get_walkin(walkin_id: int):
 # ─────────────────────────────────────────────────────────
 # Walk-ins — Create
 # ─────────────────────────────────────────────────────────
-@app.post("/api/copy_walkins")
+@app.post("/api/walkins")
 def create_walkin(data: WalkinData, authorization: Optional[str] = Header(None)):
     # Get executive_id from session if available
     exec_id_from_session = None
@@ -2526,7 +2608,7 @@ def create_walkin(data: WalkinData, authorization: Optional[str] = Header(None))
 # ─────────────────────────────────────────────────────────
 # Walk-ins — Update
 # ─────────────────────────────────────────────────────────
-@app.put("/api/copy_walkins/{walkin_id}")
+@app.put("/api/walkins/{walkin_id}")
 def update_walkin(walkin_id: int, data: WalkinData, authorization: Optional[str] = Header(None)):
     exec_id_from_session = None
     if authorization and authorization.startswith("Bearer "):
@@ -2579,7 +2661,7 @@ def update_walkin(walkin_id: int, data: WalkinData, authorization: Optional[str]
 # ─────────────────────────────────────────────────────────
 # Walk-ins — Delete
 # ─────────────────────────────────────────────────────────
-@app.delete("/api/copy_walkins/{walkin_id}")
+@app.delete("/api/walkins/{walkin_id}")
 def delete_walkin(walkin_id: int):
     conn = postgreSQL_pool.getconn()
     try:
@@ -3008,6 +3090,57 @@ def update_adjustment(id: int, data: AdjustmentData):
             raise HTTPException(status_code=404, detail="Adjustment record not found")
         conn.commit()
         return {"success": True, "id": id}
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+
+@app.put("/api/adjustment/{id}/status")
+def update_adjustment_status(id: int, request: Request, authorization: Optional[str] = Header(None)):
+    user = get_current_user(authorization)
+    if user.get("role") not in ["Manager", "Admin", "Founder/Admin", "CEO/Admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized to approve")
+    
+    data = asyncio.run(request.json())
+    new_status = data.get("status")
+    
+    if new_status not in ["Approved", "Rejected"]:
+        raise HTTPException(status_code=400, detail="Invalid status")
+        
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("UPDATE copy_partner_adjustment SET status = %s, first_level_approval_by = %s WHERE id = %s", (new_status, user.get("name", ""), id))
+        conn.commit()
+        return {"status": "success", "message": f"Adjustment {new_status}"}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+
+@app.put("/api/adjustment/{id}/assign")
+def assign_adjustment(id: int, request: Request, authorization: Optional[str] = Header(None)):
+    user = get_current_user(authorization)
+    if user.get("role") not in ["Manager", "Admin", "Founder/Admin", "CEO/Admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized to assign")
+    
+    data = asyncio.run(request.json())
+    assigned_to = data.get("assigned_to")
+    
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE copy_partner_adjustment 
+            SET assigned_to = %s, assigned_by = %s, assigned_time = NOW() 
+            WHERE id = %s
+        """, (assigned_to, user.get("name", ""), id))
+        conn.commit()
+        return {"status": "success", "message": f"Assigned to {assigned_to}"}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         postgreSQL_pool.putconn(conn)
 
@@ -3732,10 +3865,11 @@ def delete_hub_record(id: int, authorization: Optional[str] = Header(None)):
 # ─────────────────────────────────────────────────────────
 # Rents
 # ─────────────────────────────────────────────────────────
-@app.get("/api/copy_rents")
+@app.get("/api/rents")
 def get_rents(
     search: Optional[str] = None,
     level: Optional[str] = None,
+    status: Optional[str] = None,
     authorization: Optional[str] = Header(None)
 ):
     get_current_user(authorization)
@@ -3751,6 +3885,9 @@ def get_rents(
         if level:
             query += " AND level = %s"
             params.append(level)
+        if status:
+            query += " AND status = %s"
+            params.append(status)
         query += " ORDER BY id DESC"
         cur.execute(query, params)
         cols = [d[0] for d in cur.description]
@@ -3758,7 +3895,7 @@ def get_rents(
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.post("/api/copy_rents")
+@app.post("/api/rents")
 def create_rent(data: RentData, authorization: Optional[str] = Header(None)):
     user = get_current_user(authorization)
     conn = postgreSQL_pool.getconn()
@@ -3791,7 +3928,7 @@ def create_rent(data: RentData, authorization: Optional[str] = Header(None)):
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.put("/api/copy_rents/{id}")
+@app.put("/api/rents/{id}")
 def update_rent(id: int, data: RentData, authorization: Optional[str] = Header(None)):
     user = get_current_user(authorization)
     conn = postgreSQL_pool.getconn()
@@ -3831,7 +3968,59 @@ def update_rent(id: int, data: RentData, authorization: Optional[str] = Header(N
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.delete("/api/copy_rents/{id}")
+
+@app.put("/api/rents/{id}/status")
+def update_rent_status(id: int, request: Request, authorization: Optional[str] = Header(None)):
+    user = get_current_user(authorization)
+    # Require appropriate role for approvals
+    if user.get("role") not in ["Manager", "Admin", "Founder/Admin", "CEO/Admin", "Super Admin", "Business Head", "City Manager"]:
+        raise HTTPException(status_code=403, detail="Not authorized to approve")
+    
+    data = asyncio.run(request.json())
+    new_status = data.get("status")
+    
+    if new_status not in ["Approved", "Rejected"]:
+        raise HTTPException(status_code=400, detail="Invalid status")
+        
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("UPDATE copy_rents SET status = %s WHERE id = %s", (new_status, id))
+        conn.commit()
+        return {"status": "success", "message": f"Rent plan {new_status}"}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+
+@app.put("/api/rents/{id}/assign")
+def assign_rent(id: int, request: Request, authorization: Optional[str] = Header(None)):
+    user = get_current_user(authorization)
+    if user.get("role") not in ["Manager", "Admin", "Founder/Admin", "CEO/Admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized to assign")
+    
+    data = asyncio.run(request.json())
+    assigned_to = data.get("assigned_to")
+    
+    conn = postgreSQL_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE copy_rents 
+            SET assigned_to = %s, assigned_by = %s, assigned_time = NOW() 
+            WHERE id = %s
+        """, (assigned_to, user.get("name", ""), id))
+        conn.commit()
+        return {"status": "success", "message": f"Assigned to {assigned_to}"}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        postgreSQL_pool.putconn(conn)
+
+@app.delete("/api/rents/{id}")
 def delete_rent(id: int, authorization: Optional[str] = Header(None)):
     user = get_current_user(authorization)
     conn = postgreSQL_pool.getconn()
@@ -4286,7 +4475,7 @@ class TicketData(BaseModel):
     status: Optional[str] = "Open"
     assigned_to: Optional[int] = None
 
-@app.get("/api/copy_tickets")
+@app.get("/api/tickets")
 def get_tickets(authorization: Optional[str] = Header(None)):
     get_current_user(authorization)
     conn = postgreSQL_pool.getconn()
@@ -4306,7 +4495,7 @@ def get_tickets(authorization: Optional[str] = Header(None)):
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.post("/api/copy_tickets")
+@app.post("/api/tickets")
 def create_ticket(req: TicketData, authorization: Optional[str] = Header(None)):
     user = get_current_user(authorization)
     conn = postgreSQL_pool.getconn()
@@ -4325,7 +4514,7 @@ def create_ticket(req: TicketData, authorization: Optional[str] = Header(None)):
     finally:
         postgreSQL_pool.putconn(conn)
 
-@app.put("/api/copy_tickets/{id}/resolve")
+@app.put("/api/tickets/{id}/resolve")
 def resolve_ticket(id: int, data: dict, authorization: Optional[str] = Header(None)):
     get_current_user(authorization)
     notes = data.get("resolution_notes", "")
@@ -4562,7 +4751,7 @@ class ChallanData(BaseModel):
     violation_location: Optional[str] = None
     challan_amount: int
     internal_fine_amount: int = 0
-    recovery_status: str = "Pending"
+    recovery_status: str = "Follow Up Required"
     recovered_amount: int = 0
     remarks: Optional[str] = None
     challan_photo: Optional[Any] = None

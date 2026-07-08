@@ -546,7 +546,7 @@ export default function VehicleOnboardingForm({
               referrerPolicy="no-referrer"
             />
             <span className="hidden h-5 border-l border-border sm:inline-block" />
-            <span className="hidden font-sans text-xs font-medium text-text-muted tracking-wider uppercase sm:inline-block">
+            <span className="hidden font-sans text-xs font-medium text-text-muted sm:inline-block">
               Vehicle Form
             </span>
           </div>
@@ -555,22 +555,14 @@ export default function VehicleOnboardingForm({
           <nav className="flex gap-2">
             <button
               onClick={() => setActiveTab("form")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "form" 
-                  ? "bg-primary text-white shadow-sm shadow-primary/20" 
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "form" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <FileText className="h-4 w-4" />
               Onboarding Form
             </button>
             <button
               onClick={() => setActiveTab("registry")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "registry" 
-                  ? "bg-primary text-white shadow-sm shadow-primary/20" 
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "registry" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <Plus className="h-4 w-4" />
               Fleet Registry
@@ -580,14 +572,14 @@ export default function VehicleOnboardingForm({
           {/* Clock & Profile Pill */}
           <div className="hidden items-center gap-4 lg:flex">
             <div className="text-right">
-              <span className="block text-[9px] font-bold text-text-dim tracking-wider uppercase">Current Time (IST)</span>
+              <span className="block text-[9px] font-bold text-text-dim">Current Time (IST)</span>
               <span className="font-mono text-xs font-extrabold text-green">{currentTime}</span>
             </div>
             
             <span className="h-5 border-l border-border" />
             
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white uppercase">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white">
                 {initials}
               </div>
               <div className="flex flex-col">
@@ -623,7 +615,7 @@ export default function VehicleOnboardingForm({
               <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold text-white tracking-widest uppercase">
+                    <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold text-white tracking-widest">
                       LetzRyd Desk
                     </span>
                     <span className="text-white/40 text-xs">•</span>
@@ -665,7 +657,7 @@ export default function VehicleOnboardingForm({
                 
                 {/* Panel 1: Identity & Status */}
                 <div className="space-y-4">
-                  <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase mb-2 flex items-center gap-1.5 border-b border-slate-100 pb-2">
+                  <h3 className="font-sans text-xs font-bold text-primary mb-2 flex items-center gap-1.5 border-b border-slate-100 pb-2">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">1</span>
                     Vehicle Identity & Status
                   </h3>
@@ -755,7 +747,7 @@ export default function VehicleOnboardingForm({
 
                 {/* Panel 2: Compliance & Validities */}
                 <div className="space-y-4">
-                  <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase mb-2 flex items-center gap-1.5 border-b border-slate-100 pb-2 mt-2">
+                  <h3 className="font-sans text-xs font-bold text-primary mb-2 flex items-center gap-1.5 border-b border-slate-100 pb-2 mt-2">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">2</span>
                     Compliance & Validities
                   </h3>
@@ -844,7 +836,7 @@ export default function VehicleOnboardingForm({
 
               {/* Panel 3: Asset & Accessory Checklist */}
               <div className="space-y-4">
-                  <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase mb-2 flex items-center gap-1.5 border-b border-slate-100 pb-2 mt-2">
+                  <h3 className="font-sans text-xs font-bold text-primary mb-2 flex items-center gap-1.5 border-b border-slate-100 pb-2 mt-2">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">3</span>
                     Asset & Accessory Checklist
                   </h3>
@@ -945,7 +937,7 @@ export default function VehicleOnboardingForm({
 
                   {/* Add Key Quantity as a standard number field in Panel 3 */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="font-sans text-[11px] font-semibold text-text-muted uppercase tracking-wider">
+                    <label className="font-sans text-[11px] font-semibold text-text-muted">
                       Key Quantity
                     </label>
                     <input
@@ -961,7 +953,7 @@ export default function VehicleOnboardingForm({
 
               {/* Panel 4: Vehicle Documents Uploads */}
               <div className="border-t border-border/60 pt-6 mt-4">
-                <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase mb-2 flex items-center gap-1.5">
+                <h3 className="font-sans text-xs font-bold text-primary mb-2 flex items-center gap-1.5">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">4</span>
                   Vehicle Documents
                 </h3>
@@ -1028,7 +1020,7 @@ export default function VehicleOnboardingForm({
 
               {/* Panel 5: PDI Photographic Verification (14 Images Grid) */}
               <div className="border-t border-border/60 pt-6 mt-4">
-                <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase mb-2 flex items-center gap-1.5">
+                <h3 className="font-sans text-xs font-bold text-primary mb-2 flex items-center gap-1.5">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">5</span>
                   PDI Photographic Verification
                 </h3>
@@ -1110,7 +1102,7 @@ export default function VehicleOnboardingForm({
               {/* Form submit actions */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 border-t border-border/40 pt-6">
                 <div className="flex flex-col gap-1 max-w-sm">
-                  <p className="text-[10px] font-bold text-red-500 uppercase">* means mandatory</p>
+                  <p className="text-[10px] font-bold text-red-500">* means mandatory</p>
                 </div>
                 <div className="flex justify-end gap-3">
                   <button
@@ -1146,7 +1138,7 @@ export default function VehicleOnboardingForm({
                     <Truck className="h-5 w-5" />
                   </div>
                   <div>
-                    <span className="block font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Total Onboarded</span>
+                    <span className="block font-sans text-[10px] font-bold text-text-muted">Total Onboarded</span>
                     <span className="block font-mono text-xl font-extrabold text-text leading-none mt-1">{stats.total_fleet}</span>
                   </div>
                 </div>
@@ -1158,7 +1150,7 @@ export default function VehicleOnboardingForm({
                     <Database className="h-5 w-5" />
                   </div>
                   <div>
-                    <span className="block font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">CNG Enabled</span>
+                    <span className="block font-sans text-[10px] font-bold text-text-muted">CNG Enabled</span>
                     <span className="block font-mono text-xl font-extrabold text-text leading-none mt-1">{stats.cng_count}</span>
                   </div>
                 </div>
@@ -1170,7 +1162,7 @@ export default function VehicleOnboardingForm({
                     <CheckCircle className="h-5 w-5" />
                   </div>
                   <div>
-                    <span className="block font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Receiving Split</span>
+                    <span className="block font-sans text-[10px] font-bold text-text-muted">Receiving Split</span>
                     <span className="block font-mono text-xl font-extrabold text-text leading-none mt-1">{stats.receiving_count}</span>
                   </div>
                 </div>
@@ -1182,7 +1174,7 @@ export default function VehicleOnboardingForm({
                     <Info className="h-5 w-5" />
                   </div>
                   <div>
-                    <span className="block font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Allocated Split</span>
+                    <span className="block font-sans text-[10px] font-bold text-text-muted">Allocated Split</span>
                     <span className="block font-mono text-xl font-extrabold text-text leading-none mt-1">{stats.allocation_count}</span>
                   </div>
                 </div>
@@ -1242,7 +1234,7 @@ export default function VehicleOnboardingForm({
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-border bg-slate-50 text-[10px] font-bold text-text-muted uppercase tracking-wider select-none">
+                    <tr className="border-b border-border bg-slate-50 text-[10px] font-bold text-text-muted select-none">
                       <th className="py-3 px-4">ID</th>
                       <th className="py-3 px-4">Vehicle Reg No</th>
                       <th className="py-3 px-4">Model & Asset ID</th>
@@ -1285,9 +1277,7 @@ export default function VehicleOnboardingForm({
                             </div>
                           </td>
                           <td className="py-4 px-4">
-                            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
-                              record.received_allocated === "Receiving" ? "bg-blue-50 text-blue-600" : "bg-green-light text-green"
-                            }`}>
+                            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${ record.received_allocated === "Receiving" ? "bg-blue-50 text-blue-600" : "bg-green-light text-green" }`}>
                               {record.received_allocated}
                             </span>
                           </td>

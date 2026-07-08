@@ -314,7 +314,7 @@ export default function HubsParkingForm({
               referrerPolicy="no-referrer"
             />
             <span className="hidden h-5 border-l border-border sm:inline-block" />
-            <span className="hidden font-sans text-xs font-medium text-text-muted tracking-wider uppercase sm:inline-block">
+            <span className="hidden font-sans text-xs font-medium text-text-muted sm:inline-block">
               Hubs Form
             </span>
           </div>
@@ -323,22 +323,14 @@ export default function HubsParkingForm({
           <nav className="flex gap-2">
             <button
               onClick={() => setActiveTab("form")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "form" 
-                  ? "bg-primary text-white shadow-sm shadow-primary/20" 
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "form" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <FileText className="h-4 w-4" />
               Registration Form
             </button>
             <button
               onClick={() => setActiveTab("registry")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "registry" 
-                  ? "bg-primary text-white shadow-sm shadow-primary/20" 
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "registry" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <Plus className="h-4 w-4" />
               Hubs Registry
@@ -348,14 +340,14 @@ export default function HubsParkingForm({
           {/* Clock & Profile Pill */}
           <div className="hidden items-center gap-4 lg:flex">
             <div className="text-right">
-              <span className="block text-[9px] font-bold text-text-dim tracking-wider uppercase">Current Time (IST)</span>
+              <span className="block text-[9px] font-bold text-text-dim">Current Time (IST)</span>
               <span className="font-mono text-xs font-extrabold text-green">{currentTime}</span>
             </div>
             
             <span className="h-5 border-l border-border" />
             
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white uppercase">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white">
                 {initials}
               </div>
               <div className="flex flex-col">
@@ -391,7 +383,7 @@ export default function HubsParkingForm({
               <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold text-white tracking-widest uppercase">
+                    <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold text-white tracking-widest">
                       LetzRyd Desk
                     </span>
                     <span className="text-white/40 text-xs">•</span>
@@ -445,13 +437,13 @@ export default function HubsParkingForm({
               
               {/* Panel 1: Hub Details */}
               <div className="space-y-4">
-                <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase mb-2 flex items-center gap-1.5 border-b border-slate-100 pb-2">
+                <h3 className="font-sans text-xs font-bold text-primary mb-2 flex items-center gap-1.5 border-b border-slate-100 pb-2">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">1</span>
                   Hub Details & Location
                 </h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Hub Name *</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">Hub Name *</label>
                     <input
                       type="text"
                       required
@@ -462,7 +454,7 @@ export default function HubsParkingForm({
                     />
                   </div>
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">City *</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">City *</label>
                     <select
                       value={cityName}
                       onChange={(e) => setCityName(e.target.value)}
@@ -476,7 +468,7 @@ export default function HubsParkingForm({
                     </select>
                   </div>
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Pin Code *</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">Pin Code *</label>
                     <input
                       type="text"
                       required
@@ -487,7 +479,7 @@ export default function HubsParkingForm({
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Full Address *</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">Full Address *</label>
                     <textarea
                       required
                       value={address}
@@ -502,13 +494,13 @@ export default function HubsParkingForm({
 
               {/* Panel 2: Capacity & Facilities */}
               <div className="space-y-4">
-                <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase mb-2 flex items-center gap-1.5 border-b border-slate-100 pb-2 mt-2">
+                <h3 className="font-sans text-xs font-bold text-primary mb-2 flex items-center gap-1.5 border-b border-slate-100 pb-2 mt-2">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">2</span>
                   Capacity & Facilities
                 </h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Facility Type *</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">Facility Type *</label>
                     <select
                       value={facilityType}
                       onChange={(e) => setFacilityType(e.target.value)}
@@ -521,7 +513,7 @@ export default function HubsParkingForm({
                     </select>
                   </div>
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Total Parking Capacity (Cars) *</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">Total Parking Capacity (Cars) *</label>
                     <input
                       type="number"
                       required
@@ -532,7 +524,7 @@ export default function HubsParkingForm({
                     />
                   </div>
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">EV Charging Available?</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">EV Charging Available?</label>
                     <div className="flex gap-4 mt-2">
                       {["Yes", "No"].map((choice) => (
                         <label key={choice} className="flex items-center gap-2 text-xs font-medium cursor-pointer">
@@ -550,7 +542,7 @@ export default function HubsParkingForm({
                     </div>
                   </div>
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">CCTV / Security Guard Active?</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">CCTV / Security Guard Active?</label>
                     <div className="flex gap-4 mt-2">
                       {["Yes", "No"].map((choice) => (
                         <label key={choice} className="flex items-center gap-2 text-xs font-medium cursor-pointer">
@@ -572,13 +564,13 @@ export default function HubsParkingForm({
 
               {/* Panel 3: Operations & Contact */}
               <div className="space-y-4">
-                <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase mb-2 flex items-center gap-1.5 border-b border-slate-100 pb-2 mt-2">
+                <h3 className="font-sans text-xs font-bold text-primary mb-2 flex items-center gap-1.5 border-b border-slate-100 pb-2 mt-2">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">3</span>
                   Operations & Contact
                 </h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Hub Manager Name</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">Hub Manager Name</label>
                     <input
                       type="text"
                       value={hubManager}
@@ -588,7 +580,7 @@ export default function HubsParkingForm({
                     />
                   </div>
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Manager Phone Number</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">Manager Phone Number</label>
                     <input
                       type="tel"
                       value={managerPhone}
@@ -598,7 +590,7 @@ export default function HubsParkingForm({
                     />
                   </div>
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Operating Hours</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">Operating Hours</label>
                     <input
                       type="text"
                       value={operatingHours}
@@ -608,7 +600,7 @@ export default function HubsParkingForm({
                     />
                   </div>
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Contact Person (Optional)</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">Contact Person (Optional)</label>
                     <input
                       type="text"
                       value={contactPerson}
@@ -618,7 +610,7 @@ export default function HubsParkingForm({
                     />
                   </div>
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Designation (Optional)</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">Designation (Optional)</label>
                     <input
                       type="text"
                       value={designation}
@@ -632,7 +624,7 @@ export default function HubsParkingForm({
 
               {/* Photo Upload / Verification */}
               <div className="border-t border-border/60 pt-6 mt-4">
-                <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase mb-2 flex items-center gap-1.5">
+                <h3 className="font-sans text-xs font-bold text-primary mb-2 flex items-center gap-1.5">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">4</span>
                   Secure Document Uploads (Optional)
                 </h3>
@@ -697,7 +689,7 @@ export default function HubsParkingForm({
               {/* Form Actions Footer */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 border-t border-border/40 pt-6">
                 <div className="flex flex-col gap-1 max-w-sm">
-                  <p className="text-[10px] font-bold text-red-500 uppercase">* means mandatory</p>
+                  <p className="text-[10px] font-bold text-red-500">* means mandatory</p>
                 </div>
                 <div className="flex justify-end gap-3">
                   <button
@@ -733,7 +725,7 @@ export default function HubsParkingForm({
                     <MapPin className="h-5 w-5" />
                   </div>
                   <div>
-                    <span className="block font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Total Hubs</span>
+                    <span className="block font-sans text-[10px] font-bold text-text-muted">Total Hubs</span>
                     <span className="block font-mono text-xl font-extrabold text-text leading-none mt-1">{stats.total_hubs}</span>
                   </div>
                 </div>
@@ -745,7 +737,7 @@ export default function HubsParkingForm({
                     <Database className="h-5 w-5" />
                   </div>
                   <div>
-                    <span className="block font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Total Capacity</span>
+                    <span className="block font-sans text-[10px] font-bold text-text-muted">Total Capacity</span>
                     <span className="block font-mono text-xl font-extrabold text-text leading-none mt-1">{stats.total_capacity} Cars</span>
                   </div>
                 </div>
@@ -757,7 +749,7 @@ export default function HubsParkingForm({
                     <Zap className="h-5 w-5" />
                   </div>
                   <div>
-                    <span className="block font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">EV Charging Hubs</span>
+                    <span className="block font-sans text-[10px] font-bold text-text-muted">EV Charging Hubs</span>
                     <span className="block font-mono text-xl font-extrabold text-text leading-none mt-1">{stats.ev_charging_count} Hubs</span>
                   </div>
                 </div>
@@ -769,7 +761,7 @@ export default function HubsParkingForm({
                     <CheckCircle className="h-5 w-5" />
                   </div>
                   <div>
-                    <span className="block font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">CCTV Secured</span>
+                    <span className="block font-sans text-[10px] font-bold text-text-muted">CCTV Secured</span>
                     <span className="block font-mono text-xl font-extrabold text-text leading-none mt-1">{stats.cctv_secured_count} Secured</span>
                   </div>
                 </div>
@@ -831,7 +823,7 @@ export default function HubsParkingForm({
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-border bg-slate-50 text-[10px] font-bold text-text-muted uppercase tracking-wider select-none">
+                    <tr className="border-b border-border bg-slate-50 text-[10px] font-bold text-text-muted select-none">
                       <th className="py-3 px-4">ID</th>
                       <th className="py-3 px-4">Hub Name</th>
                       <th className="py-3 px-4">City & Address</th>
@@ -865,14 +857,10 @@ export default function HubsParkingForm({
                           <td className="py-4 px-4 font-bold text-gray-900">{record.total_capacity} Cars</td>
                           <td className="py-4 px-4">
                             <div className="flex flex-col gap-1">
-                              <span className={`inline-flex items-center w-fit rounded-full px-2 py-0.5 text-[9px] font-bold ${
-                                record.ev_charging === "Yes" ? "bg-green-light text-green" : "bg-slate-100 text-slate-500"
-                              }`}>
+                              <span className={`inline-flex items-center w-fit rounded-full px-2 py-0.5 text-[9px] font-bold ${ record.ev_charging === "Yes" ? "bg-green-light text-green" : "bg-slate-100 text-slate-500" }`}>
                                 EV: {record.ev_charging || "No"}
                               </span>
-                              <span className={`inline-flex items-center w-fit rounded-full px-2 py-0.5 text-[9px] font-bold ${
-                                record.security_cctv === "Yes" ? "bg-green-light text-green" : "bg-slate-100 text-slate-500"
-                              }`}>
+                              <span className={`inline-flex items-center w-fit rounded-full px-2 py-0.5 text-[9px] font-bold ${ record.security_cctv === "Yes" ? "bg-green-light text-green" : "bg-slate-100 text-slate-500" }`}>
                                 Security: {record.security_cctv || "No"}
                               </span>
                             </div>
@@ -883,7 +871,7 @@ export default function HubsParkingForm({
                               <div className="text-[10px] text-text-muted mt-0.5">{record.manager_phone}</div>
                             )}
                             {record.designation && (
-                              <div className="text-[9px] text-primary font-bold mt-1 uppercase">{record.designation}</div>
+                              <div className="text-[9px] text-primary font-bold mt-1">{record.designation}</div>
                             )}
                           </td>
                           <td className="py-4 px-4">

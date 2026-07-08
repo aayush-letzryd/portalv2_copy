@@ -1,5 +1,5 @@
 export type VisitorType = "Individual" | "Operator";
-export type OnboardingOutcome = "Joined" | "Pending" | "Not Interested";
+export type OnboardingOutcome = "Onboarding Process Initiated" | "Successfully Onboarded" | "Follow Up Required" | "No Follow Up Required / Closed" | "Others" | "Joined" | "Pending" | "Not Interested" | "Onboarding process initiated" | "Follow up required" | "No follow up required / Closed";
 
 export interface WalkInRecord {
   id: number;
@@ -259,6 +259,7 @@ export interface RentRecord {
   vendor_id?: string;
   driver_id?: string;
   rent_amount: number;
+  status?: string;
   created_at?: string;
 }
 

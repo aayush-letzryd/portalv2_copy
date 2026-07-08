@@ -424,7 +424,7 @@ export default function AdjustmentForm({
               className="h-8 w-auto object-contain"
             />
             <span className="hidden h-5 border-l border-border sm:inline-block" />
-            <span className="hidden font-sans text-xs font-medium text-text-muted tracking-wider uppercase sm:inline-block">
+            <span className="hidden font-sans text-xs font-medium text-text-muted sm:inline-block">
               Adjustment
             </span>
           </div>
@@ -433,11 +433,7 @@ export default function AdjustmentForm({
           <nav className="flex gap-2">
             <button
               onClick={() => setActiveTab("form")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "form"
-                  ? "bg-primary text-white shadow-sm shadow-primary/20"
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "form" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <FileText className="h-4 w-4" />
               Adjustment Form
@@ -448,11 +444,7 @@ export default function AdjustmentForm({
                 fetchStats();
                 fetchRecords();
               }}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "registry"
-                  ? "bg-primary text-white shadow-sm shadow-primary/20"
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "registry" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <Settings className="h-4 w-4" />
               Adjustment Registry
@@ -462,14 +454,14 @@ export default function AdjustmentForm({
           {/* Clock & User Profile */}
           <div className="hidden items-center gap-4 lg:flex">
             <div className="text-right">
-              <span className="block text-[9px] font-bold text-text-dim tracking-wider uppercase">Current Time (IST)</span>
+              <span className="block text-[9px] font-bold text-text-dim">Current Time (IST)</span>
               <span className="font-mono text-xs font-extrabold text-green">{currentTime}</span>
             </div>
             
             <span className="h-5 border-l border-border" />
             
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white uppercase">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white">
                 {initials}
               </div>
               <div className="flex flex-col">
@@ -505,7 +497,7 @@ export default function AdjustmentForm({
                   <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-2">
                       <img src="https://letzryd.com/replica-assets/letzryd-long-png-logo-Aq2o3DNOw1i2kBMB-7ab04eaa76.png" className="h-8 brightness-0 invert" alt="LetzRyd" referrerPolicy="no-referrer" />
-                      <span className="px-2 py-0.5 rounded border border-white/30 bg-white/20 text-white text-[10px] font-bold tracking-widest uppercase backdrop-blur-sm">
+                      <span className="px-2 py-0.5 rounded border border-white/30 bg-white/20 text-white text-[10px] font-bold tracking-widest backdrop-blur-sm">
                         LetzRyd Desk
                       </span>
                     </div>
@@ -559,7 +551,7 @@ export default function AdjustmentForm({
                   {/* COLUMN 1: TARGET DETAILS */}
                   <div className="space-y-6">
                     <div className="border-b border-border pb-3">
-                      <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                      <h3 className="font-sans text-sm font-bold text-primary flex items-center gap-2">
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">1</span>
                         Target Details
                       </h3>
@@ -567,7 +559,7 @@ export default function AdjustmentForm({
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Adjustment Level <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Adjustment Level <span className="text-red-500">*</span></label>
                         <select 
                           value={adjustmentLevel}
                           onChange={(e) => setAdjustmentLevel(e.target.value as any)}
@@ -584,7 +576,7 @@ export default function AdjustmentForm({
                       {(adjustmentLevel === "Operator" || adjustmentLevel === "Operator+Driver") && (
                         <>
                           <div>
-                            <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Partner Name <span className="text-red-500">*</span></label>
+                            <label className="block font-sans text-xs font-bold text-text-muted mb-2">Partner Name <span className="text-red-500">*</span></label>
                             <input 
                               type="text" 
                               placeholder="Enter full name..."
@@ -594,7 +586,7 @@ export default function AdjustmentForm({
                             />
                           </div>
                           <div>
-                            <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Partner Code <span className="text-red-500">*</span></label>
+                            <label className="block font-sans text-xs font-bold text-text-muted mb-2">Partner Code <span className="text-red-500">*</span></label>
                             <input 
                               type="text" 
                               placeholder="Unique LetzRyd ID..."
@@ -604,7 +596,7 @@ export default function AdjustmentForm({
                             />
                           </div>
                           <div>
-                            <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Partner Type <span className="text-red-500">*</span></label>
+                            <label className="block font-sans text-xs font-bold text-text-muted mb-2">Partner Type <span className="text-red-500">*</span></label>
                             <div className="flex gap-4">
                               {["Individual", "Fleet", "Rental"].map((type) => (
                                 <label key={type} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-bold hover:bg-bg cursor-pointer transition-all shadow-2xs">
@@ -625,7 +617,7 @@ export default function AdjustmentForm({
 
                       {(adjustmentLevel === "Operator+Driver" || adjustmentLevel === "Individual") && (
                         <div>
-                          <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Driver ID <span className="text-red-500">*</span></label>
+                          <label className="block font-sans text-xs font-bold text-text-muted mb-2">Driver ID <span className="text-red-500">*</span></label>
                           <input 
                             type="text" 
                             placeholder="Enter Driver ID..."
@@ -638,7 +630,7 @@ export default function AdjustmentForm({
 
                       {adjustmentLevel === "Vehicle" && (
                         <div>
-                          <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Vehicle Number <span className="text-red-500">*</span></label>
+                          <label className="block font-sans text-xs font-bold text-text-muted mb-2">Vehicle Number <span className="text-red-500">*</span></label>
                           <input 
                             type="text" 
                             placeholder="e.g. TS09 EA 1234..."
@@ -650,7 +642,7 @@ export default function AdjustmentForm({
                       )}
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Contact Number <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Contact Number <span className="text-red-500">*</span></label>
                         <input 
                           type="tel" 
                           placeholder="+91 10-digit mobile..."
@@ -662,7 +654,7 @@ export default function AdjustmentForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">City Name <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">City Name <span className="text-red-500">*</span></label>
                         <select 
                           value={cityName}
                           onChange={(e) => setCityName(e.target.value)}
@@ -682,7 +674,7 @@ export default function AdjustmentForm({
                   {/* COLUMN 2: ADJUSTMENT DETAILS */}
                   <div className="space-y-6">
                     <div className="border-b border-border pb-3">
-                      <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                      <h3 className="font-sans text-sm font-bold text-primary flex items-center gap-2">
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">2</span>
                         Adjustment Details
                       </h3>
@@ -691,7 +683,7 @@ export default function AdjustmentForm({
                     <div className="space-y-4">
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Adjustment Nature <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Adjustment Nature <span className="text-red-500">*</span></label>
                         <div className="flex gap-4">
                           {["Monetary", "Time"].map((type) => (
                             <label key={type} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-bold hover:bg-bg cursor-pointer transition-all shadow-2xs">
@@ -710,7 +702,7 @@ export default function AdjustmentForm({
 
                       {adjustmentNature === "Time" && (
                         <div>
-                          <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Time Duration <span className="text-red-500">*</span></label>
+                          <label className="block font-sans text-xs font-bold text-text-muted mb-2">Time Duration <span className="text-red-500">*</span></label>
                           <select 
                             value={timeDuration}
                             onChange={(e) => setTimeDuration(e.target.value)}
@@ -729,7 +721,7 @@ export default function AdjustmentForm({
 
                       {adjustmentNature === "Time" && timeDuration === "Custom" && (
                         <div>
-                          <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Custom Time Duration <span className="text-red-500">*</span></label>
+                          <label className="block font-sans text-xs font-bold text-text-muted mb-2">Custom Time Duration <span className="text-red-500">*</span></label>
                           <input 
                             type="text" 
                             placeholder="e.g. 5 Days, 1.5 Days, Half Day Leave..."
@@ -742,7 +734,7 @@ export default function AdjustmentForm({
                       )}
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Adjustment Type <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Adjustment Type <span className="text-red-500">*</span></label>
                         <div className="flex gap-4">
                           {["Credit", "Debit"].map((type) => (
                             <label key={type} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-bold hover:bg-bg cursor-pointer transition-all shadow-2xs">
@@ -760,7 +752,7 @@ export default function AdjustmentForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Adjustment Date <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Adjustment Date <span className="text-red-500">*</span></label>
                         <input 
                           type="date" 
                           value={adjustmentDate}
@@ -772,7 +764,7 @@ export default function AdjustmentForm({
 
                       {adjustmentNature === "Monetary" && (
                         <div>
-                          <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Enter Amount (₹) <span className="text-red-500">*</span></label>
+                          <label className="block font-sans text-xs font-bold text-text-muted mb-2">Enter Amount (₹) <span className="text-red-500">*</span></label>
                           <input 
                             type="number" 
                             placeholder="0.00"
@@ -785,7 +777,7 @@ export default function AdjustmentForm({
                       )}
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Remittance Towards (Optional)</label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Remittance Towards (Optional)</label>
                         <input 
                           type="text" 
                           placeholder="Reason for remittance..."
@@ -796,7 +788,7 @@ export default function AdjustmentForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Adjustment Related To (Optional)</label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Adjustment Related To (Optional)</label>
                         <input 
                           type="text" 
                           placeholder="e.g. Maintenance, Tolls, Penalty..."
@@ -807,7 +799,7 @@ export default function AdjustmentForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Detailed Remarks</label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Detailed Remarks</label>
                         <textarea 
                           placeholder="Enter detailed adjustment remarks here..."
                           value={remarks}
@@ -822,7 +814,7 @@ export default function AdjustmentForm({
                   {/* COLUMN 3: FINANCE & APPROVALS */}
                   <div className="space-y-6">
                     <div className="border-b border-border pb-3">
-                      <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                      <h3 className="font-sans text-sm font-bold text-primary flex items-center gap-2">
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">3</span>
                         Finance & Approvals
                       </h3>
@@ -830,7 +822,7 @@ export default function AdjustmentForm({
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">First Level Approval By</label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">First Level Approval By</label>
                         <input 
                           type="text" 
                           placeholder="Approver name..."
@@ -841,7 +833,7 @@ export default function AdjustmentForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Finance Team Status <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Finance Team Status <span className="text-red-500">*</span></label>
                         <div className="flex gap-4">
                           {["Approved", "Pending", "Rejected"].map((fStatus) => (
                             <label key={fStatus} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-bold hover:bg-bg cursor-pointer transition-all shadow-2xs">
@@ -859,7 +851,7 @@ export default function AdjustmentForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Finance Team Remarks (Optional)</label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Finance Team Remarks (Optional)</label>
                         <input 
                           type="text" 
                           placeholder="Finance comments..."
@@ -870,7 +862,7 @@ export default function AdjustmentForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Final Level Approval By</label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Final Level Approval By</label>
                         <input 
                           type="text" 
                           placeholder="Final approver name..."
@@ -881,7 +873,7 @@ export default function AdjustmentForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Final Status <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Final Status <span className="text-red-500">*</span></label>
                         <div className="flex gap-4">
                           {["Completed", "Hold", "Declined"].map((fStatus) => (
                             <label key={fStatus} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-bold hover:bg-bg cursor-pointer transition-all shadow-2xs">
@@ -904,7 +896,7 @@ export default function AdjustmentForm({
                 {/* ATTACHMENT SECTION */}
                 <div className="border-t border-border pt-10">
                   <div className="border-b border-border pb-3 mb-6">
-                    <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider">
+                    <h3 className="font-sans text-sm font-bold text-primary">
                       4. Attachments & Proof
                     </h3>
                     <p className="font-sans text-xs text-text-muted mt-1">Upload any receipts, bills, or proof related to this adjustment.</p>
@@ -963,7 +955,7 @@ export default function AdjustmentForm({
                 {/* FORM ACTIONS */}
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-3 border-t border-border pt-8">
                   <div className="flex flex-col gap-1 text-left w-full sm:w-auto">
-                    <p className="text-[10px] font-bold text-red-500 uppercase">* means mandatory</p>
+                    <p className="text-[10px] font-bold text-red-500">* means mandatory</p>
                   </div>
                   <div className="flex gap-3 w-full sm:w-auto justify-end">
                     <button 
@@ -994,7 +986,7 @@ export default function AdjustmentForm({
               {/* CARD 1: Total Adjustments */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-sm flex items-center justify-between">
                 <div>
-                  <span className="font-sans text-[10px] font-bold text-text-muted uppercase tracking-widest block">Total Adjustments</span>
+                  <span className="font-sans text-[10px] font-bold text-text-muted tracking-widest block">Total Adjustments</span>
                   <span className="font-sans text-3xl font-extrabold text-primary tracking-tight block mt-1">{stats.total_adjustments}</span>
                   <span className="font-sans text-[10px] text-text-muted block mt-0.5">Requests processed</span>
                 </div>
@@ -1006,7 +998,7 @@ export default function AdjustmentForm({
               {/* CARD 2: Total Amount */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-sm flex items-center justify-between">
                 <div>
-                  <span className="font-sans text-[10px] font-bold text-text-muted uppercase tracking-widest block">Total Amount</span>
+                  <span className="font-sans text-[10px] font-bold text-text-muted tracking-widest block">Total Amount</span>
                   <span className="font-sans text-3xl font-extrabold text-amber-600 tracking-tight block mt-1">₹{stats.total_amount.toLocaleString("en-IN")}</span>
                   <span className="font-sans text-[10px] text-text-muted block mt-0.5">Net adjustment value</span>
                 </div>
@@ -1018,7 +1010,7 @@ export default function AdjustmentForm({
               {/* CARD 3: Approved By Finance */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-sm flex items-center justify-between">
                 <div>
-                  <span className="font-sans text-[10px] font-bold text-text-muted uppercase tracking-widest block">Approved By Finance</span>
+                  <span className="font-sans text-[10px] font-bold text-text-muted tracking-widest block">Approved By Finance</span>
                   <span className="font-sans text-3xl font-extrabold text-green tracking-tight block mt-1">{stats.approved_count}</span>
                   <span className="font-sans text-[10px] text-text-muted block mt-0.5">Ready for settlement</span>
                 </div>
@@ -1030,7 +1022,7 @@ export default function AdjustmentForm({
               {/* CARD 4: Completed Status */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-sm flex items-center justify-between">
                 <div>
-                  <span className="font-sans text-[10px] font-bold text-text-muted uppercase tracking-widest block">Completed Status</span>
+                  <span className="font-sans text-[10px] font-bold text-text-muted tracking-widest block">Completed Status</span>
                   <span className="font-sans text-3xl font-extrabold text-indigo-600 tracking-tight block mt-1">{stats.completed_count}</span>
                   <span className="font-sans text-[10px] text-text-muted block mt-0.5">Fully closed adjustments</span>
                 </div>
@@ -1131,14 +1123,14 @@ export default function AdjustmentForm({
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="border-b border-border bg-bg/50 select-none">
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted tracking-wider uppercase text-left w-16">ID</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted tracking-wider uppercase text-left">Partner Details</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted tracking-wider uppercase text-left">Contact & Driver</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted tracking-wider uppercase text-left">Details</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted tracking-wider uppercase text-left">City & Vehicle</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted tracking-wider uppercase text-left">Approvals</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted tracking-wider uppercase text-left">Status</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted tracking-wider uppercase text-right w-24">Actions</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left w-16">ID</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left">Partner Details</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left">Contact & Driver</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left">Details</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left">City & Vehicle</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left">Approvals</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left">Status</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-right w-24">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border bg-white">
@@ -1163,11 +1155,7 @@ export default function AdjustmentForm({
                             </td>
                             <td className="px-6 py-4">
                               <div className="font-sans text-xs font-extrabold text-primary">₹{parseFloat(r.enter_amount).toLocaleString("en-IN")}</div>
-                              <span className={`inline-block rounded-md px-1.5 py-0.5 font-mono text-[9px] font-bold mt-1 uppercase ${
-                                r.adjustment_type === "Credit" ? "bg-green-light text-green" :
-                                r.adjustment_type === "Debit" ? "bg-red-50 text-red-600 border border-red-100" :
-                                "bg-amber-50 text-amber-600 border border-amber-100"
-                              }`}>
+                              <span className={`inline-block rounded-md px-1.5 py-0.5 font-mono text-[9px] font-bold mt-1 ${ r.adjustment_type === "Credit" ? "bg-green-light text-green" : r.adjustment_type === "Debit" ? "bg-red-50 text-red-600 border border-red-100" : "bg-amber-50 text-amber-600 border border-amber-100" }`}>
                                 {r.adjustment_type}
                               </span>
                               <div className="font-sans text-[9px] text-text-muted mt-1">{r.adjustment_date}</div>
@@ -1177,11 +1165,7 @@ export default function AdjustmentForm({
                               {r.vehicle_number && <div className="font-mono text-[10px] text-text-muted mt-0.5">{r.vehicle_number}</div>}
                             </td>
                             <td className="px-6 py-4">
-                              <span className={`inline-block rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase ${
-                                r.finance_team_status === "Approved" ? "bg-green/10 text-green" :
-                                r.finance_team_status === "Rejected" ? "bg-red-100 text-red-700" :
-                                "bg-amber-100 text-amber-700"
-                              }`}>
+                              <span className={`inline-block rounded-full px-2 py-0.5 text-[9px] font-extrabold ${ r.finance_team_status === "Approved" ? "bg-green/10 text-green" : r.finance_team_status === "Rejected" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700" }`}>
                                 {r.finance_team_status}
                               </span>
                               {r.final_level_approval_by && (
@@ -1189,11 +1173,7 @@ export default function AdjustmentForm({
                               )}
                             </td>
                             <td className="px-6 py-4">
-                              <span className={`inline-block rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase ${
-                                r.status === "Completed" ? "bg-green-500 text-white" :
-                                r.status === "Declined" ? "bg-red-600 text-white" :
-                                "bg-yellow-500 text-white"
-                              }`}>
+                              <span className={`inline-block rounded-full px-2 py-0.5 text-[9px] font-extrabold ${ r.status === "Completed" ? "bg-green-500 text-white" : r.status === "Declined" ? "bg-red-600 text-white" : "bg-yellow-500 text-white" }`}>
                                 {r.status}
                               </span>
                             </td>

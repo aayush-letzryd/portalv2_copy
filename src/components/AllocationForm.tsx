@@ -500,7 +500,7 @@ export default function AllocationForm({
               className="h-8 w-auto object-contain"
             />
             <span className="hidden h-5 border-l border-border sm:inline-block" />
-            <span className="hidden font-sans text-xs font-medium text-text-muted tracking-wider uppercase sm:inline-block">
+            <span className="hidden font-sans text-xs font-medium text-text-muted sm:inline-block">
               Allocation
             </span>
           </div>
@@ -509,11 +509,7 @@ export default function AllocationForm({
           <nav className="flex gap-2">
             <button
               onClick={() => setActiveTab("form")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "form"
-                  ? "bg-primary text-white shadow-sm shadow-primary/20"
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "form" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <FileText className="h-4 w-4" />
               Allocation Form
@@ -524,11 +520,7 @@ export default function AllocationForm({
                 fetchStats();
                 fetchRecords();
               }}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "registry"
-                  ? "bg-primary text-white shadow-sm shadow-primary/20"
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "registry" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <Database className="h-4 w-4" />
               Allocation Registry
@@ -538,14 +530,14 @@ export default function AllocationForm({
           {/* Clock & User Profile */}
           <div className="hidden items-center gap-4 lg:flex">
             <div className="text-right">
-              <span className="block text-[9px] font-bold text-text-dim tracking-wider uppercase">Current Time (IST)</span>
+              <span className="block text-[9px] font-bold text-text-dim">Current Time (IST)</span>
               <span className="font-mono text-xs font-extrabold text-green">{currentTime}</span>
             </div>
             
             <span className="h-5 border-l border-border" />
             
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white uppercase">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white">
                 {initials}
               </div>
               <div className="flex flex-col">
@@ -581,7 +573,7 @@ export default function AllocationForm({
                   <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-2">
                       <img src="https://letzryd.com/replica-assets/letzryd-long-png-logo-Aq2o3DNOw1i2kBMB-7ab04eaa76.png" className="h-8 brightness-0 invert" alt="LetzRyd" referrerPolicy="no-referrer" />
-                      <span className="px-2 py-0.5 rounded border border-white/30 bg-white/20 text-white text-[10px] font-bold tracking-widest uppercase backdrop-blur-sm">
+                      <span className="px-2 py-0.5 rounded border border-white/30 bg-white/20 text-white text-[10px] font-bold tracking-widest backdrop-blur-sm">
                         LetzRyd Desk
                       </span>
                     </div>
@@ -622,7 +614,7 @@ export default function AllocationForm({
                   {/* COLUMN 1: ALLOCATION DETAILS */}
                   <div className="space-y-6">
                     <div className="border-b border-border pb-3">
-                      <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                      <h3 className="font-sans text-sm font-bold text-primary flex items-center gap-2">
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">1</span>
                         Allocation Details
                       </h3>
@@ -630,7 +622,7 @@ export default function AllocationForm({
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Date of Allocation <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Date of Allocation <span className="text-red-500">*</span></label>
                         <input 
                           type="date" 
                           value={allocationDate}
@@ -641,7 +633,7 @@ export default function AllocationForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Allocation Type <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Allocation Type <span className="text-red-500">*</span></label>
                         <div className="flex flex-col gap-2">
                           {["New allocation", "Reallocation", "Swap", "Dropoff"].map((type) => (
                             <label key={type} className="flex items-center gap-3 rounded-xl border border-border px-4 py-2.5 text-xs font-bold hover:bg-bg cursor-pointer transition-all shadow-2xs">
@@ -659,7 +651,7 @@ export default function AllocationForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">City <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">City <span className="text-red-500">*</span></label>
                         <select 
                           value={cityName}
                           onChange={(e) => setCityName(e.target.value)}
@@ -679,7 +671,7 @@ export default function AllocationForm({
                   {/* COLUMN 2: DRIVER INFORMATION */}
                   <div className="space-y-6">
                     <div className="border-b border-border pb-3">
-                      <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                      <h3 className="font-sans text-sm font-bold text-primary flex items-center gap-2">
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">2</span>
                         Driver Information
                       </h3>
@@ -687,7 +679,7 @@ export default function AllocationForm({
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Operator / Driver ID <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Operator / Driver ID <span className="text-red-500">*</span></label>
                         <input 
                           type="text" 
                           placeholder="Unique LetzRyd ID..."
@@ -699,7 +691,7 @@ export default function AllocationForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Driver Name <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Driver Name <span className="text-red-500">*</span></label>
                         <input 
                           type="text" 
                           placeholder="Enter full name..."
@@ -711,7 +703,7 @@ export default function AllocationForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Driver Phone Number <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Driver Phone Number <span className="text-red-500">*</span></label>
                         <input 
                           type="tel" 
                           placeholder="+91 10-digit mobile..."
@@ -727,7 +719,7 @@ export default function AllocationForm({
                   {/* COLUMN 3: VEHICLE & PLAN */}
                   <div className="space-y-6">
                     <div className="border-b border-border pb-3">
-                      <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                      <h3 className="font-sans text-sm font-bold text-primary flex items-center gap-2">
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">3</span>
                         Vehicle & Plan
                       </h3>
@@ -735,7 +727,7 @@ export default function AllocationForm({
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Driver Plan</label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Driver Plan</label>
                         <input 
                           type="text" 
                           placeholder="e.g. Subscription, Lease..."
@@ -746,7 +738,7 @@ export default function AllocationForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Type of Plan</label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Type of Plan</label>
                         <input 
                           type="text" 
                           placeholder="e.g. Bronze, Silver, Gold..."
@@ -757,7 +749,7 @@ export default function AllocationForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Car Model</label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Car Model</label>
                         <input 
                           type="text" 
                           placeholder="e.g. Tata Nexon EV..."
@@ -769,7 +761,7 @@ export default function AllocationForm({
 
                       <div>
                         <div className="flex justify-between items-center mb-2">
-                          <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider">Vehicle Number (New/Current) <span className="text-red-500">*</span></label>
+                          <label className="block font-sans text-xs font-bold text-text-muted">Vehicle Number (New/Current) <span className="text-red-500">*</span></label>
                           <button
                             type="button"
                             onClick={() => fetchLastInspectionForGiven(vehicleNumber)}
@@ -796,7 +788,7 @@ export default function AllocationForm({
                 {(allocationType === "Swap" || allocationType === "Dropoff") && (
                   <div className="border-t border-border pt-10 space-y-6">
                     <div className="border-b border-border pb-3">
-                      <h3 className="font-sans text-sm font-bold text-amber-600 uppercase tracking-wider flex items-center gap-2">
+                      <h3 className="font-sans text-sm font-bold text-amber-600 flex items-center gap-2">
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-50 text-amber-600 text-xs font-bold">4</span>
                         Dropoff Details (Car Return)
                       </h3>
@@ -807,7 +799,7 @@ export default function AllocationForm({
                       <div className="space-y-4">
                         <div>
                           <div className="flex justify-between items-center mb-2">
-                            <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider">Old Vehicle Number <span className="text-red-500">*</span></label>
+                            <label className="block font-sans text-xs font-bold text-text-muted">Old Vehicle Number <span className="text-red-500">*</span></label>
                             <button
                               type="button"
                               onClick={() => fetchLastInspectionForOld(oldVehicleNumber)}
@@ -828,7 +820,7 @@ export default function AllocationForm({
                         </div>
 
                         <div>
-                          <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Dropoff Odometer (KM) <span className="text-red-500">*</span></label>
+                          <label className="block font-sans text-xs font-bold text-text-muted mb-2">Dropoff Odometer (KM) <span className="text-red-500">*</span></label>
                           <input 
                             type="number" 
                             placeholder="Current reading..."
@@ -840,7 +832,7 @@ export default function AllocationForm({
                         </div>
 
                         <div>
-                          <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Dropoff Remarks</label>
+                          <label className="block font-sans text-xs font-bold text-text-muted mb-2">Dropoff Remarks</label>
                           <textarea 
                             placeholder="Condition, damages, battery state..."
                             value={dropoffRemarks}
@@ -853,7 +845,7 @@ export default function AllocationForm({
 
                       {/* Photo Capture */}
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Vehicle Condition Photo</label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Vehicle Condition Photo</label>
                         <div className="w-full rounded-2xl border border-dashed border-border bg-bg/30 p-6 text-center hover:bg-bg/50 transition-all shadow-2xs">
                           {dropoffPhoto ? (
                             <div className="relative inline-block">
@@ -908,7 +900,7 @@ export default function AllocationForm({
                 {allocationType !== "Dropoff" && (
                   <div className="border-t border-border pt-10 space-y-6">
                     <div className="border-b border-border pb-3">
-                      <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                      <h3 className="font-sans text-sm font-bold text-primary flex items-center gap-2">
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">5</span>
                         Inspection Checklist: Allocated Car ({vehicleNumber || "No vehicle entered"})
                       </h3>
@@ -982,7 +974,7 @@ export default function AllocationForm({
                         </div>
 
                         <div>
-                          <label className="block font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Inspection Remarks (Allocated Car)</label>
+                          <label className="block font-sans text-[10px] font-bold text-text-muted mb-1">Inspection Remarks (Allocated Car)</label>
                           <input type="text" value={inspectionRemarks} onChange={(e) => setInspectionRemarks(e.target.value)} placeholder="Condition details..." className="w-full rounded-xl border border-border bg-white px-3 py-2 text-xs focus:outline-none focus:border-primary" />
                         </div>
                       </div>
@@ -994,7 +986,7 @@ export default function AllocationForm({
                 {(allocationType === "Swap" || allocationType === "Dropoff") && (
                   <div className="border-t border-border pt-10 space-y-6">
                     <div className="border-b border-border pb-3">
-                      <h3 className="font-sans text-sm font-bold text-amber-600 uppercase tracking-wider flex items-center gap-2">
+                      <h3 className="font-sans text-sm font-bold text-amber-600 flex items-center gap-2">
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-50 text-amber-600 text-xs font-bold">6</span>
                         Inspection Checklist: Returned Car ({oldVehicleNumber || "No vehicle entered"})
                       </h3>
@@ -1068,7 +1060,7 @@ export default function AllocationForm({
                         </div>
 
                         <div>
-                          <label className="block font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Inspection Remarks (Returned Car)</label>
+                          <label className="block font-sans text-[10px] font-bold text-text-muted mb-1">Inspection Remarks (Returned Car)</label>
                           <input type="text" value={oldInspectionRemarks} onChange={(e) => setOldInspectionRemarks(e.target.value)} placeholder="Condition details..." className="w-full rounded-xl border border-border bg-white px-3 py-2 text-xs focus:outline-none focus:border-primary" />
                         </div>
                       </div>
@@ -1079,7 +1071,7 @@ export default function AllocationForm({
                 {/* FORM ACTIONS */}
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-3 border-t border-border pt-8">
                   <div className="flex flex-col gap-1 text-left w-full sm:w-auto">
-                    <p className="text-[10px] font-bold text-red-500 uppercase">* means mandatory</p>
+                    <p className="text-[10px] font-bold text-red-500">* means mandatory</p>
                   </div>
                   <div className="flex gap-3 w-full sm:w-auto justify-end">
                     <button 
@@ -1110,7 +1102,7 @@ export default function AllocationForm({
               {/* CARD 1: Total Allocations */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-sm flex items-center justify-between">
                 <div>
-                  <span className="font-sans text-[10px] font-bold text-text-muted uppercase tracking-widest block">Total Allocations</span>
+                  <span className="font-sans text-[10px] font-bold text-text-muted tracking-widest block">Total Allocations</span>
                   <span className="font-sans text-3xl font-extrabold text-primary tracking-tight block mt-1">{stats.total_allocations}</span>
                   <span className="font-sans text-[10px] text-text-muted block mt-0.5">Fleet distributions</span>
                 </div>
@@ -1122,7 +1114,7 @@ export default function AllocationForm({
               {/* CARD 2: New Allocations */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-sm flex items-center justify-between">
                 <div>
-                  <span className="font-sans text-[10px] font-bold text-text-muted uppercase tracking-widest block">New Allocations</span>
+                  <span className="font-sans text-[10px] font-bold text-text-muted tracking-widest block">New Allocations</span>
                   <span className="font-sans text-3xl font-extrabold text-green tracking-tight block mt-1">{stats.new_allocations}</span>
                   <span className="font-sans text-[10px] text-text-muted block mt-0.5">Fresh assignments</span>
                 </div>
@@ -1134,7 +1126,7 @@ export default function AllocationForm({
               {/* CARD 3: Car Swaps */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-sm flex items-center justify-between">
                 <div>
-                  <span className="font-sans text-[10px] font-bold text-text-muted uppercase tracking-widest block">Car Swaps</span>
+                  <span className="font-sans text-[10px] font-bold text-text-muted tracking-widest block">Car Swaps</span>
                   <span className="font-sans text-3xl font-extrabold text-amber-600 tracking-tight block mt-1">{stats.car_swaps}</span>
                   <span className="font-sans text-[10px] text-text-muted block mt-0.5">Vehicle exchanges</span>
                 </div>
@@ -1146,7 +1138,7 @@ export default function AllocationForm({
               {/* CARD 4: Reallocations */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-sm flex items-center justify-between">
                 <div>
-                  <span className="font-sans text-[10px] font-bold text-text-muted uppercase tracking-widest block">Reallocations</span>
+                  <span className="font-sans text-[10px] font-bold text-text-muted tracking-widest block">Reallocations</span>
                   <span className="font-sans text-3xl font-extrabold text-indigo-600 tracking-tight block mt-1">{stats.reallocations}</span>
                   <span className="font-sans text-[10px] text-text-muted block mt-0.5">Redistributions</span>
                 </div>
@@ -1235,12 +1227,12 @@ export default function AllocationForm({
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="border-b border-border bg-bg/50 select-none">
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted tracking-wider uppercase text-left w-16">ID</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted tracking-wider uppercase text-left">Driver Details</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted tracking-wider uppercase text-left">Allocation Details</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted tracking-wider uppercase text-left">Plan & Vehicle</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted tracking-wider uppercase text-left">Dropoff Details</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted tracking-wider uppercase text-right w-24">Actions</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left w-16">ID</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left">Driver Details</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left">Allocation Details</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left">Plan & Vehicle</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left">Dropoff Details</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-right w-24">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border bg-white">
@@ -1261,12 +1253,7 @@ export default function AllocationForm({
                             </td>
                             <td className="px-6 py-4">
                               <div className="font-sans text-xs font-bold text-text">{r.city_name}</div>
-                              <span className={`inline-block rounded-md px-1.5 py-0.5 font-mono text-[9px] font-bold mt-1 uppercase ${
-                                (r.allocation_type === "New allocation" || r.allocation_type === "New Allocation") ? "bg-green-light text-green" :
-                                r.allocation_type === "Reallocation" ? "bg-indigo-50 text-indigo-600 border border-indigo-100" :
-                                (r.allocation_type === "Swap" || r.allocation_type === "Car Swap") ? "bg-yellow-light text-amber-600 border border-yellow-100" :
-                                "bg-red-50 text-red-600 border border-red-100"
-                              }`}>
+                              <span className={`inline-block rounded-md px-1.5 py-0.5 font-mono text-[9px] font-bold mt-1 ${ (r.allocation_type === "New allocation" || r.allocation_type === "New Allocation") ? "bg-green-light text-green" : r.allocation_type === "Reallocation" ? "bg-indigo-50 text-indigo-600 border border-indigo-100" : (r.allocation_type === "Swap" || r.allocation_type === "Car Swap") ? "bg-yellow-light text-amber-600 border border-yellow-100" : "bg-red-50 text-red-600 border border-red-100" }`}>
                                 {r.allocation_type}
                               </span>
                               <div className="font-sans text-[9px] text-text-muted mt-1">{r.allocation_date}</div>

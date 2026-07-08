@@ -519,7 +519,7 @@ export default function OperatorOnboardingForm({
               referrerPolicy="no-referrer"
             />
             <span className="hidden h-5 border-l border-border sm:inline-block" />
-            <span className="hidden font-sans text-xs font-medium text-text-muted tracking-wider uppercase sm:inline-block">
+            <span className="hidden font-sans text-xs font-medium text-text-muted sm:inline-block">
               Operator Onboarding
             </span>
           </div>
@@ -528,22 +528,14 @@ export default function OperatorOnboardingForm({
           <nav className="flex gap-2">
             <button 
               onClick={() => setActiveTab("form")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "form" 
-                  ? "bg-primary text-white shadow-sm shadow-primary/20" 
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "form" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <FileText className="h-4 w-4" />
               Onboarding Form
             </button>
             <button 
               onClick={() => setActiveTab("registry")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "registry" 
-                  ? "bg-primary text-white shadow-sm shadow-primary/20" 
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "registry" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <Database className="h-4 w-4" />
               Operator Registry
@@ -553,12 +545,12 @@ export default function OperatorOnboardingForm({
           {/* Clock & Profile */}
           <div className="hidden items-center gap-4 lg:flex">
             <div className="text-right">
-              <span className="block text-[9px] font-bold text-text-dim tracking-wider uppercase">Current Time (IST)</span>
+              <span className="block text-[9px] font-bold text-text-dim">Current Time (IST)</span>
               <span className="font-mono text-xs font-extrabold text-green">{currentTime}</span>
             </div>
             <span className="h-5 border-l border-border" />
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white uppercase">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white">
                 {initials}
               </div>
               <div className="flex flex-col">
@@ -589,7 +581,7 @@ export default function OperatorOnboardingForm({
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-2">
                     <img src="https://letzryd.com/replica-assets/letzryd-long-png-logo-Aq2o3DNOw1i2kBMB-7ab04eaa76.png" className="h-8 brightness-0 invert" alt="LetzRyd" referrerPolicy="no-referrer" />
-                    <span className="px-2 py-0.5 rounded border border-white/30 bg-white/20 text-white text-[10px] font-bold tracking-widest uppercase backdrop-blur-sm">
+                    <span className="px-2 py-0.5 rounded border border-white/30 bg-white/20 text-white text-[10px] font-bold tracking-widest backdrop-blur-sm">
                       Operator Desk
                     </span>
                   </div>
@@ -645,46 +637,46 @@ export default function OperatorOnboardingForm({
                   
                   {/* SECTION 1: OPERATOR PROFILE DETAILS */}
                   <div className="flex flex-col gap-5 border-b border-border/40 pb-6">
-                    <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase flex items-center gap-1.5">
+                    <h3 className="font-sans text-xs font-bold text-primary flex items-center gap-1.5">
                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">1</span>
                       Operator Profile Details
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Operator Name *</label>
+                        <label className="text-xs font-bold text-text-muted">Operator Name *</label>
                         <input type="text" required value={vendorName} onChange={(e) => setVendorName(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Fleet/Operator Name" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Operator ID (Vendor ID) *</label>
+                        <label className="text-xs font-bold text-text-muted">Operator ID (Vendor ID) *</label>
                         <input type="text" required value={vendorId} onChange={(e) => setVendorId(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Unique Vendor ID (e.g. VND-HYD-001)" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Phone Number *</label>
+                        <label className="text-xs font-bold text-text-muted">Phone Number *</label>
                         <input type="tel" required value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="10-digit mobile" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">WhatsApp Number</label>
+                        <label className="text-xs font-bold text-text-muted">WhatsApp Number</label>
                         <input type="tel" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="WhatsApp Number" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Operating City *</label>
+                        <label className="text-xs font-bold text-text-muted">Operating City *</label>
                         <select required value={city} onChange={(e) => setCity(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all">
                           {CITIES.map(c => <option key={c.value} value={c.value}>{c.text}</option>)}
                         </select>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Operating Place / Hub</label>
+                        <label className="text-xs font-bold text-text-muted">Operating Place / Hub</label>
                         <input type="text" value={operatingPlace} onChange={(e) => setOperatingPlace(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="e.g. HITEC Hub" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Custom Operator Rent / Day (Optional)</label>
+                        <label className="text-xs font-bold text-text-muted">Custom Operator Rent / Day (Optional)</label>
                         <div className="relative">
                           <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
                           <input type="number" value={customRentAmount} onChange={(e) => setCustomRentAmount(e.target.value)} className="w-full h-11 pl-9 pr-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Operator Rent Per Day" />
                         </div>
                       </div>
                       <div className="space-y-2 lg:col-span-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Business Address</label>
+                        <label className="text-xs font-bold text-text-muted">Business Address</label>
                         <input type="text" value={presentAddress} onChange={(e) => setPresentAddress(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Registered business address" />
                       </div>
                     </div>
@@ -692,25 +684,25 @@ export default function OperatorOnboardingForm({
 
                   {/* SECTION 2: OPERATOR BANK ACCOUNT */}
                   <div className="flex flex-col gap-5 border-b border-border/40 pb-6 pt-2">
-                    <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase flex items-center gap-1.5">
+                    <h3 className="font-sans text-xs font-bold text-primary flex items-center gap-1.5">
                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">2</span>
                       Operator Bank Details
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Bank Name</label>
+                        <label className="text-xs font-bold text-text-muted">Bank Name</label>
                         <input type="text" value={bankName} onChange={(e) => setBankName(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="SBI, HDFC, ICICI..." />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Account Number</label>
+                        <label className="text-xs font-bold text-text-muted">Account Number</label>
                         <input type="text" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Account No" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">IFSC Code</label>
+                        <label className="text-xs font-bold text-text-muted">IFSC Code</label>
                         <input type="text" value={ifscCode} onChange={(e) => setIfscCode(e.target.value.toUpperCase())} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="IFSC Code" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">UPI ID</label>
+                        <label className="text-xs font-bold text-text-muted">UPI ID</label>
                         <input type="text" value={upiId} onChange={(e) => setUpiId(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="operator@upi" />
                       </div>
                     </div>
@@ -718,17 +710,17 @@ export default function OperatorOnboardingForm({
 
                   {/* SECTION 3: OPERATOR KYC & DOCUMENTS */}
                   <div className="flex flex-col gap-5 border-b border-border/40 pb-6 pt-2">
-                    <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase flex items-center gap-1.5">
+                    <h3 className="font-sans text-xs font-bold text-primary flex items-center gap-1.5">
                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">3</span>
                       Operator KYC &amp; Documents
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">PAN Number</label>
+                        <label className="text-xs font-bold text-text-muted">PAN Number</label>
                         <input type="text" value={operatorPan} onChange={(e) => setOperatorPan(e.target.value.toUpperCase())} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="PAN Card No." />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Aadhaar Number</label>
+                        <label className="text-xs font-bold text-text-muted">Aadhaar Number</label>
                         <input type="text" value={operatorAadhaar} onChange={(e) => setOperatorAadhaar(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Aadhaar Card No." />
                       </div>
                     </div>
@@ -743,7 +735,7 @@ export default function OperatorOnboardingForm({
                   {/* SECTION 4: DRIVERS UNDER THIS OPERATOR */}
                   <div className="flex flex-col gap-5 pt-2">
                     <div className="flex justify-between items-center">
-                      <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase flex items-center gap-1.5">
+                      <h3 className="font-sans text-xs font-bold text-primary flex items-center gap-1.5">
                         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">4</span>
                         Drivers under this Operator ({drivers.length})
                       </h3>
@@ -812,54 +804,54 @@ export default function OperatorOnboardingForm({
                       {/* Driver Basic Info */}
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted uppercase">Driver Name *</label>
+                          <label className="text-xs font-bold text-text-muted">Driver Name *</label>
                           <input type="text" value={dName} onChange={(e) => setDName(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Full Name" />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted uppercase">Father's Name</label>
+                          <label className="text-xs font-bold text-text-muted">Father's Name</label>
                           <input type="text" value={dFather} onChange={(e) => setDFather(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Father's Name" />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted uppercase">Phone Number *</label>
+                          <label className="text-xs font-bold text-text-muted">Phone Number *</label>
                           <input type="tel" value={dPhone} onChange={(e) => setDPhone(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="10-digit phone" />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted uppercase">WhatsApp Number</label>
+                          <label className="text-xs font-bold text-text-muted">WhatsApp Number</label>
                           <input type="tel" value={dWhatsapp} onChange={(e) => setDWhatsapp(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Same as phone if blank" />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted uppercase">Date of Birth</label>
+                          <label className="text-xs font-bold text-text-muted">Date of Birth</label>
                           <input type="date" value={dDob} onChange={(e) => setDDob(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted uppercase">Driver ID *</label>
+                          <label className="text-xs font-bold text-text-muted">Driver ID *</label>
                           <input type="text" value={dDriverId} onChange={(e) => setDDriverId(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="e.g. DR-HYD-001" />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted uppercase">Custom Driver Rent / Day (Optional)</label>
+                          <label className="text-xs font-bold text-text-muted">Custom Driver Rent / Day (Optional)</label>
                           <div className="relative">
                             <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
                             <input type="number" value={dCustomRent} onChange={(e) => setDCustomRent(e.target.value)} className="w-full h-11 pl-9 pr-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Driver Rent Per Day" />
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted uppercase">DL Number</label>
+                          <label className="text-xs font-bold text-text-muted">DL Number</label>
                           <input type="text" value={dDlNum} onChange={(e) => setDDlNum(e.target.value.toUpperCase())} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Driving Licence No." />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted uppercase">DL Expiry Date</label>
+                          <label className="text-xs font-bold text-text-muted">DL Expiry Date</label>
                           <input type="date" value={dDlExpiry} onChange={(e) => setDDlExpiry(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted uppercase">PAN Number *</label>
+                          <label className="text-xs font-bold text-text-muted">PAN Number *</label>
                           <input type="text" value={dPanNum} onChange={(e) => setDPanNum(e.target.value.toUpperCase())} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="PAN Card No." />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted uppercase">Aadhaar Number *</label>
+                          <label className="text-xs font-bold text-text-muted">Aadhaar Number *</label>
                           <input type="text" value={dAadhaarNum} onChange={(e) => setDAadhaarNum(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Aadhaar No." />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted uppercase">PAN-Aadhaar Linked</label>
+                          <label className="text-xs font-bold text-text-muted">PAN-Aadhaar Linked</label>
                           <select value={dPanAadhaarLinked} onChange={(e) => setDPanAadhaarLinked(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none">
                             <option value="Yes">Yes</option>
                             <option value="No">No</option>
@@ -871,12 +863,12 @@ export default function OperatorOnboardingForm({
                       {/* Address */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted uppercase">Present Address</label>
+                          <label className="text-xs font-bold text-text-muted">Present Address</label>
                           <input type="text" value={dPresentAddr} onChange={(e) => setDPresentAddr(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Present Address" />
                         </div>
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <label className="text-xs font-bold text-text-muted uppercase">Permanent Address</label>
+                            <label className="text-xs font-bold text-text-muted">Permanent Address</label>
                             <label className="flex items-center gap-1.5 text-xs text-text-muted cursor-pointer hover:text-primary">
                               <input type="checkbox" checked={dSameAsPresent} onChange={(e) => setDSameAsPresent(e.target.checked)} className="rounded border-border text-primary" />
                               Same as Present
@@ -889,18 +881,18 @@ export default function OperatorOnboardingForm({
                       {/* Emergency Contact */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-border pt-4">
                         <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted uppercase">Emergency Contact Name</label>
+                          <label className="text-xs font-bold text-text-muted">Emergency Contact Name</label>
                           <input type="text" value={dEmergName} onChange={(e) => setDEmergName(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary outline-none" placeholder="Relation & Name" />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted uppercase">Emergency Phone</label>
+                          <label className="text-xs font-bold text-text-muted">Emergency Phone</label>
                           <input type="tel" value={dEmergPhone} onChange={(e) => setDEmergPhone(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary outline-none" placeholder="Emergency Mobile" />
                         </div>
                       </div>
 
                       {/* Driver KYC Images */}
                       <div className="border-t border-border pt-4">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider block mb-3">Driver KYC Documents</label>
+                        <label className="text-xs font-bold text-text-muted block mb-3">Driver KYC Documents</label>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                           {renderDocCard("d_selfie", "Driver Selfie / Photo", dSelfie, setDSelfie)}
                           {renderDocCard("d_dl_front", "DL Front Copy", dDlFront, setDDlFront, true)}
@@ -948,19 +940,19 @@ export default function OperatorOnboardingForm({
             {/* Stats Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-white rounded-xl border border-border p-4 shadow-xs">
-                <p className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Total Operators</p>
+                <p className="text-[10px] text-text-muted font-bold">Total Operators</p>
                 <p className="text-2xl font-bold text-primary mt-1">{records.length}</p>
               </div>
               <div className="bg-white rounded-xl border border-border p-4 shadow-xs">
-                <p className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Last 7 Days</p>
+                <p className="text-[10px] text-text-muted font-bold">Last 7 Days</p>
                 <p className="text-2xl font-bold text-green mt-1">{stats.last_7_days_count}</p>
               </div>
               <div className="bg-white rounded-xl border border-border p-4 shadow-xs">
-                <p className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Latest Onboarding</p>
+                <p className="text-[10px] text-text-muted font-bold">Latest Onboarding</p>
                 <p className="text-sm font-bold text-text mt-1 truncate">{stats.latest_onboarding || "—"}</p>
               </div>
               <div className="bg-white rounded-xl border border-border p-4 shadow-xs">
-                <p className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Total Vendor Count</p>
+                <p className="text-[10px] text-text-muted font-bold">Total Vendor Count</p>
                 <p className="text-2xl font-bold text-amber-600 mt-1">{stats.vendor_count}</p>
               </div>
             </div>

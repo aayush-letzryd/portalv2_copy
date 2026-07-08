@@ -220,7 +220,7 @@ export default function RentForm({
               referrerPolicy="no-referrer"
             />
             <span className="hidden h-5 border-l border-border sm:inline-block" />
-            <span className="hidden font-sans text-xs font-medium text-text-muted tracking-wider uppercase sm:inline-block">
+            <span className="hidden font-sans text-xs font-medium text-text-muted sm:inline-block">
               Rent Plans
             </span>
           </div>
@@ -229,33 +229,21 @@ export default function RentForm({
           <nav className="flex gap-2">
             <button 
               onClick={() => setActiveTab("form")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "form" 
-                  ? "bg-primary text-white shadow-sm shadow-primary/20" 
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "form" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <FileText className="h-4 w-4" />
               {editingId ? `Editing #${editingId}` : "New Rent Plan"}
             </button>
             <button 
               onClick={() => { setActiveTab("registry"); fetchData(); }}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "registry" 
-                  ? "bg-primary text-white shadow-sm shadow-primary/20" 
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "registry" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <Database className="h-4 w-4" />
               Rent Registry
             </button>
             <button 
               onClick={() => setActiveTab("ledger")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "ledger" 
-                  ? "bg-primary text-white shadow-sm shadow-primary/20" 
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "ledger" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <History className="h-4 w-4" />
               Rent Audit Ledger
@@ -265,12 +253,12 @@ export default function RentForm({
           {/* Clock & User */}
           <div className="hidden items-center gap-4 lg:flex">
             <div className="text-right">
-              <span className="block text-[9px] font-bold text-text-dim tracking-wider uppercase">Current Time (IST)</span>
+              <span className="block text-[9px] font-bold text-text-dim">Current Time (IST)</span>
               <span className="font-mono text-xs font-extrabold text-green">{currentTime}</span>
             </div>
             <span className="h-5 border-l border-border" />
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white uppercase">{initials}</div>
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white">{initials}</div>
               <div className="flex flex-col">
                 <span className="font-sans text-xs font-semibold leading-none text-text">{displayName}</span>
                 <span className="font-mono text-[10px] text-text-muted mt-0.5 leading-none">{user.role || "Executive"}</span>
@@ -299,7 +287,7 @@ export default function RentForm({
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-20 -mt-20 pointer-events-none" />
                 <div className="relative z-10 flex items-center gap-3 mb-2">
                   <img src="https://letzryd.com/replica-assets/letzryd-long-png-logo-Aq2o3DNOw1i2kBMB-7ab04eaa76.png" className="h-8 brightness-0 invert" alt="LetzRyd" referrerPolicy="no-referrer" />
-                  <span className="px-2 py-0.5 rounded border border-white/30 bg-white/20 text-white text-[10px] font-bold tracking-widest uppercase backdrop-blur-sm">
+                  <span className="px-2 py-0.5 rounded border border-white/30 bg-white/20 text-white text-[10px] font-bold tracking-widest backdrop-blur-sm">
                     Rent Configuration
                   </span>
                 </div>
@@ -325,18 +313,14 @@ export default function RentForm({
 
                   {/* Level Selector */}
                   <div className="space-y-2">
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Rent Level *</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">Rent Level *</label>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {LEVEL_OPTIONS.map(opt => (
                         <button
                           key={opt.value}
                           type="button"
                           onClick={() => { setLevel(opt.value); setVehicleManufacturer(""); setVehicleModel(""); setVehicleNumber(""); setVendorId(""); setDriverId(""); }}
-                          className={`flex flex-col items-start p-3 rounded-xl border-2 text-left transition-all cursor-pointer ${
-                            level === opt.value
-                              ? "border-primary bg-primary/5"
-                              : "border-border bg-slate-50 hover:border-primary/40"
-                          }`}
+                          className={`flex flex-col items-start p-3 rounded-xl border-2 text-left transition-all cursor-pointer ${ level === opt.value ? "border-primary bg-primary/5" : "border-border bg-slate-50 hover:border-primary/40" }`}
                         >
                           <span className={`text-xs font-bold mb-1 ${level === opt.value ? "text-primary" : "text-text"}`}>
                             {opt.label}
@@ -352,7 +336,7 @@ export default function RentForm({
                     {(level === "model" || level === "vehicle") && (
                       <>
                         <div className="space-y-2">
-                          <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Vehicle Manufacturer</label>
+                          <label className="block font-sans text-xs font-bold text-text-muted mb-2">Vehicle Manufacturer</label>
                           <input
                             type="text"
                             value={vehicleManufacturer}
@@ -362,7 +346,7 @@ export default function RentForm({
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Vehicle Model</label>
+                          <label className="block font-sans text-xs font-bold text-text-muted mb-2">Vehicle Model</label>
                           <input
                             type="text"
                             value={vehicleModel}
@@ -376,7 +360,7 @@ export default function RentForm({
 
                     {level === "vehicle" && (
                       <div className="space-y-2">
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Vehicle Number *</label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Vehicle Number *</label>
                         <input
                           type="text"
                           value={vehicleNumber}
@@ -389,7 +373,7 @@ export default function RentForm({
 
                     {(level === "model" || level === "vehicle") && (
                       <div className="space-y-2">
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Vehicle Age (Optional)</label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Vehicle Age (Optional)</label>
                         <select
                           value={vehicleAge}
                           onChange={(e) => setVehicleAge(e.target.value)}
@@ -405,7 +389,7 @@ export default function RentForm({
 
                     {level === "operator" && (
                       <div className="space-y-2 sm:col-span-2">
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Operator / Vendor ID *</label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Operator / Vendor ID *</label>
                         <input
                           type="text"
                           value={vendorId}
@@ -418,7 +402,7 @@ export default function RentForm({
 
                     {level === "driver" && (
                       <div className="space-y-2 sm:col-span-2">
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Driver ID *</label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Driver ID *</label>
                         <input
                           type="text"
                           value={driverId}
@@ -432,7 +416,7 @@ export default function RentForm({
 
                   {/* Rent Amount */}
                   <div className="space-y-2">
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Rent Amount (₹ / Day) *</label>
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">Rent Amount (₹ / Day) *</label>
                     <div className="relative">
                       <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
                       <input
@@ -478,7 +462,7 @@ export default function RentForm({
                 const count = records.filter(r => r.level === opt.value).length;
                 return (
                   <div key={opt.value} className={`rounded-xl border p-4 shadow-xs ${LEVEL_COLORS[opt.value]}`}>
-                    <p className="text-[10px] font-bold uppercase tracking-wider opacity-70">{opt.label}</p>
+                    <p className="text-[10px] font-bold opacity-70">{opt.label}</p>
                     <p className="text-2xl font-bold mt-1">{count}</p>
                   </div>
                 );
@@ -537,7 +521,7 @@ export default function RentForm({
                       <tr key={record.id} className="border-b border-border hover:bg-slate-50/50 transition-colors">
                         <td className="px-5 py-4 text-xs font-mono text-text-muted">#{record.id}</td>
                         <td className="px-5 py-4">
-                          <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border ${LEVEL_COLORS[record.level] || "bg-slate-100 text-slate-600 border-slate-200"}`}>
+                          <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${LEVEL_COLORS[record.level] || "bg-slate-100 text-slate-600 border-slate-200"}`}>
                             {getLevelInfo(record.level)?.label || record.level}
                           </span>
                         </td>
@@ -622,7 +606,7 @@ export default function RentForm({
             <div className="bg-white rounded-2xl shadow-sm border border-border/60 overflow-hidden">
               <div className="border-b border-border bg-slate-50/50 px-8 py-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <h2 className="font-sans text-sm font-extrabold text-primary uppercase tracking-wider">Rent Modification Audit Logs</h2>
+                  <h2 className="font-sans text-sm font-extrabold text-primary">Rent Modification Audit Logs</h2>
                   <p className="font-sans text-xs text-text-muted mt-0.5">Search by Driver ID, Vehicle Number, Model name, or Vendor ID</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">

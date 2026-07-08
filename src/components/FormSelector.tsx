@@ -8,7 +8,7 @@ interface FormSelectorProps {
 }
 
 const CARDS = [
-  { key: "walkin",              label: "Walk-In Form",           sub: "Log visitor & walk-in enquiries",         icon: ClipboardList, iconBg: "bg-blue-50",    iconColor: "text-primary",     hover: "hover:border-primary"    },
+  { key: "walkin",              label: "Lead Generation Form",           sub: "Log walk-in enquiries",         icon: ClipboardList, iconBg: "bg-blue-50",    iconColor: "text-primary",     hover: "hover:border-primary"    },
   { key: "onboarding",         label: "Individual Onboarding",  sub: "Onboard new drivers to the fleet",        icon: UserCheck,     iconBg: "bg-green-light", iconColor: "text-green",       hover: "hover:border-green"      },
   { key: "operator_onboarding",label: "Operator Onboarding",   sub: "Register new fleet partners",             icon: UserCheck,     iconBg: "bg-blue-50",    iconColor: "text-primary",     hover: "hover:border-blue-500"   },
   { key: "adjustment",         label: "Adjustment Form",        sub: "Credit / debit wallet adjustments",       icon: Settings,      iconBg: "bg-yellow-light",iconColor: "text-amber-600",   hover: "hover:border-amber-500"  },
@@ -49,15 +49,23 @@ export default function FormSelector({ user, onSelectForm, onLogout }: FormSelec
               referrerPolicy="no-referrer"
             />
             <span className="hidden h-5 border-l border-border sm:inline-block" />
-            <span className="hidden font-sans text-xs font-medium text-text-muted tracking-wider uppercase sm:inline-block">
+            <span className="hidden font-sans text-xs font-medium text-text-muted sm:inline-block">
               Operations Portal
             </span>
           </div>
 
           {/* User Actions */}
           <div className="flex items-center gap-4">
+            {["Manager", "Admin", "Founder/Admin", "CEO/Admin", "Super Admin", "Business Head", "City Manager"].includes(user.role || "") && (
+              <button
+                onClick={() => onSelectForm("approvals" as any)}
+                className="flex h-9 items-center justify-center rounded-lg bg-primary px-4 font-sans text-xs font-bold text-white hover:bg-primary/90 transition-colors shadow-xs cursor-pointer"
+              >
+                Approval Centre
+              </button>
+            )}
             <div className="flex items-center gap-3 rounded-lg border border-border bg-bg/50 px-3 py-1.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white uppercase">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white">
                 {initials}
               </div>
               <div className="flex flex-col">
@@ -97,7 +105,7 @@ export default function FormSelector({ user, onSelectForm, onLogout }: FormSelec
                 <h3 className="font-sans text-sm font-bold text-gray-900 mb-1 leading-tight">{label}</h3>
                 <p className="font-sans text-xs text-gray-500 leading-snug line-clamp-1">{sub}</p>
               </div>
-              <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green uppercase tracking-wider">
+              <span className="absolute top-4 right-4 rounded-md bg-green-light px-2.5 py-1 text-[10px] font-extrabold text-green">
                 Live
               </span>
             </button>

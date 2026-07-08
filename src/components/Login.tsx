@@ -67,7 +67,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
             </div>
           </div>
           
-          <div className="font-sans text-xs text-white/40 tracking-wider">
+          <div className="font-sans text-xs text-white/40">
             LetzRyd Fleet Operations Co.
           </div>
         </div>
@@ -102,7 +102,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               
               {/* Username field */}
               <div className="flex flex-col gap-1.5">
-                <label className="font-sans text-xs font-semibold text-text-muted tracking-wider uppercase" htmlFor="username">
+                <label className="font-sans text-xs font-semibold text-text-muted" htmlFor="username">
                   Username
                 </label>
                 <input
@@ -118,7 +118,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
 
               {/* Password field */}
               <div className="flex flex-col gap-1.5">
-                <label className="font-sans text-xs font-semibold text-text-muted tracking-wider uppercase" htmlFor="password">
+                <label className="font-sans text-xs font-semibold text-text-muted" htmlFor="password">
                   Password
                 </label>
                 <div className="relative">

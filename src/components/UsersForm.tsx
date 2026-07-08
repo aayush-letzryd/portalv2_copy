@@ -273,8 +273,8 @@ export default function UsersForm({
               referrerPolicy="no-referrer"
             />
             <span className="hidden h-5 border-l border-border sm:inline-block" />
-            <span className="hidden font-sans text-xs font-medium text-text-muted tracking-wider uppercase sm:inline-block">
-              PORTAL USERS
+            <span className="hidden font-sans text-xs font-medium text-text-muted sm:inline-block">
+              Portal Users
             </span>
           </div>
 
@@ -282,22 +282,14 @@ export default function UsersForm({
           <nav className="flex gap-2">
             <button
               onClick={() => setActiveTab('form')}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === 'form' 
-                  ? 'bg-primary text-white shadow-sm shadow-primary/20' 
-                  : 'text-text-muted hover:bg-slate-100 hover:text-primary'
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === 'form' ? 'bg-primary text-white shadow-sm shadow-primary/20' : 'text-text-muted hover:bg-slate-100 hover:text-primary' }`}
             >
               <FileText className="h-4 w-4" />
               Portal Users
             </button>
             <button
               onClick={() => setActiveTab('registry')}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === 'registry' 
-                  ? 'bg-primary text-white shadow-sm shadow-primary/20' 
-                  : 'text-text-muted hover:bg-slate-100 hover:text-primary'
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === 'registry' ? 'bg-primary text-white shadow-sm shadow-primary/20' : 'text-text-muted hover:bg-slate-100 hover:text-primary' }`}
             >
               <Users className="h-4 w-4" />
               User Accounts Registry
@@ -306,14 +298,14 @@ export default function UsersForm({
 
           <div className="hidden items-center gap-4 lg:flex">
             <div className="text-right">
-              <span className="block text-[9px] font-bold text-text-dim tracking-wider uppercase">Current Time (IST)</span>
+              <span className="block text-[9px] font-bold text-text-dim">Current Time (IST)</span>
               <span className="font-mono text-xs font-extrabold text-green">{currentTime}</span>
             </div>
             
             <span className="h-5 border-l border-border" />
             
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white uppercase">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white">
                 {initials}
               </div>
               <div className="flex flex-col">
@@ -346,7 +338,7 @@ export default function UsersForm({
               <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold text-white tracking-widest uppercase">
+                    <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold text-white tracking-widest">
                       LetzRyd Desk
                     </span>
                     <span className="text-white/40 text-xs">•</span>
@@ -365,7 +357,7 @@ export default function UsersForm({
               {/* Lookup Section */}
               {!editingId && (
                 <div className="bg-slate-50 p-4 rounded-xl border border-border">
-                  <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                  <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                     Auto-fill from Employee ID
                   </label>
                   <div className="flex gap-2">
@@ -390,7 +382,7 @@ export default function UsersForm({
               {/* Employee ID & Email Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                  <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                     Employee ID
                   </label>
                   <input 
@@ -402,7 +394,7 @@ export default function UsersForm({
                   />
                 </div>
                 <div>
-                  <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                  <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                     Email Address
                   </label>
                   <input 
@@ -417,7 +409,7 @@ export default function UsersForm({
 
               {/* Name */}
               <div>
-                <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                   Full Name <span className="text-red-500">*</span>
                 </label>
                 <input 
@@ -433,7 +425,7 @@ export default function UsersForm({
               {/* Role */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                  <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                     Designation/Role <span className="text-red-500">*</span>
                   </label>
                   <select 
@@ -455,7 +447,7 @@ export default function UsersForm({
 
                 {role === "Other" && (
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Custom Role Name <span className="text-red-500">*</span>
                     </label>
                     <input 
@@ -472,7 +464,7 @@ export default function UsersForm({
 
               {/* Portal Role (Access Control) */}
               <div>
-                <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                   Portal Access Role
                   <span className="ml-2 text-[10px] font-normal text-text-muted normal-case tracking-normal">(Controls which sections this user can access)</span>
                 </label>
@@ -490,14 +482,14 @@ export default function UsersForm({
 
 
               <div className="border-t border-border/60 pt-6">
-                <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase mb-4 flex items-center gap-1.5">
+                <h3 className="font-sans text-xs font-bold text-primary mb-4 flex items-center gap-1.5">
                   Portal Login Credentials
                 </h3>
                 
                 <div className="space-y-4">
                   {/* Username */}
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Username <span className="text-red-500">*</span>
                     </label>
                     <input 
@@ -513,7 +505,7 @@ export default function UsersForm({
 
                   {/* Password */}
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Password {editingId ? "(Optional)" : <span className="text-red-500">*</span>}
                     </label>
                     <input 
@@ -615,14 +607,14 @@ export default function UsersForm({
                 <table className="w-full border-collapse text-left">
                   <thead>
                     <tr className="border-b border-border bg-slate-50/70">
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">User ID</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Employee ID / Email</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Full Name</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Username</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Designation / Role</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Password</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Created On</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider text-right">Actions</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted">User ID</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted">Employee ID / Email</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted">Full Name</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted">Username</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted">Designation / Role</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted">Password</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted">Created On</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/60">
@@ -639,13 +631,7 @@ export default function UsersForm({
                           <td className="px-6 py-4 font-sans text-sm font-bold text-text">{r.name}</td>
                           <td className="px-6 py-4 font-mono text-xs text-primary font-semibold">@{r.username}</td>
                           <td className="px-6 py-4">
-                            <span className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold ${
-                              r.role === "Administrator" 
-                                ? "bg-red-50 text-red-600 border border-red-200/50" 
-                                : r.role === "Finance Team" 
-                                ? "bg-amber-50 text-amber-600 border border-amber-200/50"
-                                : "bg-slate-100 text-slate-700"
-                            }`}>
+                            <span className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold ${ r.role === "Administrator" ? "bg-red-50 text-red-600 border border-red-200/50" : r.role === "Finance Team" ? "bg-amber-50 text-amber-600 border border-amber-200/50" : "bg-slate-100 text-slate-700" }`}>
                               {r.role}
                             </span>
                           </td>

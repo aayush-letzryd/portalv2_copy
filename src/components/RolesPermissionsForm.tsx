@@ -191,7 +191,7 @@ export default function RolesPermissionsForm({
               referrerPolicy="no-referrer"
             />
             <span className="hidden h-5 border-l border-border sm:inline-block" />
-            <span className="hidden font-sans text-xs font-medium text-text-muted tracking-wider uppercase sm:inline-block">
+            <span className="hidden font-sans text-xs font-medium text-text-muted sm:inline-block">
               ROLES & PERMISSIONS
             </span>
           </div>
@@ -200,22 +200,14 @@ export default function RolesPermissionsForm({
           <nav className="flex gap-2">
             <button
               onClick={() => setActiveTab('form')}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === 'form' 
-                  ? 'bg-primary text-white shadow-sm shadow-primary/20' 
-                  : 'text-text-muted hover:bg-slate-100 hover:text-primary'
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === 'form' ? 'bg-primary text-white shadow-sm shadow-primary/20' : 'text-text-muted hover:bg-slate-100 hover:text-primary' }`}
             >
               <FileText className="h-4 w-4" />
               Roles & Permissions
             </button>
             <button
               onClick={() => setActiveTab('registry')}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === 'registry' 
-                  ? 'bg-primary text-white shadow-sm shadow-primary/20' 
-                  : 'text-text-muted hover:bg-slate-100 hover:text-primary'
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === 'registry' ? 'bg-primary text-white shadow-sm shadow-primary/20' : 'text-text-muted hover:bg-slate-100 hover:text-primary' }`}
             >
               <ShieldCheck className="h-4 w-4" />
               Roles List
@@ -224,14 +216,14 @@ export default function RolesPermissionsForm({
 
           <div className="hidden items-center gap-4 lg:flex">
             <div className="text-right">
-              <span className="block text-[9px] font-bold text-text-dim tracking-wider uppercase">Current Time (IST)</span>
+              <span className="block text-[9px] font-bold text-text-dim">Current Time (IST)</span>
               <span className="font-mono text-xs font-extrabold text-green">{currentTime}</span>
             </div>
             
             <span className="h-5 border-l border-border" />
             
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white uppercase">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white">
                 {initials}
               </div>
               <div className="flex flex-col">
@@ -264,7 +256,7 @@ export default function RolesPermissionsForm({
               <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold text-white tracking-widest uppercase">
+                    <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold text-white tracking-widest">
                       LetzRyd Desk
                     </span>
                     <span className="text-white/40 text-xs">•</span>
@@ -282,7 +274,7 @@ export default function RolesPermissionsForm({
             <form onSubmit={handleSubmit} className="p-8 space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                  <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                     Role Name <span className="text-red-500">*</span>
                   </label>
                   <input 
@@ -295,7 +287,7 @@ export default function RolesPermissionsForm({
                   />
                 </div>
                 <div>
-                  <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                  <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                     Description
                   </label>
                   <input 
@@ -310,7 +302,7 @@ export default function RolesPermissionsForm({
 
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider">
+                  <label className="block font-sans text-xs font-bold text-text-muted">
                     Permissions ({selectedPermissions.length} selected)
                   </label>
                   <div className="flex gap-3">
@@ -326,11 +318,7 @@ export default function RolesPermissionsForm({
                         key={perm}
                         type="button"
                         onClick={() => togglePermission(perm)}
-                        className={`flex items-center justify-between px-4 py-3 rounded-xl border text-sm font-semibold transition-all cursor-pointer ${
-                          isSelected 
-                            ? "border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm" 
-                            : "border-border bg-white text-text-muted hover:border-indigo-300 hover:bg-slate-50"
-                        }`}
+                        className={`flex items-center justify-between px-4 py-3 rounded-xl border text-sm font-semibold transition-all cursor-pointer ${ isSelected ? "border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm" : "border-border bg-white text-text-muted hover:border-indigo-300 hover:bg-slate-50" }`}
                       >
                         {perm}
                         {isSelected && <Check className="h-4 w-4 text-indigo-600" />}
@@ -390,11 +378,11 @@ export default function RolesPermissionsForm({
                 <table className="w-full border-collapse text-left">
                   <thead>
                     <tr className="border-b border-border bg-slate-50/70">
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">ID</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Role Name</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Description</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Permissions</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider text-right">Actions</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted">ID</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted">Role Name</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted">Description</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted">Permissions</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/60">

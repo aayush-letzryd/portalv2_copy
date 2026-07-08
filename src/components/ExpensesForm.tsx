@@ -293,7 +293,7 @@ export default function ExpensesForm({
               className="h-8 w-auto object-contain"
             />
             <span className="hidden h-5 border-l border-border sm:inline-block" />
-            <span className="hidden font-sans text-xs font-medium text-text-muted tracking-wider uppercase sm:inline-block">
+            <span className="hidden font-sans text-xs font-medium text-text-muted sm:inline-block">
               Expenses
             </span>
           </div>
@@ -302,11 +302,7 @@ export default function ExpensesForm({
           <nav className="flex gap-2">
             <button
               onClick={() => setActiveTab("form")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "form"
-                  ? "bg-primary text-white shadow-sm shadow-primary/20"
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "form" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <FileText className="h-4 w-4" />
               Expenses Form
@@ -317,11 +313,7 @@ export default function ExpensesForm({
                 fetchStats();
                 fetchRecords();
               }}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "registry"
-                  ? "bg-primary text-white shadow-sm shadow-primary/20"
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "registry" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <Database className="h-4 w-4" />
               Expenses Registry
@@ -331,14 +323,14 @@ export default function ExpensesForm({
           {/* Clock & User Profile */}
           <div className="hidden items-center gap-4 lg:flex">
             <div className="text-right">
-              <span className="block text-[9px] font-bold text-text-dim tracking-wider uppercase">Current Time (IST)</span>
+              <span className="block text-[9px] font-bold text-text-dim">Current Time (IST)</span>
               <span className="font-mono text-xs font-extrabold text-green">{currentTime}</span>
             </div>
             
             <span className="h-5 border-l border-border" />
             
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white uppercase">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white">
                 {initials}
               </div>
               <div className="flex flex-col">
@@ -374,7 +366,7 @@ export default function ExpensesForm({
                   <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-2">
                       <img src="https://letzryd.com/replica-assets/letzryd-long-png-logo-Aq2o3DNOw1i2kBMB-7ab04eaa76.png" className="h-8 brightness-0 invert" alt="LetzRyd" referrerPolicy="no-referrer" />
-                      <span className="px-2 py-0.5 rounded border border-white/30 bg-white/20 text-white text-[10px] font-bold tracking-widest uppercase backdrop-blur-sm">
+                      <span className="px-2 py-0.5 rounded border border-white/30 bg-white/20 text-white text-[10px] font-bold tracking-widest backdrop-blur-sm">
                         LetzRyd Expenses
                       </span>
                     </div>
@@ -428,7 +420,7 @@ export default function ExpensesForm({
                   {/* COLUMN 1: DRIVER & VEHICLE INFO */}
                   <div className="space-y-6">
                     <div className="border-b border-border pb-3">
-                      <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                      <h3 className="font-sans text-sm font-bold text-primary flex items-center gap-2">
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">1</span>
                         Driver & Vehicle Info
                       </h3>
@@ -436,7 +428,7 @@ export default function ExpensesForm({
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Log Date <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Log Date <span className="text-red-500">*</span></label>
                         <input 
                           type="date" 
                           value={expenseDate}
@@ -447,7 +439,7 @@ export default function ExpensesForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Driver Name <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Driver Name <span className="text-red-500">*</span></label>
                         <input 
                           type="text" 
                           placeholder="Enter driver's full name..."
@@ -459,7 +451,7 @@ export default function ExpensesForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Phone Number <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Phone Number <span className="text-red-500">*</span></label>
                         <input 
                           type="tel" 
                           placeholder="+91 10-digit mobile..."
@@ -471,7 +463,7 @@ export default function ExpensesForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Vehicle Number <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Vehicle Number <span className="text-red-500">*</span></label>
                         <input 
                           type="text" 
                           placeholder="e.g. KA03 CD 1234..."
@@ -487,7 +479,7 @@ export default function ExpensesForm({
                   {/* COLUMN 2: EXPENSE DETAILS */}
                   <div className="space-y-6">
                     <div className="border-b border-border pb-3">
-                      <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                      <h3 className="font-sans text-sm font-bold text-primary flex items-center gap-2">
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">2</span>
                         Expense Details
                       </h3>
@@ -495,7 +487,7 @@ export default function ExpensesForm({
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Expenses Type <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Expenses Type <span className="text-red-500">*</span></label>
                         <select 
                           value={expensesType}
                           onChange={(e) => setExpensesType(e.target.value)}
@@ -510,7 +502,7 @@ export default function ExpensesForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Amount Paid (₹) <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Amount Paid (₹) <span className="text-red-500">*</span></label>
                         <div className="relative flex items-center">
                           <IndianRupee className="absolute left-3.5 h-4 w-4 text-text-muted pointer-events-none" />
                           <input 
@@ -529,7 +521,7 @@ export default function ExpensesForm({
                   {/* COLUMN 3: REFERENCE PHOTO */}
                   <div className="space-y-6">
                     <div className="border-b border-border pb-3">
-                      <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                      <h3 className="font-sans text-sm font-bold text-primary flex items-center gap-2">
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">3</span>
                         Reference Photo <span className="text-red-500">*</span>
                       </h3>
@@ -588,7 +580,7 @@ export default function ExpensesForm({
                 {/* FORM ACTIONS */}
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-3 border-t border-border pt-8">
                   <div className="flex flex-col gap-1 text-left w-full sm:w-auto">
-                    <p className="text-[10px] font-bold text-red-500 uppercase">* means mandatory</p>
+                    <p className="text-[10px] font-bold text-red-500">* means mandatory</p>
                   </div>
                   <div className="flex gap-3 w-full sm:w-auto justify-end">
                     <button 
@@ -619,7 +611,7 @@ export default function ExpensesForm({
               {/* CARD 1: Total Expenses */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-sm flex items-center justify-between">
                 <div>
-                  <span className="font-sans text-[10px] font-bold text-text-muted uppercase tracking-widest block">Total Expenses</span>
+                  <span className="font-sans text-[10px] font-bold text-text-muted tracking-widest block">Total Expenses</span>
                   <span className="font-sans text-3xl font-extrabold text-primary tracking-tight block mt-1">₹{stats.total_expenses}</span>
                   <span className="font-sans text-[10px] text-text-muted block mt-0.5">Overall logged expenses</span>
                 </div>
@@ -631,7 +623,7 @@ export default function ExpensesForm({
               {/* CARD 2: CNG Total */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-sm flex items-center justify-between">
                 <div>
-                  <span className="font-sans text-[10px] font-bold text-text-muted uppercase tracking-widest block">CNG Logs</span>
+                  <span className="font-sans text-[10px] font-bold text-text-muted tracking-widest block">CNG Logs</span>
                   <span className="font-sans text-3xl font-extrabold text-green tracking-tight block mt-1">₹{stats.cng_total}</span>
                   <span className="font-sans text-[10px] text-text-muted block mt-0.5">Gas logs</span>
                 </div>
@@ -643,7 +635,7 @@ export default function ExpensesForm({
               {/* CARD 3: Toll Total */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-sm flex items-center justify-between">
                 <div>
-                  <span className="font-sans text-[10px] font-bold text-text-muted uppercase tracking-widest block">Toll Total</span>
+                  <span className="font-sans text-[10px] font-bold text-text-muted tracking-widest block">Toll Total</span>
                   <span className="font-sans text-3xl font-extrabold text-amber-600 tracking-tight block mt-1">₹{stats.toll_total}</span>
                   <span className="font-sans text-[10px] text-text-muted block mt-0.5">Toll costs</span>
                 </div>
@@ -655,7 +647,7 @@ export default function ExpensesForm({
               {/* CARD 4: Other Total */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-sm flex items-center justify-between">
                 <div>
-                  <span className="font-sans text-[10px] font-bold text-text-muted uppercase tracking-widest block">Other Payments</span>
+                  <span className="font-sans text-[10px] font-bold text-text-muted tracking-widest block">Other Payments</span>
                   <span className="font-sans text-3xl font-extrabold text-indigo-600 tracking-tight block mt-1">₹{stats.other_total}</span>
                   <span className="font-sans text-[10px] text-text-muted block mt-0.5">OLA & directly to company</span>
                 </div>
@@ -729,12 +721,12 @@ export default function ExpensesForm({
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="border-b border-border bg-bg/50 select-none">
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted tracking-wider uppercase text-left w-16">ID</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted tracking-wider uppercase text-left">Date</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted tracking-wider uppercase text-left">Driver & Vehicle</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted tracking-wider uppercase text-left">Expense details</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted tracking-wider uppercase text-left w-24">Proof Photo</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted tracking-wider uppercase text-right w-24">Actions</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left w-16">ID</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left">Date</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left">Driver & Vehicle</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left">Expense details</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left w-24">Proof Photo</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-right w-24">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border bg-white">
@@ -760,12 +752,7 @@ export default function ExpensesForm({
                               <div className="font-mono text-[10px] text-primary mt-0.5">{r.vehicle_number}</div>
                             </td>
                             <td className="px-6 py-4">
-                              <span className={`inline-block rounded-md px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase ${
-                                r.expenses_type === "CNG" ? "bg-green-light text-green" :
-                                r.expenses_type === "Toll" ? "bg-yellow-light text-amber-600 border border-yellow-100" :
-                                r.expenses_type === "OLA - CL Balance" ? "bg-indigo-50 text-indigo-600 border border-indigo-100" :
-                                "bg-rose-50 text-rose-600 border border-rose-100"
-                              }`}>
+                              <span className={`inline-block rounded-md px-1.5 py-0.5 font-mono text-[9px] font-bold ${ r.expenses_type === "CNG" ? "bg-green-light text-green" : r.expenses_type === "Toll" ? "bg-yellow-light text-amber-600 border border-yellow-100" : r.expenses_type === "OLA - CL Balance" ? "bg-indigo-50 text-indigo-600 border border-indigo-100" : "bg-rose-50 text-rose-600 border border-rose-100" }`}>
                                 {r.expenses_type}
                               </span>
                               <div className="font-sans text-xs font-bold text-text mt-1.5">₹{r.amount_paid}</div>

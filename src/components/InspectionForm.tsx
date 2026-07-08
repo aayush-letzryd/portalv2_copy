@@ -417,13 +417,7 @@ export default function InspectionForm({
               key={opt}
               type="button"
               onClick={() => setter(opt)}
-              className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
-                value === opt 
-                  ? opt === "Available" 
-                    ? "bg-green-light border-green/30 text-green" 
-                    : "bg-red-50 border-red-200 text-red-600"
-                  : "bg-white border-border text-text-muted hover:bg-slate-50"
-              }`}
+              className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${ value === opt ? opt === "Available" ? "bg-green-light border-green/30 text-green" : "bg-red-50 border-red-200 text-red-600" : "bg-white border-border text-text-muted hover:bg-slate-50" }`}
             >
               {opt}
             </button>
@@ -436,7 +430,7 @@ export default function InspectionForm({
   const renderPhotoCard = (label: string, fieldName: string, stateVal: string | null) => {
     return (
       <div className="rounded-xl border border-dashed border-border bg-bg/30 p-4 text-center flex flex-col items-center justify-center">
-        <span className="text-[10px] font-bold text-text-muted uppercase mb-2">{label}</span>
+        <span className="text-[10px] font-bold text-text-muted mb-2">{label}</span>
         {stateVal ? (
           <div className="relative">
             <img src={stateVal} className="h-24 w-24 object-cover rounded-lg border border-border shadow-xs" />
@@ -473,7 +467,7 @@ export default function InspectionForm({
               className="h-8 w-auto object-contain"
             />
             <span className="hidden h-5 border-l border-border sm:inline-block" />
-            <span className="hidden font-sans text-xs font-medium text-text-muted tracking-wider uppercase sm:inline-block">
+            <span className="hidden font-sans text-xs font-medium text-text-muted sm:inline-block">
               Vehicle Inspection
             </span>
           </div>
@@ -485,11 +479,7 @@ export default function InspectionForm({
                 setActiveTab("form");
                 resetForm();
               }}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "form"
-                  ? "bg-primary text-white shadow-sm shadow-primary/20"
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "form" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <FileText className="h-4 w-4" />
               Inspection Form
@@ -500,11 +490,7 @@ export default function InspectionForm({
                 fetchStats();
                 fetchRecords();
               }}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "registry"
-                  ? "bg-primary text-white shadow-sm shadow-primary/20"
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "registry" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <Settings className="h-4 w-4" />
               Inspection Registry
@@ -514,14 +500,14 @@ export default function InspectionForm({
           {/* Clock & User Profile */}
           <div className="hidden items-center gap-4 lg:flex">
             <div className="text-right">
-              <span className="block text-[9px] font-bold text-text-dim tracking-wider uppercase">Current Time (IST)</span>
+              <span className="block text-[9px] font-bold text-text-dim">Current Time (IST)</span>
               <span className="font-mono text-xs font-extrabold text-green">{currentTime}</span>
             </div>
             
             <span className="h-5 border-l border-border" />
             
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white uppercase">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white">
                 {initials}
               </div>
               <div className="flex flex-col">
@@ -557,8 +543,8 @@ export default function InspectionForm({
                   <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-2">
                       <img src="https://letzryd.com/replica-assets/letzryd-long-png-logo-Aq2o3DNOw1i2kBMB-7ab04eaa76.png" className="h-8 brightness-0 invert" alt="LetzRyd" referrerPolicy="no-referrer" />
-                      <span className="px-2 py-0.5 rounded border border-white/30 bg-white/20 text-white text-[10px] font-bold tracking-widest uppercase backdrop-blur-sm">
-                        FLEET OPERATIONS
+                      <span className="px-2 py-0.5 rounded border border-white/30 bg-white/20 text-white text-[10px] font-bold tracking-widest backdrop-blur-sm">
+                        Fleet Operations
                       </span>
                     </div>
                     <h1 className="font-sans text-2xl font-bold tracking-tight text-white leading-tight">
@@ -612,7 +598,7 @@ export default function InspectionForm({
                   {/* LEFT COLUMN: VEHICLE & INFO */}
                   <div className="space-y-6">
                     <div className="border-b border-border pb-3">
-                      <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider">
+                      <h3 className="font-sans text-sm font-bold text-primary">
                         Vehicle & Inspection Details
                       </h3>
                     </div>
@@ -620,7 +606,7 @@ export default function InspectionForm({
                     <div className="space-y-4">
                       <div>
                         <div className="flex justify-between items-center mb-2">
-                          <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider">Vehicle Number <span className="text-red-500">*</span></label>
+                          <label className="block font-sans text-xs font-bold text-text-muted">Vehicle Number <span className="text-red-500">*</span></label>
                           <button
                             type="button"
                             onClick={() => loadLastInspection(vehicleNumber)}
@@ -642,7 +628,7 @@ export default function InspectionForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Inspection Date <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Inspection Date <span className="text-red-500">*</span></label>
                         <input 
                           type="date" 
                           value={inspectionDate}
@@ -653,7 +639,7 @@ export default function InspectionForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Odometer Reading (Kms) <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Odometer Reading (Kms) <span className="text-red-500">*</span></label>
                         <input 
                           type="number" 
                           placeholder="Current mileage..."
@@ -665,7 +651,7 @@ export default function InspectionForm({
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">General Remarks</label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">General Remarks</label>
                         <textarea 
                           placeholder="Add comments about vehicle damage, cleanliness, or pending items..."
                           value={remarks}
@@ -680,7 +666,7 @@ export default function InspectionForm({
                   {/* RIGHT COLUMN: ACCESSORIES CHECKLIST */}
                   <div className="space-y-6">
                     <div className="border-b border-border pb-3">
-                      <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider">
+                      <h3 className="font-sans text-sm font-bold text-primary">
                         Asset & Accessory Checklist
                       </h3>
                     </div>
@@ -711,7 +697,7 @@ export default function InspectionForm({
                 {/* PHOTOS ATTACHMENT (15 PDI PHOTOS) */}
                 <div className="border-t border-border pt-10">
                   <div className="border-b border-border pb-3 mb-6">
-                    <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider">
+                    <h3 className="font-sans text-sm font-bold text-primary">
                       Photographic Verification (All Sides & Accessory Checkpoints)
                     </h3>
                   </div>
@@ -763,7 +749,7 @@ export default function InspectionForm({
               {/* Card 1: Total Inspections */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-sm flex items-center justify-between">
                 <div>
-                  <span className="block font-sans text-[10px] font-extrabold text-text-muted tracking-wider uppercase mb-1">TOTAL INSPECTIONS LOGGED</span>
+                  <span className="block font-sans text-[10px] font-extrabold text-text-muted mb-1">Total Inspections Logged</span>
                   <span className="block font-sans text-3xl font-extrabold text-brand-blue">{stats.total_inspections}</span>
                   <span className="block font-sans text-[10px] text-text-dim mt-2">Historical audit logs</span>
                 </div>
@@ -775,7 +761,7 @@ export default function InspectionForm({
               {/* Card 2: Unique Vehicles */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-sm flex items-center justify-between">
                 <div>
-                  <span className="block font-sans text-[10px] font-extrabold text-text-muted tracking-wider uppercase mb-1">UNIQUE VEHICLES AUDITED</span>
+                  <span className="block font-sans text-[10px] font-extrabold text-text-muted mb-1">Unique Vehicles Audited</span>
                   <span className="block font-sans text-3xl font-extrabold text-green">{stats.unique_vehicles}</span>
                   <span className="block font-sans text-[10px] text-text-dim mt-2">Active checked fleet</span>
                 </div>
@@ -832,7 +818,7 @@ export default function InspectionForm({
               <div className="overflow-x-auto">
                 <table className="w-full min-w-4xl border-collapse text-left">
                   <thead>
-                    <tr className="border-b border-border bg-slate-50 text-[10px] font-bold text-text-muted tracking-wider uppercase">
+                    <tr className="border-b border-border bg-slate-50 text-[10px] font-bold text-text-muted">
                       <th className="px-8 py-3.5 w-16">ID</th>
                       <th className="px-5 py-3.5">Date</th>
                       <th className="px-5 py-3.5">Vehicle Number</th>
@@ -854,13 +840,7 @@ export default function InspectionForm({
                             <td className="px-5 py-4 font-bold text-primary">{r.vehicle_number}</td>
                             <td className="px-5 py-4 font-semibold text-text">{parseInt(r.odometer_reading || "0").toLocaleString()}</td>
                             <td className="px-5 py-4">
-                              <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                                availableCount === 7 
-                                  ? "bg-green-light text-green"
-                                  : availableCount >= 5
-                                  ? "bg-yellow-light text-amber-700"
-                                  : "bg-red-50 text-red-600"
-                              }`}>
+                              <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold ${ availableCount === 7 ? "bg-green-light text-green" : availableCount >= 5 ? "bg-yellow-light text-amber-700" : "bg-red-50 text-red-600" }`}>
                                 {availableCount} / 7 Available
                               </span>
                             </td>

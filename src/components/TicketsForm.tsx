@@ -220,8 +220,8 @@ export default function TicketsForm({
               referrerPolicy="no-referrer"
             />
             <span className="hidden h-5 border-l border-border sm:inline-block" />
-            <span className="hidden font-sans text-xs font-medium text-text-muted tracking-wider uppercase sm:inline-block">
-              TICKETS DESK
+            <span className="hidden font-sans text-xs font-medium text-text-muted sm:inline-block">
+              Tickets Desk
             </span>
           </div>
 
@@ -229,22 +229,14 @@ export default function TicketsForm({
           <nav className="flex gap-2">
             <button
               onClick={() => setActiveTab('list')}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === 'list' 
-                  ? 'bg-primary text-white shadow-sm shadow-primary/20' 
-                  : 'text-text-muted hover:bg-slate-100 hover:text-primary'
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === 'list' ? 'bg-primary text-white shadow-sm shadow-primary/20' : 'text-text-muted hover:bg-slate-100 hover:text-primary' }`}
             >
               <TicketIcon className="h-4 w-4" />
               All Tickets
             </button>
             <button
               onClick={() => setActiveTab('new')}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === 'new' 
-                  ? 'bg-primary text-white shadow-sm shadow-primary/20' 
-                  : 'text-text-muted hover:bg-slate-100 hover:text-primary'
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === 'new' ? 'bg-primary text-white shadow-sm shadow-primary/20' : 'text-text-muted hover:bg-slate-100 hover:text-primary' }`}
             >
               <Plus className="h-4 w-4" />
               Raise Ticket
@@ -253,14 +245,14 @@ export default function TicketsForm({
 
           <div className="hidden items-center gap-4 lg:flex">
             <div className="text-right">
-              <span className="block text-[9px] font-bold text-text-dim tracking-wider uppercase">Current Time (IST)</span>
+              <span className="block text-[9px] font-bold text-text-dim">Current Time (IST)</span>
               <span className="font-mono text-xs font-extrabold text-green">{currentTime}</span>
             </div>
             
             <span className="h-5 border-l border-border" />
             
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white uppercase">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white">
                 {initials}
               </div>
               <div className="flex flex-col">
@@ -294,7 +286,7 @@ export default function TicketsForm({
               <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold text-white tracking-widest uppercase">
+                    <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold text-white tracking-widest">
                       LetzRyd Desk
                     </span>
                     <span className="text-white/40 text-xs">•</span>
@@ -311,7 +303,7 @@ export default function TicketsForm({
 
             <form onSubmit={handleCreateTicket} className="p-8 space-y-6">
               <div>
-                <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                   Ticket Title <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -325,7 +317,7 @@ export default function TicketsForm({
               </div>
 
               <div>
-                <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                   Description <span className="text-red-500">*</span>
                 </label>
                 <textarea
@@ -340,7 +332,7 @@ export default function TicketsForm({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                  <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                     Ticket Source <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -349,11 +341,7 @@ export default function TicketsForm({
                         key={value}
                         type="button"
                         onClick={() => setFormSource(value)}
-                        className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-bold transition-all cursor-pointer ${
-                          formSource === value
-                            ? "border-rose-500 bg-rose-50 text-rose-700"
-                            : "border-border bg-white text-text-muted hover:border-rose-300"
-                        }`}
+                        className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-bold transition-all cursor-pointer ${ formSource === value ? "border-rose-500 bg-rose-50 text-rose-700" : "border-border bg-white text-text-muted hover:border-rose-300" }`}
                       >
                         <Icon className="h-3.5 w-3.5" />
                         {value}
@@ -363,7 +351,7 @@ export default function TicketsForm({
                 </div>
 
                 <div>
-                  <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                  <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                     Assign To (Optional)
                   </label>
                   <select
@@ -397,19 +385,19 @@ export default function TicketsForm({
             {/* Stats Row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="rounded-xl border border-border bg-white p-4 shadow-xs">
-                <p className="font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Total</p>
+                <p className="font-sans text-[10px] font-bold text-text-muted">Total</p>
                 <p className="font-sans text-2xl font-extrabold text-text mt-1">{tickets.length}</p>
               </div>
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-xs">
-                <p className="font-sans text-[10px] font-bold text-amber-600 uppercase tracking-wider">Open</p>
+                <p className="font-sans text-[10px] font-bold text-amber-600">Open</p>
                 <p className="font-sans text-2xl font-extrabold text-amber-700 mt-1">{openCount}</p>
               </div>
               <div className="rounded-xl border border-green-200 bg-green-50 p-4 shadow-xs">
-                <p className="font-sans text-[10px] font-bold text-green-600 uppercase tracking-wider">Resolved</p>
+                <p className="font-sans text-[10px] font-bold text-green-600">Resolved</p>
                 <p className="font-sans text-2xl font-extrabold text-green-700 mt-1">{resolvedCount}</p>
               </div>
               <div className="rounded-xl border border-purple-200 bg-purple-50 p-4 shadow-xs">
-                <p className="font-sans text-[10px] font-bold text-purple-600 uppercase tracking-wider">Sources</p>
+                <p className="font-sans text-[10px] font-bold text-purple-600">Sources</p>
                 <p className="font-sans text-2xl font-extrabold text-purple-700 mt-1">{new Set(tickets.map(t => t.source)).size}</p>
               </div>
             </div>
@@ -489,7 +477,7 @@ export default function TicketsForm({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-sans text-sm font-bold text-text truncate">{ticket.title}</h3>
-                          <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ring-1 ring-inset ${STATUS_COLORS[ticket.status] || STATUS_COLORS.Open}`}>
+                          <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-extrabold ring-1 ring-inset ${STATUS_COLORS[ticket.status] || STATUS_COLORS.Open}`}>
                             {ticket.status}
                           </span>
                           <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold ${SOURCE_COLORS[ticket.source] || "bg-slate-50 text-slate-700"}`}>
@@ -522,12 +510,12 @@ export default function TicketsForm({
                     {expandedId === ticket.id && (
                       <div className="border-t border-border bg-slate-50/50 px-5 py-4 space-y-3">
                         <div>
-                          <p className="font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Full Description</p>
+                          <p className="font-sans text-[10px] font-bold text-text-muted mb-1">Full Description</p>
                           <p className="font-sans text-sm text-text whitespace-pre-wrap">{ticket.description}</p>
                         </div>
                         {ticket.resolution_notes && (
                           <div className="rounded-xl border border-green-200 bg-green-50 p-4">
-                            <p className="font-sans text-[10px] font-bold text-green-600 uppercase tracking-wider mb-1">Resolution Notes</p>
+                            <p className="font-sans text-[10px] font-bold text-green-600 mb-1">Resolution Notes</p>
                             <p className="font-sans text-sm text-green-800">{ticket.resolution_notes}</p>
                             {ticket.resolved_at && (
                               <p className="font-sans text-xs text-green-600 mt-2">
@@ -568,7 +556,7 @@ export default function TicketsForm({
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                   Resolution Notes
                 </label>
                 <textarea

@@ -579,30 +579,22 @@ export default function MaintenanceForm({
               referrerPolicy="no-referrer"
             />
             <span className="hidden h-5 border-l border-border sm:inline-block" />
-            <span className="hidden font-sans text-xs font-semibold text-text-muted tracking-wider uppercase sm:inline-block">
-              PARTNER MAINTENANCE DESK
+            <span className="hidden font-sans text-xs font-semibold text-text-muted sm:inline-block">
+              Partner Maintenance Desk
             </span>
           </div>
 
           <nav className="flex gap-2">
             <button
               onClick={() => setActiveTab("form")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "form" 
-                  ? "bg-primary text-white shadow-sm shadow-primary/20" 
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "form" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <FileText className="h-4 w-4" />
               Maintenance Form
             </button>
             <button
               onClick={() => setActiveTab("registry")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "registry" 
-                  ? "bg-primary text-white shadow-sm shadow-primary/20" 
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "registry" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <Database className="h-4 w-4" />
               Maintenance Registry
@@ -611,14 +603,14 @@ export default function MaintenanceForm({
 
           <div className="hidden items-center gap-4 lg:flex">
             <div className="text-right">
-              <span className="block text-[9px] font-bold text-text-dim tracking-wider uppercase">Current Time (IST)</span>
+              <span className="block text-[9px] font-bold text-text-dim">Current Time (IST)</span>
               <span className="font-mono text-xs font-extrabold text-green">{currentTime}</span>
             </div>
             
             <span className="h-5 border-l border-border" />
             
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white uppercase">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white">
                 {initials}
               </div>
               <div className="flex flex-col">
@@ -653,7 +645,7 @@ export default function MaintenanceForm({
               <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold text-white tracking-widest uppercase">
+                    <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold text-white tracking-widest">
                       LetzRyd Desk
                     </span>
                     <span className="text-white/40 text-xs">•</span>
@@ -696,13 +688,13 @@ export default function MaintenanceForm({
               
               {/* Panel 1: Intake & Diagnostics */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-2xs md:p-8">
-                <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider mb-6 pb-2 border-b border-border/80 flex items-center gap-2">
+                <h3 className="font-sans text-sm font-bold text-primary mb-6 pb-2 border-b border-border/80 flex items-center gap-2">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs text-primary font-bold">1</span>
                   Vehicle Intake & Diagnostics
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Vehicle Plate Number <span className="text-red-500">*</span>
                     </label>
                     <input 
@@ -711,12 +703,12 @@ export default function MaintenanceForm({
                       value={vehicleNumber}
                       onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
                       required
-                      className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-mono text-sm uppercase tracking-wide focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
+                      className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-mono text-sm tracking-wide focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       City / Operational Hub <span className="text-red-500">*</span>
                     </label>
                     <select
@@ -730,7 +722,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Vehicle Model Name <span className="text-red-500">*</span>
                     </label>
                     <input 
@@ -744,7 +736,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Odometer (KMs Reading) <span className="text-red-500">*</span>
                     </label>
                     <input 
@@ -759,7 +751,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Repair Classification <span className="text-red-500">*</span>
                     </label>
                     <div className="grid grid-cols-2 gap-3 mt-1 sm:grid-cols-3">
@@ -773,7 +765,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Breakdown/Current Location
                     </label>
                     <input 
@@ -786,7 +778,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Vehicle Inward Date & Time <span className="text-red-500">*</span>
                     </label>
                     <input 
@@ -799,7 +791,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Inward Damage Photos (Visual Evidence)
                     </label>
                     <div className="flex items-center gap-3 mt-1">
@@ -833,7 +825,7 @@ export default function MaintenanceForm({
                 </div>
 
                 <div className="mt-6">
-                  <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                  <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                     Initial Symptoms & Diagnostics Remarks
                   </label>
                   <textarea 
@@ -848,13 +840,13 @@ export default function MaintenanceForm({
 
               {/* Panel 2: Workshop Allocation & Estimates */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-2xs md:p-8">
-                <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider mb-6 pb-2 border-b border-border/80 flex items-center gap-2">
+                <h3 className="font-sans text-sm font-bold text-primary mb-6 pb-2 border-b border-border/80 flex items-center gap-2">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs text-primary font-bold">2</span>
                   Workshop Allocation & Estimates
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Workshop Name <span className="text-red-500">*</span>
                     </label>
                     <input 
@@ -868,7 +860,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Allocation Date
                     </label>
                     <input 
@@ -880,7 +872,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Estimated Cost (₹)
                     </label>
                     <input 
@@ -894,7 +886,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Expected Delivery Date
                     </label>
                     <input 
@@ -906,7 +898,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Insurance Claim Initiated? <span className="text-red-500">*</span>
                     </label>
                     <div className="flex gap-4 mt-2">
@@ -929,7 +921,7 @@ export default function MaintenanceForm({
                   {insuranceClaimed === "Yes" && (
                     <>
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                           Insurance Claim Reference Number
                         </label>
                         <input 
@@ -941,7 +933,7 @@ export default function MaintenanceForm({
                         />
                       </div>
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                           Insurance Brokerage / Company
                         </label>
                         <input 
@@ -956,7 +948,7 @@ export default function MaintenanceForm({
                   )}
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Approved By (Operations Manager)
                     </label>
                     <input 
@@ -969,7 +961,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Approval Date
                     </label>
                     <input 
@@ -981,7 +973,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Upload Estimate / Approval Doc
                     </label>
                     <div className="flex items-center gap-3 mt-1">
@@ -1021,13 +1013,13 @@ export default function MaintenanceForm({
 
               {/* Panel 3: Job Lifecycle & Status Tracking */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-2xs md:p-8">
-                <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider mb-6 pb-2 border-b border-border/80 flex items-center gap-2">
+                <h3 className="font-sans text-sm font-bold text-primary mb-6 pb-2 border-b border-border/80 flex items-center gap-2">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs text-primary font-bold">3</span>
                   Job Lifecycle & Status Tracking
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Current Servicing Stage <span className="text-red-500">*</span>
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-1">
@@ -1041,7 +1033,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Status Update Date
                     </label>
                     <input 
@@ -1053,7 +1045,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Ready For Delivery (RFD) Date
                     </label>
                     <input 
@@ -1065,7 +1057,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Delivered Back to Active Fleet Date
                     </label>
                     <input 
@@ -1077,7 +1069,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Final Service Status
                     </label>
                     <div className="grid grid-cols-3 gap-3 mt-1">
@@ -1091,7 +1083,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Turn-Around Time (TAT Days)
                     </label>
                     <input 
@@ -1105,7 +1097,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Inspection Status <span className="text-red-500">*</span>
                     </label>
                     <div className="flex gap-4 mt-2">
@@ -1127,7 +1119,7 @@ export default function MaintenanceForm({
                 </div>
 
                 <div className="mt-6">
-                  <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                  <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                     Daily Service & Progress Remarks
                   </label>
                   <textarea 
@@ -1142,13 +1134,13 @@ export default function MaintenanceForm({
 
               {/* Panel 4: Invoicing & Financial Settlement */}
               <div className="rounded-2xl border border-border bg-white p-6 shadow-2xs md:p-8">
-                <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider mb-6 pb-2 border-b border-border/80 flex items-center gap-2">
+                <h3 className="font-sans text-sm font-bold text-primary mb-6 pb-2 border-b border-border/80 flex items-center gap-2">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs text-primary font-bold">4</span>
                   Invoicing & Financial Settlement
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Invoice Number
                     </label>
                     <input 
@@ -1161,7 +1153,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Invoice Date
                     </label>
                     <input 
@@ -1173,7 +1165,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Invoice Total Amount (₹)
                     </label>
                     <input 
@@ -1187,7 +1179,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       LetzRyd Share Payable (₹)
                     </label>
                     <input 
@@ -1201,7 +1193,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Insurance Liability / Discounts (₹)
                     </label>
                     <input 
@@ -1215,7 +1207,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Payment Settlement Status
                     </label>
                     <div className="grid grid-cols-3 gap-3 mt-1">
@@ -1229,7 +1221,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Payment Mode
                     </label>
                     <div className="grid grid-cols-2 gap-3 mt-1">
@@ -1243,7 +1235,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       UTR / Bank Transaction Reference
                     </label>
                     <input 
@@ -1256,7 +1248,7 @@ export default function MaintenanceForm({
                   </div>
 
                   <div>
-                    <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                    <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                       Invoice File Document
                     </label>
                     <div className="flex items-center gap-3 mt-1">
@@ -1294,7 +1286,7 @@ export default function MaintenanceForm({
                 </div>
 
                 <div className="mt-6">
-                  <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                  <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                     Internal Financial Remarks
                   </label>
                   <textarea 
@@ -1310,13 +1302,13 @@ export default function MaintenanceForm({
               {/* Panel 5: PDI Inventory Check Sheet (Conditional) */}
               {pdiStatus === "Pending" && (
                 <div className="rounded-2xl border border-border bg-white p-6 shadow-2xs md:p-8">
-                  <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider mb-6 pb-2 border-b border-border/80 flex items-center gap-2">
+                  <h3 className="font-sans text-sm font-bold text-primary mb-6 pb-2 border-b border-border/80 flex items-center gap-2">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs text-primary font-bold">5</span>
                     PDI (Post-Delivery Inspection) Checklist
                   </h3>
 
                   {/* Visual Verification Images */}
-                  <h4 className="font-sans text-xs font-bold text-violet-600 uppercase tracking-wider mb-4">A. Visual Condition Photographic Logs</h4>
+                  <h4 className="font-sans text-xs font-bold text-violet-600 mb-4">A. Visual Condition Photographic Logs</h4>
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
                     {[
                       { label: "FRONT VIEW", state: pdiFrontPhoto, setter: setPdiFrontPhoto, key: "pdi_front" },
@@ -1326,7 +1318,7 @@ export default function MaintenanceForm({
                       { label: "ENGINE/BATTERY", state: pdiEnginePhoto, setter: setPdiEnginePhoto, key: "pdi_engine" }
                     ].map(item => (
                       <div key={item.key} className="flex flex-col items-center justify-between border border-border rounded-xl p-3 bg-bg/50">
-                        <span className="text-[10px] font-bold text-text-muted tracking-wider text-center uppercase mb-2">{item.label}</span>
+                        <span className="text-[10px] font-bold text-text-muted text-center mb-2">{item.label}</span>
                         {item.state ? (
                           <div className="relative h-20 w-full rounded-lg border border-border overflow-hidden">
                             <img src={item.state} alt={item.label} className="h-full w-full object-cover" />
@@ -1337,7 +1329,7 @@ export default function MaintenanceForm({
                         ) : (
                           <div className="flex h-20 w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-white text-text-muted hover:bg-bg cursor-pointer transition-colors" onClick={() => setCameraActiveField(item.key)}>
                             <Camera className="h-6 w-6 mb-1 text-text-muted" />
-                            <span className="text-[9px] font-semibold text-text-muted uppercase">Capture</span>
+                            <span className="text-[9px] font-semibold text-text-muted">Capture</span>
                           </div>
                         )}
                       </div>
@@ -1345,10 +1337,10 @@ export default function MaintenanceForm({
                   </div>
 
                   {/* Asset Identifiers */}
-                  <h4 className="font-sans text-xs font-bold text-violet-600 uppercase tracking-wider mb-4 border-t border-border/60 pt-6">B. Asset Identifiers (Security Check)</h4>
+                  <h4 className="font-sans text-xs font-bold text-violet-600 mb-4 border-t border-border/60 pt-6">B. Asset Identifiers (Security Check)</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div>
-                      <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                      <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                         Engine & Chassis Number
                       </label>
                       <input 
@@ -1361,7 +1353,7 @@ export default function MaintenanceForm({
                     </div>
 
                     <div>
-                      <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                      <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                         Battery Serial ID
                       </label>
                       <input 
@@ -1374,7 +1366,7 @@ export default function MaintenanceForm({
                     </div>
 
                     <div>
-                      <label className="block font-sans text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                      <label className="block font-sans text-xs font-bold text-text-muted mb-2">
                         FastTag ID Number
                       </label>
                       <input 
@@ -1388,7 +1380,7 @@ export default function MaintenanceForm({
                   </div>
 
                   {/* Toolkit & Accessories Check List */}
-                  <h4 className="font-sans text-xs font-bold text-violet-600 uppercase tracking-wider mb-4 border-t border-border/60 pt-6">C. Toolkit & Inventory Checks</h4>
+                  <h4 className="font-sans text-xs font-bold text-violet-600 mb-4 border-t border-border/60 pt-6">C. Toolkit & Inventory Checks</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 mb-8">
                     {[
                       { label: "Jack", state: pdiJack, setter: setPdiJack },
@@ -1427,7 +1419,7 @@ export default function MaintenanceForm({
                   </div>
 
                   {/* Tyres checks */}
-                  <h4 className="font-sans text-xs font-bold text-violet-600 uppercase tracking-wider mb-4 border-t border-border/60 pt-6">D. Tyre State Logs</h4>
+                  <h4 className="font-sans text-xs font-bold text-violet-600 mb-4 border-t border-border/60 pt-6">D. Tyre State Logs</h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {[
                       { label: "RH FRONT TYRE", state: pdiRhFrontTyre, setter: setPdiRhFrontTyre },
@@ -1436,7 +1428,7 @@ export default function MaintenanceForm({
                       { label: "LH REAR TYRE", state: pdiLhRearTyre, setter: setPdiLhRearTyre }
                     ].map(item => (
                       <div key={item.label} className="border border-border rounded-xl p-3.5 bg-bg/50">
-                        <label className="block text-[9px] font-bold text-text-muted tracking-wider uppercase mb-2 text-center">{item.label}</label>
+                        <label className="block text-[9px] font-bold text-text-muted mb-2 text-center">{item.label}</label>
                         <select 
                           value={item.state} 
                           onChange={(e) => item.setter(e.target.value)}
@@ -1483,7 +1475,7 @@ export default function MaintenanceForm({
             <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
               <div className="bg-white p-6 rounded-2xl shadow-xs border border-border flex items-center justify-between">
                 <div>
-                  <span className="block text-[9px] font-bold text-text-dim tracking-widest uppercase">Total Maintenance Logs</span>
+                  <span className="block text-[9px] font-bold text-text-dim tracking-widest">Total Maintenance Logs</span>
                   <span className="text-3xl font-extrabold text-primary leading-tight mt-1 block">{stats.total}</span>
                 </div>
                 <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-primary">
@@ -1493,7 +1485,7 @@ export default function MaintenanceForm({
 
               <div className="bg-white p-6 rounded-2xl shadow-xs border border-border flex items-center justify-between">
                 <div>
-                  <span className="block text-[9px] font-bold text-text-dim tracking-widest uppercase">Awaiting Approval</span>
+                  <span className="block text-[9px] font-bold text-text-dim tracking-widest">Awaiting Approval</span>
                   <span className="text-3xl font-extrabold text-amber-500 leading-tight mt-1 block">{stats.pendingApproval}</span>
                 </div>
                 <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center text-amber-500">
@@ -1503,7 +1495,7 @@ export default function MaintenanceForm({
 
               <div className="bg-white p-6 rounded-2xl shadow-xs border border-border flex items-center justify-between">
                 <div>
-                  <span className="block text-[9px] font-bold text-text-dim tracking-widest uppercase">Active Servicing / QC</span>
+                  <span className="block text-[9px] font-bold text-text-dim tracking-widest">Active Servicing / QC</span>
                   <span className="text-3xl font-extrabold text-rose-500 leading-tight mt-1 block">{stats.activeRepairs}</span>
                 </div>
                 <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center text-rose-500">
@@ -1513,7 +1505,7 @@ export default function MaintenanceForm({
 
               <div className="bg-white p-6 rounded-2xl shadow-xs border border-border flex items-center justify-between">
                 <div>
-                  <span className="block text-[9px] font-bold text-text-dim tracking-widest uppercase">Completed & Released</span>
+                  <span className="block text-[9px] font-bold text-text-dim tracking-widest">Completed & Released</span>
                   <span className="text-3xl font-extrabold text-green leading-tight mt-1 block">{stats.completed}</span>
                 </div>
                 <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-green">
@@ -1596,13 +1588,13 @@ export default function MaintenanceForm({
                   <table className="w-full border-collapse text-left">
                     <thead>
                       <tr className="border-b border-border bg-slate-50/70">
-                        <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Job ID</th>
-                        <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">In Date</th>
-                        <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Vehicle & Workshop</th>
-                        <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Type & Hub</th>
-                        <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Estimated Cost</th>
-                        <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider">Lifecycle Status</th>
-                        <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted uppercase tracking-wider text-right">Actions</th>
+                        <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted">Job ID</th>
+                        <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted">In Date</th>
+                        <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted">Vehicle & Workshop</th>
+                        <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted">Type & Hub</th>
+                        <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted">Estimated Cost</th>
+                        <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted">Lifecycle Status</th>
+                        <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/60">

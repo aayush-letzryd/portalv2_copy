@@ -457,7 +457,7 @@ export default function OnboardingForm({
               referrerPolicy="no-referrer"
             />
             <span className="hidden h-5 border-l border-border sm:inline-block" />
-            <span className="hidden font-sans text-xs font-medium text-text-muted tracking-wider uppercase sm:inline-block">
+            <span className="hidden font-sans text-xs font-medium text-text-muted sm:inline-block">
               Driver Onboarding
             </span>
           </div>
@@ -466,22 +466,14 @@ export default function OnboardingForm({
           <nav className="flex gap-2">
             <button
               onClick={() => setActiveTab("form")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "form" 
-                  ? "bg-primary text-white shadow-sm shadow-primary/20" 
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "form" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <FileText className="h-4 w-4" />
               Check-In Form
             </button>
             <button
               onClick={() => setActiveTab("registry")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeTab === "registry" 
-                  ? "bg-primary text-white shadow-sm shadow-primary/20" 
-                  : "text-text-muted hover:bg-slate-100 hover:text-primary"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "registry" ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               <Database className="h-4 w-4" />
               Onboarding Registry
@@ -491,14 +483,14 @@ export default function OnboardingForm({
           {/* Clock & Profile Pill */}
           <div className="hidden items-center gap-4 lg:flex">
             <div className="text-right">
-              <span className="block text-[9px] font-bold text-text-dim tracking-wider uppercase">Current Time (IST)</span>
+              <span className="block text-[9px] font-bold text-text-dim">Current Time (IST)</span>
               <span className="font-mono text-xs font-extrabold text-green">{currentTime}</span>
             </div>
             
             <span className="h-5 border-l border-border" />
             
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white uppercase">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white">
                 {initials}
               </div>
               <div className="flex flex-col">
@@ -535,7 +527,7 @@ export default function OnboardingForm({
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-2">
                     <img src="https://letzryd.com/replica-assets/letzryd-long-png-logo-Aq2o3DNOw1i2kBMB-7ab04eaa76.png" className="h-8 brightness-0 invert" alt="LetzRyd" referrerPolicy="no-referrer" />
-                    <span className="px-2 py-0.5 rounded border border-white/30 bg-white/20 text-white text-[10px] font-bold tracking-widest uppercase backdrop-blur-sm">
+                    <span className="px-2 py-0.5 rounded border border-white/30 bg-white/20 text-white text-[10px] font-bold tracking-widest backdrop-blur-sm">
                       LetzRyd Desk
                     </span>
                   </div>
@@ -621,53 +613,53 @@ export default function OnboardingForm({
 
                   {/* Section 1: Candidate Info */}
                   <div className="flex flex-col gap-5 border-b border-border/40 pb-6">
-                    <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase flex items-center gap-1.5">
+                    <h3 className="font-sans text-xs font-bold text-primary flex items-center gap-1.5">
                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">1</span>
                       Candidate Information
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Driver Name *</label>
+                        <label className="text-xs font-bold text-text-muted">Driver Name *</label>
                         <input type="text" required value={driverName} onChange={(e) => {
                           setDriverName(e.target.value);
                           if (sameAsDriver) setVendorName(e.target.value);
                         }} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Full Name as per Aadhaar" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Father's Name *</label>
+                        <label className="text-xs font-bold text-text-muted">Father's Name *</label>
                         <input type="text" required value={fatherName} onChange={(e) => setFatherName(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Father's Full Name" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Phone Number *</label>
+                        <label className="text-xs font-bold text-text-muted">Phone Number *</label>
                         <input type="tel" required value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="10-digit mobile" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">WhatsApp Number</label>
+                        <label className="text-xs font-bold text-text-muted">WhatsApp Number</label>
                         <input type="tel" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Same as phone" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Date of Birth *</label>
+                        <label className="text-xs font-bold text-text-muted">Date of Birth *</label>
                         <input type="date" required value={dob} onChange={(e) => setDob(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Operating City (Bang, Hyd, Mum) *</label>
+                        <label className="text-xs font-bold text-text-muted">Operating City (Bang, Hyd, Mum) *</label>
                         <select required value={city} onChange={(e) => setCity(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all">
                           {CITIES.map(c => <option key={c.value} value={c.value}>{c.text}</option>)}
                         </select>
                       </div>
                       <div className="space-y-2 lg:col-span-1">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Operating Place</label>
+                        <label className="text-xs font-bold text-text-muted">Operating Place</label>
                         <input type="text" value={operatingPlace} onChange={(e) => setOperatingPlace(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Enter operating place" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Driver ID *</label>
+                        <label className="text-xs font-bold text-text-muted">Driver ID *</label>
                         <input type="text" required value={driverId} onChange={(e) => {
                           setDriverId(e.target.value);
                           if (sameAsDriver) setVendorId(e.target.value);
                         }} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Enter Driver ID" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Custom Rent Amount (Optional)</label>
+                        <label className="text-xs font-bold text-text-muted">Custom Rent Amount (Optional)</label>
                         <div className="relative">
                           <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
                           <input type="number" value={customRentAmount} onChange={(e) => setCustomRentAmount(e.target.value)} className="w-full h-11 pl-9 pr-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="₹ per day" />
@@ -691,15 +683,15 @@ export default function OnboardingForm({
                         </label>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Vendor Name</label>
+                        <label className="text-xs font-bold text-text-muted">Vendor Name</label>
                         <input type="text" value={vendorName} onChange={(e) => setVendorName(e.target.value)} disabled={sameAsDriver} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="Enter Vendor Name (if any)" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Vendor ID</label>
+                        <label className="text-xs font-bold text-text-muted">Vendor ID</label>
                         <input type="text" value={vendorId} onChange={(e) => setVendorId(e.target.value)} disabled={sameAsDriver} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="Enter Vendor ID (if any)" />
                       </div>
                       <div className="space-y-2 lg:col-span-3">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Present Address *</label>
+                        <label className="text-xs font-bold text-text-muted">Present Address *</label>
                         <input type="text" required value={presentAddress} onChange={(e) => {
                           setPresentAddress(e.target.value);
                           if (sameAsPresentAddress) setPermanentAddress(e.target.value);
@@ -707,7 +699,7 @@ export default function OnboardingForm({
                       </div>
                       <div className="space-y-2 lg:col-span-3">
                         <div className="flex items-center justify-between">
-                          <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Permanent Address *</label>
+                          <label className="text-xs font-bold text-text-muted">Permanent Address *</label>
                           <label className="flex items-center gap-2 text-xs text-text-muted cursor-pointer hover:text-primary">
                             <input 
                               type="checkbox" 
@@ -728,17 +720,17 @@ export default function OnboardingForm({
  
                   {/* Section 2: Emergency */}
                   <div className="flex flex-col gap-5 border-b border-border/40 pb-6 pt-6">
-                    <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase flex items-center gap-1.5">
+                    <h3 className="font-sans text-xs font-bold text-primary flex items-center gap-1.5">
                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">2</span>
                       Emergency Contact
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Emergency Contact Name *</label>
+                        <label className="text-xs font-bold text-text-muted">Emergency Contact Name *</label>
                         <input type="text" required value={emergencyName} onChange={(e) => setEmergencyName(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Relation & Name" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Emergency Phone *</label>
+                        <label className="text-xs font-bold text-text-muted">Emergency Phone *</label>
                         <input type="tel" required value={emergencyPhone} onChange={(e) => setEmergencyPhone(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="10-digit emergency number" />
                       </div>
                     </div>
@@ -746,37 +738,37 @@ export default function OnboardingForm({
  
                   {/* Section 3: Legal & KYC */}
                   <div className="flex flex-col gap-5 border-b border-border/40 pb-6 pt-6">
-                    <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase flex items-center gap-1.5">
+                    <h3 className="font-sans text-xs font-bold text-primary flex items-center gap-1.5">
                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">3</span>
                       Document Verifications
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Driving License Number</label>
-                        <input type="text" value={dlNumber} onChange={(e) => setDlNumber(e.target.value.toUpperCase())} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm uppercase focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="e.g. MH04 20110012345" />
+                        <label className="text-xs font-bold text-text-muted">Driving License Number</label>
+                        <input type="text" value={dlNumber} onChange={(e) => setDlNumber(e.target.value.toUpperCase())} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="e.g. MH04 20110012345" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">DL Expiry Date</label>
+                        <label className="text-xs font-bold text-text-muted">DL Expiry Date</label>
                         <input type="date" value={dlExpiryDate} onChange={(e) => setDlExpiryDate(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">PAN Number *</label>
+                        <label className="text-xs font-bold text-text-muted">PAN Number *</label>
                         <input type="text" required value={panNumber} onChange={(e) => setPanNumber(e.target.value.toUpperCase())} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm font-mono focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="ABCDE1234F" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Aadhaar Number *</label>
+                        <label className="text-xs font-bold text-text-muted">Aadhaar Number *</label>
                         <input type="text" required value={aadhaarNumber} onChange={(e) => setAadhaarNumber(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm font-mono focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="0000 0000 0000" />
                       </div>
                       
                       <div className="space-y-2 lg:col-span-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Is PAN Linked to Aadhaar? *</label>
+                        <label className="text-xs font-bold text-text-muted">Is PAN Linked to Aadhaar? *</label>
                         <select required value={panAadhaarLinked} onChange={(e) => setPanAadhaarLinked(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all">
                           <option value="Yes">Yes, Linked</option>
                           <option value="No">No, Not Linked</option>
                         </select>
                       </div>
                       <div className="space-y-2 lg:col-span-1">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Lead Source</label>
+                        <label className="text-xs font-bold text-text-muted">Lead Source</label>
                         <input type="text" value={leadSource} onChange={(e) => setLeadSource(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="e.g. Facebook" />
                       </div>
                     </div>
@@ -784,7 +776,7 @@ export default function OnboardingForm({
  
                   {/* Section 4: Document Captures */}
                   <div className="flex flex-col gap-5 pt-6">
-                    <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase flex items-center gap-1.5">
+                    <h3 className="font-sans text-xs font-bold text-primary flex items-center gap-1.5">
                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">4</span>
                       Document Captures
                     </h3>
@@ -852,13 +844,13 @@ export default function OnboardingForm({
  
                   {/* Section 5: Bank Details */}
                   <div className="flex flex-col gap-5 border-b border-border/40 pb-6 pt-6">
-                    <h3 className="font-sans text-xs font-bold text-primary tracking-wider uppercase flex items-center gap-1.5">
+                    <h3 className="font-sans text-xs font-bold text-primary flex items-center gap-1.5">
                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">5</span>
                       Bank Details
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Bank Name</label>
+                        <label className="text-xs font-bold text-text-muted">Bank Name</label>
                         <select 
                           value={bankName} 
                           onChange={(e) => setBankName(e.target.value)} 
@@ -883,7 +875,7 @@ export default function OnboardingForm({
 
                       {bankName === "Other" && (
                         <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Specify Bank Name *</label>
+                          <label className="text-xs font-bold text-text-muted">Specify Bank Name *</label>
                           <input 
                             type="text" 
                             required={bankName === "Other"} 
@@ -896,7 +888,7 @@ export default function OnboardingForm({
                       )}
 
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Account Number</label>
+                        <label className="text-xs font-bold text-text-muted">Account Number</label>
                         <input 
                           type="text" 
                           value={accountNumber} 
@@ -908,19 +900,19 @@ export default function OnboardingForm({
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">IFSC Code</label>
+                        <label className="text-xs font-bold text-text-muted">IFSC Code</label>
                         <input 
                           type="text" 
                           value={ifscCode} 
                           onChange={(e) => setIfscCode(e.target.value.toUpperCase())} 
-                          className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm uppercase focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
+                          className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
                           placeholder="e.g. IFSC0001234" 
                           maxLength={11}
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider">UPI ID</label>
+                        <label className="text-xs font-bold text-text-muted">UPI ID</label>
                         <input 
                           type="text" 
                           value={upiId} 
@@ -937,7 +929,7 @@ export default function OnboardingForm({
                       <p className="text-xs text-text-muted leading-relaxed">
                         By submitting this form, you verify that all uploaded documents have been inspected physically.
                       </p>
-                      <p className="text-[10px] font-bold text-red-500 uppercase">* means mandatory</p>
+                      <p className="text-[10px] font-bold text-red-500">* means mandatory</p>
                     </div>
                     <button
                       type="submit"
@@ -963,7 +955,7 @@ export default function OnboardingForm({
               {/* Card 1: Total Onboarded */}
               <div className="rounded-xl border border-border bg-white p-5 shadow-xs flex justify-between items-center">
                 <div className="flex flex-col">
-                  <span className="font-sans text-[10px] font-bold text-text-dim tracking-wider uppercase">
+                  <span className="font-sans text-[10px] font-bold text-text-dim">
                     Total Onboarded
                   </span>
                   <span className="font-sans text-3xl font-extrabold text-primary mt-1">
@@ -981,7 +973,7 @@ export default function OnboardingForm({
               {/* Card 2: No of Vendors */}
               <div className="rounded-xl border border-border bg-white p-5 shadow-xs flex justify-between items-center">
                 <div className="flex flex-col">
-                  <span className="font-sans text-[10px] font-bold text-text-dim tracking-wider uppercase">
+                  <span className="font-sans text-[10px] font-bold text-text-dim">
                     No. of Vendors
                   </span>
                   <span className="font-sans text-3xl font-extrabold text-green mt-1">
@@ -999,7 +991,7 @@ export default function OnboardingForm({
               {/* Card 3: Last Added */}
               <div className="rounded-xl border border-border bg-white p-5 shadow-xs flex justify-between items-center">
                 <div className="flex flex-col">
-                  <span className="font-sans text-[10px] font-bold text-text-dim tracking-wider uppercase">
+                  <span className="font-sans text-[10px] font-bold text-text-dim">
                     Last Added
                   </span>
                   <span className="font-sans text-3xl font-extrabold text-primary mt-1">
@@ -1017,7 +1009,7 @@ export default function OnboardingForm({
               {/* Card 4: Last 7 Days Added */}
               <div className="rounded-xl border border-border bg-white p-5 shadow-xs flex justify-between items-center">
                 <div className="flex flex-col">
-                  <span className="font-sans text-[10px] font-bold text-text-dim tracking-wider uppercase">
+                  <span className="font-sans text-[10px] font-bold text-text-dim">
                     Last 7 Days Added
                   </span>
                   <span className="font-sans text-3xl font-extrabold text-primary mt-1">
@@ -1094,12 +1086,12 @@ export default function OnboardingForm({
                 <table className="w-full text-left whitespace-nowrap border-collapse">
                   <thead className="bg-white border-b border-border/60">
                     <tr>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim tracking-wider uppercase text-left">ID</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim tracking-wider uppercase text-left">Driver Details</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim tracking-wider uppercase text-left">License & KYC</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim tracking-wider uppercase text-left">Location</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim tracking-wider uppercase text-left">Vendor & Emergency</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim tracking-wider uppercase text-center">Actions</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim text-left">ID</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim text-left">Driver Details</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim text-left">License & KYC</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim text-left">Location</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim text-left">Vendor & Emergency</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/40">
