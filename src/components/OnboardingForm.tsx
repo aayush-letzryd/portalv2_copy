@@ -1225,7 +1225,7 @@ export default function OnboardingForm({
                       <p className="text-xs text-text-muted leading-relaxed">
                         By submitting this form, you verify that all uploaded documents have been inspected physically.
                       </p>
-                      <p className="text-[10px] font-bold text-red-500">* means mandatory</p>
+                      <p className="text-[10px] font-bold text-red-500">* Means Mandatory</p>
                     </div>
                     <button
                       type="submit"
