@@ -1463,6 +1463,7 @@ class OnboardingData(BaseModel):
     permanent_address: str
     emergency_name: str
     emergency_phone: str
+    emergency_relationship: Optional[str] = None
     dl_number: Optional[str] = None
     dl_expiry_date: Optional[str] = None
     lead_source: Optional[str] = None
@@ -1487,6 +1488,11 @@ class OnboardingData(BaseModel):
     driver_id: Optional[str] = None
     custom_rent_amount: Optional[str] = None
     operator_drivers: Optional[list[dict]] = None
+    platform_details: Optional[Union[dict, str]] = None
+    documents_verified: Optional[bool] = False
+    custom_rental_plan: Optional[bool] = False
+    cancelled_cheque_photo: Optional[Any] = None
+    signature_photo: Optional[Any] = None
 
 class AdjustmentData(BaseModel):
     partner_name: Optional[str] = None
@@ -2715,6 +2721,7 @@ def create_onboarding(data: OnboardingData):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
+        import json
         cur.execute("""
             INSERT INTO copy_form_onboarding (
                 driver_name, phone_number, whatsapp_number, dob, city, operating_place,
@@ -2725,8 +2732,10 @@ def create_onboarding(data: OnboardingData):
                 vendor_name, vendor_id, aadhaar_card_photo,
                 father_name, bank_name, other_bank_name,
                 account_number, ifsc_code, upi_id,
-                vendor_type, driver_id, custom_rent_amount
-            ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                vendor_type, driver_id, custom_rent_amount,
+                walkin_id, emergency_relationship, platform_details, documents_verified, 
+                custom_rental_plan, cancelled_cheque_photo, signature_photo
+            ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             RETURNING id;
         """, (
             data.driver_name, data.phone_number, data.whatsapp_number, data.dob, data.city, data.operating_place,
@@ -2738,7 +2747,9 @@ def create_onboarding(data: OnboardingData):
             data.vendor_name, data.vendor_id, extract_image(data.aadhaar_card_photo),
             data.father_name, data.bank_name, data.other_bank_name,
             data.account_number, data.ifsc_code, data.upi_id,
-            data.vendor_type, data.driver_id, data.custom_rent_amount
+            data.vendor_type, data.driver_id, data.custom_rent_amount,
+            data.walkin_id, data.emergency_relationship, json.dumps(data.platform_details) if data.platform_details else None, data.documents_verified,
+            data.custom_rental_plan, extract_image(data.cancelled_cheque_photo), extract_image(data.signature_photo)
         ))
         new_id = cur.fetchone()[0]
         
@@ -2791,7 +2802,9 @@ def get_onboarding(id: int):
                 father_name, bank_name, other_bank_name,
                 account_number, ifsc_code, upi_id,
                 selfie_photo, dl_front, dl_back, pan_card_photo,
-                vendor_type, driver_id, custom_rent_amount
+                vendor_type, driver_id, custom_rent_amount,
+                walkin_id, emergency_relationship, platform_details, documents_verified,
+                custom_rental_plan, cancelled_cheque_photo, signature_photo
             FROM copy_form_onboarding
             WHERE id = %s;
         """, (id,))
@@ -2810,7 +2823,10 @@ def get_onboarding(id: int):
                 "father_name": r[19], "bank_name": r[20], "other_bank_name": r[21],
                 "account_number": r[22], "ifsc_code": r[23], "upi_id": r[24],
                 "selfie_photo": r[25], "dl_front": r[26], "dl_back": r[27], "pan_card_photo": r[28],
-                "vendor_type": r[29], "driver_id": r[30], "custom_rent_amount": r[31]
+                "vendor_type": r[29], "driver_id": r[30], "custom_rent_amount": r[31],
+                "walkin_id": r[32], "emergency_relationship": r[33], "platform_details": r[34],
+                "documents_verified": r[35], "custom_rental_plan": r[36],
+                "cancelled_cheque_photo": r[37], "signature_photo": r[38]
             }
             if r[29] == "Operator" and r[17]:
                 cur.execute("""
@@ -2847,6 +2863,7 @@ def update_onboarding(id: int, data: OnboardingData):
         if not cur.fetchone():
             raise HTTPException(status_code=404, detail="Onboarding record not found")
             
+        import json
         cur.execute("""
             UPDATE copy_form_onboarding SET
                 driver_name=%s, phone_number=%s, whatsapp_number=%s, dob=%s, city=%s, operating_place=%s,
@@ -2855,7 +2872,9 @@ def update_onboarding(id: int, data: OnboardingData):
                 pan_number=%s, aadhaar_number=%s, pan_aadhaar_linked=%s,
                 vendor_name=%s, vendor_id=%s,
                 father_name=%s, bank_name=%s, other_bank_name=%s,
-                account_number=%s, ifsc_code=%s, upi_id=%s
+                account_number=%s, ifsc_code=%s, upi_id=%s,
+                walkin_id=%s, emergency_relationship=%s, platform_details=%s, documents_verified=%s,
+                custom_rental_plan=%s
             WHERE id=%s;
         """, (
             data.driver_name, data.phone_number, data.whatsapp_number, data.dob, data.city, data.operating_place,
@@ -2865,6 +2884,8 @@ def update_onboarding(id: int, data: OnboardingData):
             data.vendor_name, data.vendor_id,
             data.father_name, data.bank_name, data.other_bank_name,
             data.account_number, data.ifsc_code, data.upi_id,
+            data.walkin_id, data.emergency_relationship, json.dumps(data.platform_details) if data.platform_details else None, data.documents_verified,
+            data.custom_rental_plan,
             id
         ))
         
@@ -2874,6 +2895,8 @@ def update_onboarding(id: int, data: OnboardingData):
         new_dl_back = extract_image(data.dl_back)
         new_pan = extract_image(data.pan_card_photo)
         new_aadhaar_img = extract_image(data.aadhaar_card_photo)
+        new_cancelled_cheque = extract_image(data.cancelled_cheque_photo)
+        new_signature = extract_image(data.signature_photo)
         
         if new_selfie:
             cur.execute("UPDATE copy_form_onboarding SET selfie_photo=%s WHERE id=%s;", (new_selfie, id))
@@ -2885,6 +2908,10 @@ def update_onboarding(id: int, data: OnboardingData):
             cur.execute("UPDATE copy_form_onboarding SET pan_card_photo=%s WHERE id=%s;", (new_pan, id))
         if new_aadhaar_img:
             cur.execute("UPDATE copy_form_onboarding SET aadhaar_card_photo=%s WHERE id=%s;", (new_aadhaar_img, id))
+        if new_cancelled_cheque:
+            cur.execute("UPDATE copy_form_onboarding SET cancelled_cheque_photo=%s WHERE id=%s;", (new_cancelled_cheque, id))
+        if new_signature:
+            cur.execute("UPDATE copy_form_onboarding SET signature_photo=%s WHERE id=%s;", (new_signature, id))
             
         if data.walkin_id:
             cur.execute("DELETE FROM copy_walkin_form_links WHERE onboarding_id = %s;", (id,))

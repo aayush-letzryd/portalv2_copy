@@ -49,14 +49,15 @@ export default function OnboardingForm({
   const [walkinSearchInput, setWalkinSearchInput] = useState("");
   const [driverName, setDriverName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [differentWhatsapp, setDifferentWhatsapp] = useState(false);
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [dob, setDob] = useState("");
   const [city, setCity] = useState("Hyderabad");
-  const [operatingPlace, setOperatingPlace] = useState("");
   const [presentAddress, setPresentAddress] = useState("");
   const [permanentAddress, setPermanentAddress] = useState("");
   const [sameAsPresentAddress, setSameAsPresentAddress] = useState(false);
   const [emergencyName, setEmergencyName] = useState("");
+  const [emergencyRelationship, setEmergencyRelationship] = useState("");
   const [emergencyPhone, setEmergencyPhone] = useState("");
   const [dlNumber, setDlNumber] = useState("");
   const [dlExpiryDate, setDlExpiryDate] = useState("");
@@ -72,6 +73,12 @@ export default function OnboardingForm({
   const [accountNumber, setAccountNumber] = useState("");
   const [ifscCode, setIfscCode] = useState("");
   const [upiId, setUpiId] = useState("");
+  const [entryMode, setEntryMode] = useState<"new" | "walkin" | "retrieve">("new");
+  const [thirdPartyPlatforms, setThirdPartyPlatforms] = useState<string[]>([]);
+  const [platformDetails, setPlatformDetails] = useState<Record<string, {id: string, photo: string | null}>>({});
+  const [documentsVerified, setDocumentsVerified] = useState(false);
+  const [customRentalPlan, setCustomRentalPlan] = useState(false);
+  const [sameAsCandidateName, setSameAsCandidateName] = useState(false);
   const [stats, setStats] = useState({
     total_onboarded: 0,
     vendor_count: 0,
@@ -85,7 +92,9 @@ export default function OnboardingForm({
   const [dlBack, setDlBack] = useState<string | null>(null);
   const [panCardPhoto, setPanCardPhoto] = useState<string | null>(null);
   const [aadhaarPhoto, setAadhaarPhoto] = useState<string | null>(null);
-  const [cameraActiveField, setCameraActiveField] = useState<"selfie" | "dl_front" | "dl_back" | "pan" | "aadhaar" | null>(null);
+  const [cancelledChequePhoto, setCancelledChequePhoto] = useState<string | null>(null);
+  const [signaturePhoto, setSignaturePhoto] = useState<string | null>(null);
+  const [cameraActiveField, setCameraActiveField] = useState<"selfie" | "dl_front" | "dl_back" | "pan" | "aadhaar" | "cheque" | "signature" | string | null>(null);
 
   // Registry Search & Filter State
   const [searchQuery, setSearchQuery] = useState("");
@@ -179,13 +188,13 @@ export default function OnboardingForm({
 
       driver_name: driverName.trim(),
       phone_number: cleanPhone,
-      whatsapp_number: whatsappNumber.trim() || undefined,
+      whatsapp_number: differentWhatsapp ? whatsappNumber.trim() : cleanPhone,
       dob: dob,
       city: city,
-      operating_place: operatingPlace.trim() || undefined,
       present_address: presentAddress.trim(),
       permanent_address: permanentAddress.trim(),
       emergency_name: emergencyName.trim(),
+      emergency_relationship: emergencyRelationship.trim(),
       emergency_phone: emergencyPhone.trim(),
       dl_number: dlNumber.trim().toUpperCase(),
       dl_expiry_date: dlExpiryDate,
@@ -207,6 +216,11 @@ export default function OnboardingForm({
       account_number: accountNumber.trim() || undefined,
       ifsc_code: ifscCode.trim().toUpperCase() || undefined,
       upi_id: upiId.trim().toLowerCase() || undefined,
+      documents_verified: documentsVerified,
+      custom_rental_plan: customRentalPlan,
+      cancelled_cheque_photo: cancelledChequePhoto || undefined,
+      signature_photo: signaturePhoto || undefined,
+      platform_details: platformDetails
     };
 
     try {
@@ -251,14 +265,15 @@ export default function OnboardingForm({
     setWalkinSearchInput("");
     setDriverName("");
     setPhoneNumber("");
+    setDifferentWhatsapp(false);
     setWhatsappNumber("");
     setDob("");
     setCity("Hyderabad");
-    setOperatingPlace("");
     setPresentAddress("");
     setPermanentAddress("");
     setSameAsPresentAddress(false);
     setEmergencyName("");
+    setEmergencyRelationship("");
     setEmergencyPhone("");
     setDlNumber("");
     setDlExpiryDate("");
@@ -279,9 +294,17 @@ export default function OnboardingForm({
     setAccountNumber("");
     setIfscCode("");
     setUpiId("");
+    setDocumentsVerified(false);
+    setCustomRentalPlan(false);
+    setCancelledChequePhoto(null);
+    setSignaturePhoto(null);
+    setThirdPartyPlatforms([]);
+    setPlatformDetails({});
+    setEntryMode("new");
+    setSameAsCandidateName(false);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, field: "selfie" | "dl_front" | "dl_back" | "pan" | "aadhaar") => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, field: "selfie" | "dl_front" | "dl_back" | "pan" | "aadhaar" | "cheque" | "signature") => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -292,6 +315,8 @@ export default function OnboardingForm({
           if (field === "dl_back") setDlBack(reader.result);
           if (field === "pan") setPanCardPhoto(reader.result);
           if (field === "aadhaar") setAadhaarPhoto(reader.result);
+          if (field === "cheque") setCancelledChequePhoto(reader.result);
+          if (field === "signature") setSignaturePhoto(reader.result);
         }
       };
       reader.readAsDataURL(file);
@@ -311,13 +336,14 @@ export default function OnboardingForm({
       setDriverName(data.driver_name || "");
       setPhoneNumber(data.phone_number || "");
       setWhatsappNumber(data.whatsapp_number || "");
+      setDifferentWhatsapp(data.whatsapp_number && data.whatsapp_number !== data.phone_number);
       setDob(data.dob || "");
       setCity(data.city || "Hyderabad");
-      setOperatingPlace(data.operating_place || "");
       setPresentAddress(data.present_address || "");
       setPermanentAddress(data.permanent_address || "");
       setSameAsPresentAddress(data.present_address === data.permanent_address);
       setEmergencyName(data.emergency_name || "");
+      setEmergencyRelationship(data.emergency_relationship || "");
       setEmergencyPhone(data.emergency_phone || "");
       setDlNumber(data.dl_number || "");
       setDlExpiryDate(data.dl_expiry_date || "");
@@ -344,6 +370,19 @@ export default function OnboardingForm({
       setAccountNumber(data.account_number || "");
       setIfscCode(data.ifsc_code || "");
       setUpiId(data.upi_id || "");
+      setDocumentsVerified(data.documents_verified || false);
+      setCustomRentalPlan(data.custom_rental_plan || false);
+      setCancelledChequePhoto(data.cancelled_cheque_photo || null);
+      setSignaturePhoto(data.signature_photo || null);
+      
+      try {
+        const pDetails = typeof data.platform_details === 'string' ? JSON.parse(data.platform_details) : (data.platform_details || {});
+        setPlatformDetails(pDetails);
+        setThirdPartyPlatforms(Object.keys(pDetails));
+      } catch (e) {
+        setPlatformDetails({});
+        setThirdPartyPlatforms([]);
+      }
       
       setActiveTab("form");
       setRetrieveIdInput("");
@@ -426,11 +465,39 @@ export default function OnboardingForm({
   };
 
   // Helper for camera uploads
-  const removePhoto = (field: "selfie" | "dl_front" | "dl_back" | "pan") => {
+  const removePhoto = (field: "selfie" | "dl_front" | "dl_back" | "pan" | "aadhaar" | "cheque" | "signature") => {
     if (field === "selfie") setSelfiePhoto(null);
     if (field === "dl_front") setDlFront(null);
     if (field === "dl_back") setDlBack(null);
     if (field === "pan") setPanCardPhoto(null);
+    if (field === "aadhaar") setAadhaarPhoto(null);
+    if (field === "cheque") setCancelledChequePhoto(null);
+    if (field === "signature") setSignaturePhoto(null);
+  };
+
+  const handleIfscBlur = async () => {
+    if (ifscCode.length === 11) {
+      try {
+        const res = await fetch(`https://ifsc.razorpay.com/${ifscCode}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.BANK) {
+            const knownBanks = ["State Bank of India", "HDFC Bank", "ICICI Bank", "Axis Bank", "Kotak Mahindra Bank", "IndusInd Bank", "Yes Bank", "Federal Bank", "Bank of Baroda", "Punjab National Bank", "Canara Bank", "Union Bank of India", "IDBI Bank"];
+            
+            // basic matching
+            const matched = knownBanks.find(b => data.BANK.toLowerCase().includes(b.toLowerCase()) || b.toLowerCase().includes(data.BANK.toLowerCase()));
+            if (matched) {
+              setBankName(matched);
+            } else {
+              setBankName("Other");
+              setOtherBankName(data.BANK);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("IFSC lookup failed", err);
+      }
+    }
   };
 
   return (
@@ -575,8 +642,17 @@ export default function OnboardingForm({
               <div className="p-8 pb-10">
                 <form onSubmit={handleFormSubmit} className="space-y-8">
                   
-                  {/* Optional Walk-in Link */}
+                  {/* Entry Mode Selector */}
                   {!editingId && (
+                    <div className="flex bg-slate-100 p-1 rounded-xl w-full max-w-md mx-auto mb-8">
+                      <button type="button" onClick={() => setEntryMode('new')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${entryMode === 'new' ? 'bg-white text-primary shadow-sm' : 'text-text-muted hover:text-text'}`}>New Entry</button>
+                      <button type="button" onClick={() => setEntryMode('walkin')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${entryMode === 'walkin' ? 'bg-white text-primary shadow-sm' : 'text-text-muted hover:text-text'}`}>Link Walk-in</button>
+                      <button type="button" onClick={() => setEntryMode('retrieve')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${entryMode === 'retrieve' ? 'bg-white text-primary shadow-sm' : 'text-text-muted hover:text-text'}`}>Retrieve Older</button>
+                    </div>
+                  )}
+
+                  {/* Optional Walk-in Link */}
+                  {entryMode === 'walkin' && !editingId && (
                     <div className="bg-slate-50 border border-border/80 rounded-xl p-5 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div>
                         <h4 className="font-sans text-sm font-bold text-primary flex items-center gap-2">
@@ -610,6 +686,35 @@ export default function OnboardingForm({
                       </div>
                     </div>
                   )}
+                  
+                  {/* Optional Retrieve Older */}
+                  {entryMode === 'retrieve' && !editingId && (
+                    <div className="bg-slate-50 border border-border/80 rounded-xl p-5 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div>
+                        <h4 className="font-sans text-sm font-bold text-primary flex items-center gap-2">
+                          <Search className="h-4 w-4 text-green" /> Retrieve Operator Details
+                        </h4>
+                        <p className="font-sans text-xs text-text-muted mt-1">
+                          Search older driver records to link under Operator.
+                        </p>
+                      </div>
+                      <div className="flex w-full sm:w-auto">
+                        <input
+                          type="text"
+                          placeholder="Search Operator..."
+                          value={operatorRetrievalSearch}
+                          onChange={(e) => setOperatorRetrievalSearch(e.target.value)}
+                          className="h-10 w-full sm:w-64 rounded-l-lg border border-border bg-white px-3 text-sm focus:border-primary outline-none transition-colors"
+                        />
+                        <button
+                          type="button"
+                          className="h-10 rounded-r-lg bg-primary px-4 text-xs font-bold text-white hover:bg-primary-hover transition-colors"
+                        >
+                          Search
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Section 1: Candidate Info */}
                   <div className="flex flex-col gap-5 border-b border-border/40 pb-6">
@@ -626,16 +731,28 @@ export default function OnboardingForm({
                         }} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Full Name as per Aadhaar" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Father's Name *</label>
-                        <input type="text" required value={fatherName} onChange={(e) => setFatherName(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Father's Full Name" />
+                        <label className="text-xs font-bold text-text-muted">Parent's Name *</label>
+                        <input type="text" required value={fatherName} onChange={(e) => setFatherName(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Parent's Full Name" />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-text-muted">Phone Number *</label>
                         <input type="tel" required value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="10-digit mobile" />
+                        <p className="text-[10px] text-text-muted italic">Used for login and verification.</p>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">WhatsApp Number</label>
-                        <input type="tel" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Same as phone" />
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold text-text-muted">WhatsApp Number</label>
+                          <label className="flex items-center gap-1.5 text-[10px] text-text-muted cursor-pointer hover:text-primary">
+                            <input 
+                              type="checkbox" 
+                              checked={differentWhatsapp}
+                              onChange={(e) => setDifferentWhatsapp(e.target.checked)}
+                              className="rounded border-border text-primary focus:ring-primary/20"
+                            />
+                            Different from Phone?
+                          </label>
+                        </div>
+                        <input type="tel" disabled={!differentWhatsapp} value={differentWhatsapp ? whatsappNumber : phoneNumber} onChange={(e) => setWhatsappNumber(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="Same as phone" />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-text-muted">Date of Birth *</label>
@@ -647,10 +764,6 @@ export default function OnboardingForm({
                           {CITIES.map(c => <option key={c.value} value={c.value}>{c.text}</option>)}
                         </select>
                       </div>
-                      <div className="space-y-2 lg:col-span-1">
-                        <label className="text-xs font-bold text-text-muted">Operating Place</label>
-                        <input type="text" value={operatingPlace} onChange={(e) => setOperatingPlace(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Enter operating place" />
-                      </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-text-muted">Driver ID *</label>
                         <input type="text" required value={driverId} onChange={(e) => {
@@ -659,10 +772,21 @@ export default function OnboardingForm({
                         }} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Enter Driver ID" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Custom Rent Amount (Optional)</label>
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold text-text-muted">Custom Rent Amount (Optional)</label>
+                          <label className="flex items-center gap-1.5 text-[10px] text-text-muted cursor-pointer hover:text-primary">
+                            <input 
+                              type="checkbox" 
+                              checked={customRentalPlan}
+                              onChange={(e) => setCustomRentalPlan(e.target.checked)}
+                              className="rounded border-border text-primary focus:ring-primary/20"
+                            />
+                            Custom Rent?
+                          </label>
+                        </div>
                         <div className="relative">
                           <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
-                          <input type="number" value={customRentAmount} onChange={(e) => setCustomRentAmount(e.target.value)} className="w-full h-11 pl-9 pr-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="₹ per day" />
+                          <input type="number" disabled={!customRentalPlan} value={customRentAmount} onChange={(e) => setCustomRentAmount(e.target.value)} className="w-full h-11 pl-9 pr-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="₹ per day" />
                         </div>
                       </div>
                       <div className="space-y-2 col-span-1 md:col-span-2 lg:col-span-3 flex items-center pt-2">
@@ -679,18 +803,41 @@ export default function OnboardingForm({
                             }}
                             className="rounded border-border text-primary focus:ring-primary/20"
                           />
-                          Vendor details same as Driver details (Individual)
+                          Operator details same as Driver details (Individual)
                         </label>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Vendor Name</label>
-                        <input type="text" value={vendorName} onChange={(e) => setVendorName(e.target.value)} disabled={sameAsDriver} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="Enter Vendor Name (if any)" />
+                        <label className="text-xs font-bold text-text-muted">Operator Name</label>
+                        <input type="text" value={vendorName} onChange={(e) => setVendorName(e.target.value)} disabled={sameAsDriver} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="Enter Operator Name (if any)" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Vendor ID</label>
-                        <input type="text" value={vendorId} onChange={(e) => setVendorId(e.target.value)} disabled={sameAsDriver} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="Enter Vendor ID (if any)" />
+                        <label className="text-xs font-bold text-text-muted">Operator ID</label>
+                        <input type="text" value={vendorId} onChange={(e) => setVendorId(e.target.value)} disabled={sameAsDriver} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="Enter Operator ID (if any)" />
                       </div>
-                      <div className="space-y-2 lg:col-span-3">
+                      
+                      {/* Third Party Platforms */}
+                      <div className="space-y-2 lg:col-span-1">
+                        <label className="text-xs font-bold text-text-muted">Third-Party Platforms</label>
+                        <select 
+                          multiple
+                          value={thirdPartyPlatforms} 
+                          onChange={(e) => {
+                            const selected = Array.from(e.target.selectedOptions, option => option.value);
+                            setThirdPartyPlatforms(selected);
+                          }} 
+                          className="w-full h-24 p-3 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                        >
+                          <option value="Uber">Uber</option>
+                          <option value="Ola">Ola</option>
+                          <option value="Rapido">Rapido</option>
+                          <option value="Indrive">Indrive</option>
+                          <option value="BluSmart">BluSmart</option>
+                          <option value="None">None</option>
+                        </select>
+                        <p className="text-[10px] text-text-muted italic">Hold Ctrl/Cmd to select multiple.</p>
+                      </div>
+
+                      <div className="space-y-2 lg:col-span-2">
                         <label className="text-xs font-bold text-text-muted">Present Address *</label>
                         <input type="text" required value={presentAddress} onChange={(e) => {
                           setPresentAddress(e.target.value);
@@ -724,10 +871,22 @@ export default function OnboardingForm({
                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">2</span>
                       Emergency Contact
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-text-muted">Emergency Contact Name *</label>
-                        <input type="text" required value={emergencyName} onChange={(e) => setEmergencyName(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Relation & Name" />
+                        <input type="text" required value={emergencyName} onChange={(e) => setEmergencyName(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Name" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-text-muted">Relationship *</label>
+                        <select required value={emergencyRelationship} onChange={(e) => setEmergencyRelationship(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all">
+                          <option value="">Select Relation...</option>
+                          <option value="Father">Father</option>
+                          <option value="Mother">Mother</option>
+                          <option value="Spouse">Spouse</option>
+                          <option value="Sibling">Sibling</option>
+                          <option value="Friend">Friend</option>
+                          <option value="Other">Other</option>
+                        </select>
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-text-muted">Emergency Phone *</label>
@@ -772,6 +931,21 @@ export default function OnboardingForm({
                         <input type="text" value={leadSource} onChange={(e) => setLeadSource(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="e.g. Facebook" />
                       </div>
                     </div>
+                    
+                    {/* Documents Verified Checkbox */}
+                    <div className="mt-6 flex items-start gap-3 bg-slate-50 border border-border p-4 rounded-xl">
+                      <input 
+                        type="checkbox" 
+                        required
+                        id="docs_verified"
+                        checked={documentsVerified}
+                        onChange={(e) => setDocumentsVerified(e.target.checked)}
+                        className="mt-1 h-5 w-5 rounded border-border text-primary focus:ring-primary/20"
+                      />
+                      <label htmlFor="docs_verified" className="text-sm font-semibold text-text-muted cursor-pointer">
+                        I verify that the candidate's name matches exactly across all uploaded documents (Aadhaar, PAN, DL, Bank details).
+                      </label>
+                    </div>
                   </div>
  
                   {/* Section 4: Document Captures */}
@@ -788,6 +962,8 @@ export default function OnboardingForm({
                         { id: "dl_back", label: "DL Back Image", val: dlBack, setter: setDlBack },
                         { id: "pan", label: "PAN Card Image", val: panCardPhoto, setter: setPanCardPhoto },
                         { id: "aadhaar", label: "Aadhaar Card Image", val: aadhaarPhoto, setter: setAadhaarPhoto },
+                        { id: "cheque", label: "Cancelled Cheque (Optional)", val: cancelledChequePhoto, setter: setCancelledChequePhoto },
+                        { id: "signature", label: "Signature", val: signaturePhoto, setter: setSignaturePhoto },
                       ].map((doc) => (
                         <div key={doc.id} className="flex flex-col gap-2.5 rounded-xl border-2 border-dashed border-border bg-slate-50/50 p-4 relative">
                           <span className="font-sans text-xs font-semibold text-text-muted">{doc.label}</span>
@@ -839,6 +1015,58 @@ export default function OnboardingForm({
                         </div>
                       ))}
 
+                      {/* Dynamic Third Party Platform Documents */}
+                      {thirdPartyPlatforms.filter(p => p !== 'None').map(platform => (
+                        <div key={platform} className="flex flex-col gap-2.5 rounded-xl border-2 border-dashed border-border bg-slate-50/50 p-4 relative">
+                          <span className="font-sans text-xs font-semibold text-text-muted">{platform} App Profile Screenshot</span>
+                          <input 
+                            type="text" 
+                            placeholder={`${platform} ID (Optional)`}
+                            value={platformDetails[platform]?.id || ""}
+                            onChange={(e) => setPlatformDetails(prev => ({...prev, [platform]: { ...prev[platform], id: e.target.value }}))}
+                            className="h-8 px-2 text-xs border border-border rounded"
+                          />
+                          {platformDetails[platform]?.photo ? (
+                            <div className="relative flex flex-col items-center justify-center bg-slate-100 rounded-lg p-3 min-h-[100px]">
+                              <img 
+                                src={platformDetails[platform].photo!} 
+                                alt={`${platform} Thumbnail`} 
+                                className="max-h-20 w-auto object-contain rounded-md shadow-xs border border-border"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setPlatformDetails(prev => ({...prev, [platform]: { ...prev[platform], photo: null }}))}
+                                className="absolute top-2 right-2 rounded-full bg-rose-50 border border-rose-200 p-1.5 text-rose-500 hover:bg-rose-100 transition-all cursor-pointer"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex gap-2 justify-center mt-2">
+                              <label className="flex items-center gap-1.5 rounded-lg border border-border bg-white hover:bg-slate-100 text-text-muted text-[10px] font-semibold px-3 py-1.5 transition-colors cursor-pointer w-full justify-center">
+                                <Upload className="h-3 w-3" /> Upload
+                                <input 
+                                  type="file" 
+                                  accept="image/*" 
+                                  className="hidden" 
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const reader = new FileReader();
+                                      reader.onloadend = () => {
+                                        if (typeof reader.result === "string") {
+                                          setPlatformDetails(prev => ({...prev, [platform]: { ...prev[platform], photo: reader.result as string }}));
+                                        }
+                                      };
+                                      reader.readAsDataURL(file);
+                                    }
+                                  }}
+                                />
+                              </label>
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
  
@@ -887,6 +1115,18 @@ export default function OnboardingForm({
                         </div>
                       )}
 
+                      <div className="space-y-2 lg:col-span-3">
+                        <label className="flex items-center gap-2 text-xs font-bold text-text-muted cursor-pointer hover:text-primary">
+                          <input 
+                            type="checkbox" 
+                            checked={sameAsCandidateName}
+                            onChange={(e) => setSameAsCandidateName(e.target.checked)}
+                            className="rounded border-border text-primary focus:ring-primary/20"
+                          />
+                          Account Holder Name is same as Candidate's Name ({driverName || "N/A"})
+                        </label>
+                      </div>
+
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-text-muted">Account Number</label>
                         <input 
@@ -905,10 +1145,12 @@ export default function OnboardingForm({
                           type="text" 
                           value={ifscCode} 
                           onChange={(e) => setIfscCode(e.target.value.toUpperCase())} 
+                          onBlur={handleIfscBlur}
                           className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
                           placeholder="e.g. IFSC0001234" 
                           maxLength={11}
                         />
+                        <p className="text-[10px] text-text-muted italic">Auto-fetches bank name.</p>
                       </div>
 
                       <div className="space-y-2">
