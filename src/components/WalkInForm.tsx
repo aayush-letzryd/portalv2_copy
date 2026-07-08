@@ -636,7 +636,7 @@ export default function WalkInForm({
                  </div>
 
                  <div className="flex flex-col gap-4">
-                    <h3 className="font-sans text-xs font-bold text-primary">Outcome</h3>
+                    <h3 className="font-sans text-xs font-bold text-primary hidden">Outcome</h3>
                     <div className="flex flex-col gap-1.5">
                       <label className="font-sans text-xs font-semibold text-text-muted">Onboarding Outcome Status *</label>
                       <select required value={joinedStatus} onChange={(e) => setJoinedStatus(e.target.value as OnboardingOutcome)} className="h-10 rounded border border-border px-3 text-sm bg-white outline-none focus:border-primary">
