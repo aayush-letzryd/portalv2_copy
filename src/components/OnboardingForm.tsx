@@ -54,7 +54,13 @@ export default function OnboardingForm({
   const [dob, setDob] = useState("");
   const [city, setCity] = useState("Hyderabad");
   const [presentAddress, setPresentAddress] = useState("");
+  const [presentCity, setPresentCity] = useState("");
+  const [presentState, setPresentState] = useState("");
+  const [presentPincode, setPresentPincode] = useState("");
   const [permanentAddress, setPermanentAddress] = useState("");
+  const [permanentCity, setPermanentCity] = useState("");
+  const [permanentState, setPermanentState] = useState("");
+  const [permanentPincode, setPermanentPincode] = useState("");
   const [sameAsPresentAddress, setSameAsPresentAddress] = useState(false);
   const [emergencyName, setEmergencyName] = useState("");
   const [emergencyRelationship, setEmergencyRelationship] = useState("");
@@ -73,8 +79,8 @@ export default function OnboardingForm({
   const [accountNumber, setAccountNumber] = useState("");
   const [ifscCode, setIfscCode] = useState("");
   const [upiId, setUpiId] = useState("");
-  const [entryMode, setEntryMode] = useState<"new" | "walkin" | "retrieve">("new");
-  const [thirdPartyPlatforms, setThirdPartyPlatforms] = useState<string[]>([]);
+  const [entryMode, setEntryMode] = useState<"new" | "walkin">("new");
+  const [thirdPartyPlatform, setThirdPartyPlatform] = useState<string>("None");
   const [platformDetails, setPlatformDetails] = useState<Record<string, {id: string, photo: string | null}>>({});
   const [documentsVerified, setDocumentsVerified] = useState(false);
   const [customRentalPlan, setCustomRentalPlan] = useState(false);
@@ -191,8 +197,8 @@ export default function OnboardingForm({
       whatsapp_number: differentWhatsapp ? whatsappNumber.trim() : cleanPhone,
       dob: dob,
       city: city,
-      present_address: presentAddress.trim(),
-      permanent_address: permanentAddress.trim(),
+      present_address: `${presentAddress.trim()}, ${presentCity.trim()}, ${presentState.trim()}, India - ${presentPincode.trim()}`,
+      permanent_address: `${permanentAddress.trim()}, ${permanentCity.trim()}, ${permanentState.trim()}, India - ${permanentPincode.trim()}`,
       emergency_name: emergencyName.trim(),
       emergency_relationship: emergencyRelationship.trim(),
       emergency_phone: emergencyPhone.trim(),
@@ -228,6 +234,7 @@ export default function OnboardingForm({
       const method = editingId ? "PUT" : "POST";
       const token = localStorage.getItem("lr_token");
       
+      
       const res = await fetch(url, {
         method,
         headers: {
@@ -242,7 +249,30 @@ export default function OnboardingForm({
         throw new Error(error.detail || "Failed to save record");
       }
       
-      alert(`Onboarding form successfully ${editingId ? 'updated' : 'submitted'}!`);
+      // Auto-create walk-in if this is a new entry
+      if (entryMode === 'new' && !editingId) {
+        try {
+          await fetch("/api/walkins", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              time_period: "beginning_of_month", // default
+              person_name: payload.driver_name,
+              person_number: payload.phone_number,
+              city: payload.city,
+              person_status: "Joined",
+              dl_number: payload.dl_number || null,
+              aadhaar_number: payload.aadhaar_number || null,
+              joining_date: new Date().toISOString().split('T')[0]
+            })
+          });
+        } catch (we) {
+          console.error("Failed to auto-create walk-in", we);
+        }
+      }
       
       alert(`Onboarding form successfully ${editingId ? 'updated' : 'submitted'}!`);
       
@@ -270,7 +300,13 @@ export default function OnboardingForm({
     setDob("");
     setCity("Hyderabad");
     setPresentAddress("");
+    setPresentCity("");
+    setPresentState("");
+    setPresentPincode("");
     setPermanentAddress("");
+    setPermanentCity("");
+    setPermanentState("");
+    setPermanentPincode("");
     setSameAsPresentAddress(false);
     setEmergencyName("");
     setEmergencyRelationship("");
@@ -298,7 +334,7 @@ export default function OnboardingForm({
     setCustomRentalPlan(false);
     setCancelledChequePhoto(null);
     setSignaturePhoto(null);
-    setThirdPartyPlatforms([]);
+    setThirdPartyPlatform("None");
     setPlatformDetails({});
     setEntryMode("new");
     setSameAsCandidateName(false);
@@ -339,9 +375,21 @@ export default function OnboardingForm({
       setDifferentWhatsapp(data.whatsapp_number && data.whatsapp_number !== data.phone_number);
       setDob(data.dob || "");
       setCity(data.city || "Hyderabad");
-      setPresentAddress(data.present_address || "");
-      setPermanentAddress(data.permanent_address || "");
-      setSameAsPresentAddress(data.present_address === data.permanent_address);
+      // Attempt to parse out city, state, pincode if possible. If not, just put everything in line 1
+      const pAddr = data.present_address || "";
+      const permAddr = data.permanent_address || "";
+      
+      setPresentAddress(pAddr.split(',')[0] || "");
+      setPresentCity("");
+      setPresentState("");
+      setPresentPincode("");
+      
+      setPermanentAddress(permAddr.split(',')[0] || "");
+      setPermanentCity("");
+      setPermanentState("");
+      setPermanentPincode("");
+
+      setSameAsPresentAddress(pAddr === permAddr && pAddr !== "");
       setEmergencyName(data.emergency_name || "");
       setEmergencyRelationship(data.emergency_relationship || "");
       setEmergencyPhone(data.emergency_phone || "");
@@ -378,10 +426,11 @@ export default function OnboardingForm({
       try {
         const pDetails = typeof data.platform_details === 'string' ? JSON.parse(data.platform_details) : (data.platform_details || {});
         setPlatformDetails(pDetails);
-        setThirdPartyPlatforms(Object.keys(pDetails));
+        const platforms = Object.keys(pDetails);
+        setThirdPartyPlatform(platforms.length > 0 ? platforms[0] : "None");
       } catch (e) {
         setPlatformDetails({});
-        setThirdPartyPlatforms([]);
+        setThirdPartyPlatform("None");
       }
       
       setActiveTab("form");
@@ -647,7 +696,6 @@ export default function OnboardingForm({
                     <div className="flex bg-slate-100 p-1 rounded-xl w-full max-w-md mx-auto mb-8">
                       <button type="button" onClick={() => setEntryMode('new')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${entryMode === 'new' ? 'bg-white text-primary shadow-sm' : 'text-text-muted hover:text-text'}`}>New Entry</button>
                       <button type="button" onClick={() => setEntryMode('walkin')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${entryMode === 'walkin' ? 'bg-white text-primary shadow-sm' : 'text-text-muted hover:text-text'}`}>Link Walk-in</button>
-                      <button type="button" onClick={() => setEntryMode('retrieve')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${entryMode === 'retrieve' ? 'bg-white text-primary shadow-sm' : 'text-text-muted hover:text-text'}`}>Retrieve Older</button>
                     </div>
                   )}
 
@@ -682,35 +730,6 @@ export default function OnboardingForm({
                           className="h-10 rounded-r-lg bg-primary px-4 text-xs font-bold text-white hover:bg-primary-hover transition-colors"
                         >
                           Fetch
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Optional Retrieve Older */}
-                  {entryMode === 'retrieve' && !editingId && (
-                    <div className="bg-slate-50 border border-border/80 rounded-xl p-5 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                      <div>
-                        <h4 className="font-sans text-sm font-bold text-primary flex items-center gap-2">
-                          <Search className="h-4 w-4 text-green" /> Retrieve Operator Details
-                        </h4>
-                        <p className="font-sans text-xs text-text-muted mt-1">
-                          Search older driver records to link under Operator.
-                        </p>
-                      </div>
-                      <div className="flex w-full sm:w-auto">
-                        <input
-                          type="text"
-                          placeholder="Search Operator..."
-                          value={operatorRetrievalSearch}
-                          onChange={(e) => setOperatorRetrievalSearch(e.target.value)}
-                          className="h-10 w-full sm:w-64 rounded-l-lg border border-border bg-white px-3 text-sm focus:border-primary outline-none transition-colors"
-                        />
-                        <button
-                          type="button"
-                          className="h-10 rounded-r-lg bg-primary px-4 text-xs font-bold text-white hover:bg-primary-hover transition-colors"
-                        >
-                          Search
                         </button>
                       </div>
                     </div>
@@ -759,7 +778,7 @@ export default function OnboardingForm({
                         <input type="date" required value={dob} onChange={(e) => setDob(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Operating City (Bang, Hyd, Mum) *</label>
+                        <label className="text-xs font-bold text-text-muted">Operating City *</label>
                         <select required value={city} onChange={(e) => setCity(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all">
                           {CITIES.map(c => <option key={c.value} value={c.value}>{c.text}</option>)}
                         </select>
@@ -817,34 +836,53 @@ export default function OnboardingForm({
                       
                       {/* Third Party Platforms */}
                       <div className="space-y-2 lg:col-span-1">
-                        <label className="text-xs font-bold text-text-muted">Third-Party Platforms</label>
+                        <label className="text-xs font-bold text-text-muted">Third-Party Platform</label>
                         <select 
-                          multiple
-                          value={thirdPartyPlatforms} 
-                          onChange={(e) => {
-                            const selected = Array.from(e.target.selectedOptions, option => option.value);
-                            setThirdPartyPlatforms(selected);
-                          }} 
-                          className="w-full h-24 p-3 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                          value={thirdPartyPlatform} 
+                          onChange={(e) => setThirdPartyPlatform(e.target.value)} 
+                          className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                         >
+                          <option value="None">None</option>
                           <option value="Uber">Uber</option>
                           <option value="Ola">Ola</option>
                           <option value="Rapido">Rapido</option>
                           <option value="Indrive">Indrive</option>
                           <option value="BluSmart">BluSmart</option>
-                          <option value="None">None</option>
                         </select>
-                        <p className="text-[10px] text-text-muted italic">Hold Ctrl/Cmd to select multiple.</p>
                       </div>
 
-                      <div className="space-y-2 lg:col-span-2">
+                      {/* Present Address Fields */}
+                      <div className="space-y-2 lg:col-span-3">
                         <label className="text-xs font-bold text-text-muted">Present Address *</label>
                         <input type="text" required value={presentAddress} onChange={(e) => {
                           setPresentAddress(e.target.value);
                           if (sameAsPresentAddress) setPermanentAddress(e.target.value);
-                        }} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Full residential address" />
+                        }} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="House/Flat No, Building, Street" />
                       </div>
-                      <div className="space-y-2 lg:col-span-3">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-text-muted">Present Pincode *</label>
+                        <input type="text" required value={presentPincode} onChange={(e) => {
+                          setPresentPincode(e.target.value);
+                          if (sameAsPresentAddress) setPermanentPincode(e.target.value);
+                        }} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="e.g. 500001" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-text-muted">Present City *</label>
+                        <input type="text" required value={presentCity} onChange={(e) => {
+                          setPresentCity(e.target.value);
+                          if (sameAsPresentAddress) setPermanentCity(e.target.value);
+                        }} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="e.g. Hyderabad" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-text-muted">Present State *</label>
+                        <input type="text" required value={presentState} onChange={(e) => {
+                          setPresentState(e.target.value);
+                          if (sameAsPresentAddress) setPermanentState(e.target.value);
+                        }} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="e.g. Telangana" />
+                      </div>
+
+                      {/* Permanent Address Fields */}
+                      <div className="space-y-2 lg:col-span-3 pt-2">
                         <div className="flex items-center justify-between">
                           <label className="text-xs font-bold text-text-muted">Permanent Address *</label>
                           <label className="flex items-center gap-2 text-xs text-text-muted cursor-pointer hover:text-primary">
@@ -853,14 +891,31 @@ export default function OnboardingForm({
                               checked={sameAsPresentAddress}
                               onChange={(e) => {
                                 setSameAsPresentAddress(e.target.checked);
-                                if (e.target.checked) setPermanentAddress(presentAddress);
+                                if (e.target.checked) {
+                                  setPermanentAddress(presentAddress);
+                                  setPermanentCity(presentCity);
+                                  setPermanentState(presentState);
+                                  setPermanentPincode(presentPincode);
+                                }
                               }}
                               className="rounded border-border text-primary focus:ring-primary/20"
                             />
                             Same as Present Address
                           </label>
                         </div>
-                        <input type="text" required value={permanentAddress} onChange={(e) => setPermanentAddress(e.target.value)} disabled={sameAsPresentAddress} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="Full permanent address" />
+                        <input type="text" required value={permanentAddress} onChange={(e) => setPermanentAddress(e.target.value)} disabled={sameAsPresentAddress} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="House/Flat No, Building, Street" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-text-muted">Permanent Pincode *</label>
+                        <input type="text" required value={permanentPincode} onChange={(e) => setPermanentPincode(e.target.value)} disabled={sameAsPresentAddress} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="e.g. 500001" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-text-muted">Permanent City *</label>
+                        <input type="text" required value={permanentCity} onChange={(e) => setPermanentCity(e.target.value)} disabled={sameAsPresentAddress} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="e.g. Hyderabad" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-text-muted">Permanent State *</label>
+                        <input type="text" required value={permanentState} onChange={(e) => setPermanentState(e.target.value)} disabled={sameAsPresentAddress} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="e.g. Telangana" />
                       </div>
                     </div>
                   </div>
@@ -1016,7 +1071,7 @@ export default function OnboardingForm({
                       ))}
 
                       {/* Dynamic Third Party Platform Documents */}
-                      {thirdPartyPlatforms.filter(p => p !== 'None').map(platform => (
+                      {[thirdPartyPlatform].filter(p => p !== 'None').map(platform => (
                         <div key={platform} className="flex flex-col gap-2.5 rounded-xl border-2 border-dashed border-border bg-slate-50/50 p-4 relative">
                           <span className="font-sans text-xs font-semibold text-text-muted">{platform} App Profile Screenshot</span>
                           <input 
@@ -1150,7 +1205,6 @@ export default function OnboardingForm({
                           placeholder="e.g. IFSC0001234" 
                           maxLength={11}
                         />
-                        <p className="text-[10px] text-text-muted italic">Auto-fetches bank name.</p>
                       </div>
 
                       <div className="space-y-2">
