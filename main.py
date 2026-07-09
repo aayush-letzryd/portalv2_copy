@@ -283,7 +283,18 @@ def startup_event():
         """)
 
         # Add columns if migrating an existing table
-        for col in ["vendor_type VARCHAR(50)", "driver_id VARCHAR(50)", "custom_rent_amount VARCHAR(50)"]:
+        # Add columns if migrating an existing table
+        for col in [
+            "vendor_type VARCHAR(50)", 
+            "driver_id VARCHAR(50)", 
+            "custom_rent_amount VARCHAR(50)",
+            "emergency_relationship VARCHAR(100)",
+            "platform_details TEXT",
+            "documents_verified BOOLEAN DEFAULT FALSE",
+            "custom_rental_plan BOOLEAN DEFAULT FALSE",
+            "cancelled_cheque_photo TEXT",
+            "signature_photo TEXT"
+        ]:
             cur.execute(f"ALTER TABLE copy_form_onboarding ADD COLUMN IF NOT EXISTS {col};")
 
         # ── copy_rents ───────────────────────────────────────
@@ -370,12 +381,17 @@ def startup_event():
             "status VARCHAR(50)",
             "adjustment_level VARCHAR(50)",
             "adjustment_nature VARCHAR(50)",
-            "time_duration VARCHAR(50)"
+            "time_duration VARCHAR(50)",
+            # NEW LETZRYD DOCUMENT FIELDS
+            "hisaab_number VARCHAR(255)",
+            "contested_line_items TEXT",
+            "severity_level VARCHAR(50)",
+            "cost_level VARCHAR(50)",
+            "escalate_to VARCHAR(100)",
+            "submitter_comments TEXT",
+            "sent_for_approval VARCHAR(10)"
         ]:
             cur.execute(f"ALTER TABLE copy_partner_adjustment ADD COLUMN IF NOT EXISTS {col};")
-
-        cur.execute("ALTER TABLE copy_rents ADD COLUMN IF NOT EXISTS vehicle_manufacturer VARCHAR(100);")
-
         cur.execute("SELECT COUNT(*) FROM copy_partner_adjustment;")
         if cur.fetchone()[0] == 0:
             adj_sql = """
@@ -1517,6 +1533,14 @@ class AdjustmentData(BaseModel):
     final_level_approval_by: Optional[str] = None
     status: str
     photo: Optional[Any] = None
+    # NEW LETZRYD DOCUMENT FIELDS
+    hisaab_number: Optional[str] = None
+    contested_line_items: Optional[str] = None
+    severity_level: Optional[str] = None
+    cost_level: Optional[str] = None
+    escalate_to: Optional[str] = None
+    submitter_comments: Optional[str] = None
+    sent_for_approval: Optional[str] = None
 
 class AllocationData(BaseModel):
     allocation_date: str

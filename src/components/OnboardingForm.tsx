@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { 
   Calendar, MapPin, User, Phone, FileText, CheckCircle, 
   Clock, ArrowLeft, Download, Search, Trash2, Edit, Camera, 
-  Upload, X, RefreshCw, AlertTriangle, ShieldCheck, Filter, Plus, ChevronLeft, UserCheck, Database, IndianRupee
+  Upload, X, RefreshCw, AlertTriangle, ShieldCheck, Filter, Plus, ChevronLeft, UserCheck, Database, IndianRupee, ChevronRight, Check
 } from "lucide-react";
 import { OnboardingRecord, User as UserSession, CITIES } from "../types";
 import CameraCapture from "./CameraCapture";
@@ -19,6 +19,7 @@ export default function OnboardingForm({
   onLogout
 }: OnboardingFormProps) {
   const [activeTab, setActiveTab] = useState<"form" | "registry">("form");
+  const [currentStep, setCurrentStep] = useState(1);
   
   // Header clock state
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString("en-IN", {
@@ -80,7 +81,7 @@ export default function OnboardingForm({
   const [accountNumber, setAccountNumber] = useState("");
   const [ifscCode, setIfscCode] = useState("");
   const [upiId, setUpiId] = useState("");
-  const [entryMode, setEntryMode] = useState<"new" | "walkin">("new");
+  const [entryMode, setEntryMode] = useState<"new" | "walkin" | "retrieve">("new");
   const [thirdPartyPlatform, setThirdPartyPlatform] = useState<string>("None");
   const [platformDetails, setPlatformDetails] = useState<Record<string, {id: string, photo: string | null}>>({});
   const [documentsVerified, setDocumentsVerified] = useState(false);
@@ -107,7 +108,7 @@ export default function OnboardingForm({
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCity, setFilterCity] = useState("all");
   
-  // Top header quick search
+  // Top header quick search (Removed from UI per LetzRyd doc, but kept variable to prevent breaking your code)
   const [retrieveIdInput, setRetrieveIdInput] = useState("");
 
   const displayName = user.name || user.username || "User";
@@ -187,7 +188,6 @@ export default function OnboardingForm({
     }
 
     const payload = {
-
       vendor_type: vendorType,
       driver_id: driverId,
       custom_rent_amount: customRentAmount,
@@ -235,7 +235,6 @@ export default function OnboardingForm({
       const method = editingId ? "PUT" : "POST";
       const token = localStorage.getItem("lr_token");
       
-      
       const res = await fetch(url, {
         method,
         headers: {
@@ -250,7 +249,6 @@ export default function OnboardingForm({
         throw new Error(error.detail || "Failed to save record");
       }
       
-      // Auto-create walk-in if this is a new entry
       if (entryMode === 'new' && !editingId) {
         try {
           await fetch("/api/walkins", {
@@ -260,7 +258,7 @@ export default function OnboardingForm({
               "Authorization": `Bearer ${token}`
             },
             body: JSON.stringify({
-              time_period: "beginning_of_month", // default
+              time_period: "beginning_of_month", 
               person_name: payload.driver_name,
               person_number: payload.phone_number,
               city: payload.city,
@@ -287,11 +285,11 @@ export default function OnboardingForm({
 
   const resetForm = () => {
     setEditingId(null);
+    setCurrentStep(1);
     setVendorType("Individual");
     setDriverId("");
     setCustomRentAmount("");
     setOperatorDrivers([]);
-
     setLinkedWalkinId(null);
     setWalkinSearchInput("");
     setDriverName("");
@@ -377,7 +375,6 @@ export default function OnboardingForm({
       setDifferentWhatsapp(data.whatsapp_number && data.whatsapp_number !== data.phone_number);
       setDob(data.dob || "");
       setCity(data.city || "Hyderabad");
-      // Attempt to parse out city, state, pincode if possible. If not, just put everything in line 1
       const pAddr = data.present_address || "";
       const permAddr = data.permanent_address || "";
       
@@ -407,7 +404,6 @@ export default function OnboardingForm({
       setVendorType(data.vendor_type || "Individual");
       setDriverId(data.driver_id || "");
       setCustomRentAmount(data.custom_rent_amount || "");
-
       
       setSelfiePhoto(data.selfie_photo || null);
       setDlFront(data.dl_front || null);
@@ -439,6 +435,7 @@ export default function OnboardingForm({
       
       setActiveTab("form");
       setRetrieveIdInput("");
+      setCurrentStep(1);
     } catch (err: any) {
       alert(err.message);
     }
@@ -461,17 +458,16 @@ export default function OnboardingForm({
       const data = await res.json();
       
       if (data.length === 0) {
-        alert("No walk-in record found for that query.");
+        alert("No walk-in or unverified record found for that query.");
         return;
       }
       
-      const record = data[0]; // Take the most recent match
-      if (window.confirm(`Found Walk-in: ${record.person_name} (${record.person_number}). Link and autofill?`)) {
+      const record = data[0]; 
+      if (window.confirm(`Found Record: ${record.person_name} (${record.person_number}). Link and autofill?`)) {
         setLinkedWalkinId(record.id);
         if (record.person_name) setDriverName(record.person_name);
         if (record.person_number) setPhoneNumber(record.person_number.replace(/\D/g, '').slice(0, 10));
         if (record.city) {
-          // Attempt to match city string or id to CITIES, default to Hyderabad if not found
           const matchedCity = CITIES.find(c => c.value === record.city || c.text === record.city);
           if (matchedCity) setCity(matchedCity.value);
         }
@@ -503,7 +499,7 @@ export default function OnboardingForm({
       `"${r.city}"`,
       `"${r.dl_number}"`,
       r.dl_expiry_date,
-      `"${r.driver_plan}"`,
+      `"${r.custom_rental_plan ? 'Custom' : 'Standard'}"`,
       `"${r.pan_number}"`,
       `"${r.aadhaar_number}"`,
       r.created_at
@@ -517,7 +513,6 @@ export default function OnboardingForm({
     link.click();
   };
 
-  // Helper for camera uploads
   const removePhoto = (field: "selfie" | "dl_front" | "dl_back" | "pan" | "aadhaar" | "cheque" | "signature") => {
     if (field === "selfie") setSelfiePhoto(null);
     if (field === "dl_front") setDlFront(null);
@@ -537,7 +532,6 @@ export default function OnboardingForm({
           if (data.BANK) {
             const knownBanks = ["State Bank of India", "HDFC Bank", "ICICI Bank", "Axis Bank", "Kotak Mahindra Bank", "IndusInd Bank", "Yes Bank", "Federal Bank", "Bank of Baroda", "Punjab National Bank", "Canara Bank", "Union Bank of India", "IDBI Bank"];
             
-            // basic matching
             const matched = knownBanks.find(b => data.BANK.toLowerCase().includes(b.toLowerCase()) || b.toLowerCase().includes(data.BANK.toLowerCase()));
             if (matched) {
               setBankName(matched);
@@ -578,7 +572,7 @@ export default function OnboardingForm({
             />
             <span className="hidden h-5 border-l border-border sm:inline-block" />
             <span className="hidden font-sans text-xs font-medium text-text-muted sm:inline-block">
-              Driver Onboarding
+              Driver On-boarding
             </span>
           </div>
 
@@ -652,28 +646,8 @@ export default function OnboardingForm({
                     </span>
                   </div>
                   <h1 className="font-sans text-2xl font-bold tracking-tight text-white leading-tight">
-                    {editingId ? `Edit Onboarding Record #${editingId}` : "Onboarding Form"}
+                    {editingId ? `Edit Onboarding Record #${editingId}` : "Driver On-boarding"}
                   </h1>
-                </div>
-
-                <div className="relative z-10 flex w-full sm:w-auto mt-2 sm:mt-0">
-                  <div className="relative flex w-full sm:w-72 items-center">
-                    <Search className="absolute left-3 h-4 w-4 text-white/60" />
-                    <input
-                      type="number"
-                      placeholder="Edit existing record (ID)..."
-                      value={retrieveIdInput}
-                      onChange={(e) => setRetrieveIdInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleRetrieveId()}
-                      className="h-10 w-full rounded-l-xl border border-white/20 bg-white/10 py-2 pl-10 pr-3 text-sm text-white placeholder-white/50 backdrop-blur-md outline-none transition-all focus:border-white focus:bg-white/20 focus:ring-2 focus:ring-white/20"
-                    />
-                    <button 
-                      onClick={handleRetrieveId}
-                      className="h-10 rounded-r-xl border border-white/20 border-l-0 bg-white px-4 text-xs font-bold text-green hover:bg-slate-50 transition-colors"
-                    >
-                      Retrieve
-                    </button>
-                  </div>
                 </div>
               </div>
 
@@ -684,7 +658,7 @@ export default function OnboardingForm({
                     Editing existing Onboarding Record #{editingId}
                   </div>
                   <button 
-                    onClick={() => { setEditingId(null); handleFormSubmit({ preventDefault: () => {} } as any); }} // Hacky reset
+                    onClick={() => { setEditingId(null); handleFormSubmit({ preventDefault: () => {} } as any); }}
                     className="text-xs text-yellow-700 hover:text-yellow-900 font-bold underline"
                   >
                     Cancel Edit
@@ -693,35 +667,36 @@ export default function OnboardingForm({
               )}
 
               <div className="p-8 pb-10">
-                <form onSubmit={handleFormSubmit} className="space-y-8">
+                <form onSubmit={handleFormSubmit}>
                   
-                  {/* Entry Mode Selector */}
+                  {/* Mode Selector */}
                   {!editingId && (
-                    <div className="flex bg-slate-100 p-1 rounded-xl w-full max-w-md mx-auto mb-8">
-                      <button type="button" onClick={() => setEntryMode('new')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${entryMode === 'new' ? 'bg-white text-primary shadow-sm' : 'text-text-muted hover:text-text'}`}>New Entry</button>
-                      <button type="button" onClick={() => setEntryMode('walkin')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${entryMode === 'walkin' ? 'bg-white text-primary shadow-sm' : 'text-text-muted hover:text-text'}`}>Link Walk-in</button>
+                    <div className="flex bg-slate-100 p-1 rounded-xl w-full max-w-lg mx-auto mb-8">
+                      <button type="button" onClick={() => setEntryMode('new')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${entryMode === 'new' ? 'bg-white text-primary shadow-sm' : 'text-text-muted hover:text-text'}`}>New Entry</button>
+                      <button type="button" onClick={() => setEntryMode('walkin')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${entryMode === 'walkin' ? 'bg-white text-primary shadow-sm' : 'text-text-muted hover:text-text'}`}>Link Walk-in</button>
+                      <button type="button" onClick={() => setEntryMode('retrieve')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${entryMode === 'retrieve' ? 'bg-white text-primary shadow-sm' : 'text-text-muted hover:text-text'}`}>Retrieve Unverified</button>
                     </div>
                   )}
 
-                  {/* Optional Walk-in Link */}
-                  {entryMode === 'walkin' && !editingId && (
+                  {/* Retrieval / Walk-in Component */}
+                  {(entryMode === 'walkin' || entryMode === 'retrieve') && !editingId && (
                     <div className="bg-slate-50 border border-border/80 rounded-xl p-5 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div>
                         <h4 className="font-sans text-sm font-bold text-primary flex items-center gap-2">
                           {linkedWalkinId ? <CheckCircle className="h-4 w-4 text-green" /> : <Search className="h-4 w-4 text-green" />} 
-                          Link to Walk-in Record
+                          {entryMode === 'walkin' ? 'Link to Walk-in Record' : 'Retrieve Unverified Record'}
                         </h4>
                         <p className="font-sans text-xs text-text-muted mt-1">
                           {linkedWalkinId 
-                            ? `Successfully linked to Walk-in ID: ${linkedWalkinId}` 
-                            : "Fetch driver details from the Walk-In registry by ID, Phone, or DL Number."}
+                            ? `Successfully linked to Record ID: ${linkedWalkinId}` 
+                            : "Fetch driver details from the registry by Name, Phone, or DL Number."}
                         </p>
                       </div>
                       {!linkedWalkinId ? (
                         <div className="flex w-full sm:w-auto">
                           <input
                             type="text"
-                            placeholder="Search Walk-Ins..."
+                            placeholder="Search..."
                             value={walkinSearchInput}
                             onChange={(e) => setWalkinSearchInput(e.target.value)}
                             onKeyDown={(e) => {
@@ -752,161 +727,81 @@ export default function OnboardingForm({
                     </div>
                   )}
 
-                  {/* Section 1: Candidate Info */}
-                  <div className="flex flex-col gap-5 border-b border-border/40 pb-6">
-                    <h3 className="font-sans text-xs font-bold text-primary flex items-center gap-1.5">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">1</span>
-                      Candidate Information
-                    </h3>
+                  {/* MULTI-STEP PROGRESS BAR */}
+                  <div className="mb-8">
+                    <div className="flex items-center justify-between relative">
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-100 rounded-full z-0"></div>
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-primary rounded-full z-0 transition-all duration-500" style={{ width: `${((currentStep - 1) / 3) * 100}%` }}></div>
+                      
+                      {[
+                        { step: 1, label: "Candidate Info" },
+                        { step: 2, label: "Documents" },
+                        { step: 3, label: "Rent & Operator" },
+                        { step: 4, label: "Bank & Verify" }
+                      ].map((s) => (
+                        <div key={s.step} className="relative z-10 flex flex-col items-center gap-2">
+                          <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${currentStep >= s.step ? 'bg-primary text-white ring-4 ring-primary/20' : 'bg-white border-2 border-slate-200 text-slate-400'}`}>
+                            {currentStep > s.step ? <Check className="h-4 w-4" /> : s.step}
+                          </div>
+                          <span className={`text-[10px] font-bold ${currentStep >= s.step ? 'text-primary' : 'text-slate-400'}`}>{s.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ======================================= */}
+                  {/* STEP 1: CANDIDATE INFO & EMERGENCY      */}
+                  {/* ======================================= */}
+                  <div className={`${currentStep === 1 ? 'block' : 'hidden'} space-y-6 animate-in fade-in slide-in-from-right-4 duration-500`}>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-text-muted">Driver Name *</label>
-                        <input type="text" required value={driverName} onChange={(e) => {
+                        <input type="text" required={currentStep === 1} value={driverName} onChange={(e) => {
                           setDriverName(e.target.value);
                           if (sameAsDriver) setVendorName(e.target.value);
                         }} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Full Name as per Aadhaar" />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-text-muted">Parent's Name *</label>
-                        <input type="text" required value={fatherName} onChange={(e) => setFatherName(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Parent's Full Name" />
+                        <input type="text" required={currentStep === 1} value={fatherName} onChange={(e) => setFatherName(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Parent's Full Name" />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-text-muted">Phone Number *</label>
-                        <input type="tel" required value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="10-digit mobile" maxLength={10} />
-                        <p className="text-[10px] text-text-muted italic">Used for login and verification.</p>
+                        <input type="tel" required={currentStep === 1} value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="10-digit mobile" maxLength={10} />
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <label className="text-xs font-bold text-text-muted">WhatsApp Number</label>
-                          <label className="flex items-center gap-1.5 text-[10px] text-text-muted cursor-pointer hover:text-primary">
-                            <input 
-                              type="checkbox" 
-                              checked={differentWhatsapp}
-                              onChange={(e) => setDifferentWhatsapp(e.target.checked)}
-                              className="rounded border-border text-primary focus:ring-primary/20"
-                            />
-                            Different from Phone?
+                          <label className="flex items-center gap-1 text-[10px] text-text-muted cursor-pointer hover:text-primary">
+                            <input type="checkbox" checked={differentWhatsapp} onChange={(e) => setDifferentWhatsapp(e.target.checked)} className="rounded border-border text-primary focus:ring-primary/20" /> Different?
                           </label>
                         </div>
-                        <input type="tel" disabled={!differentWhatsapp} value={differentWhatsapp ? whatsappNumber : phoneNumber} onChange={(e) => setWhatsappNumber(e.target.value.replace(/\D/g, '').slice(0, 10))} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="Same as phone" maxLength={10} />
+                        <input type="tel" disabled={!differentWhatsapp} value={differentWhatsapp ? whatsappNumber : phoneNumber} onChange={(e) => setWhatsappNumber(e.target.value.replace(/\D/g, '').slice(0, 10))} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none transition-all disabled:opacity-60" placeholder="Same as phone" maxLength={10} />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-text-muted">Date of Birth *</label>
-                        <input type="date" required value={dob} onChange={(e) => setDob(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" />
+                        <input type="date" required={currentStep === 1} value={dob} onChange={(e) => setDob(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-text-muted">Operating City *</label>
-                        <select required value={city} onChange={(e) => setCity(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all">
+                        <select required={currentStep === 1} value={city} onChange={(e) => setCity(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all">
                           {CITIES.map(c => <option key={c.value} value={c.value}>{c.text}</option>)}
                         </select>
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Driver ID *</label>
-                        <input type="text" required value={driverId} onChange={(e) => {
-                          setDriverId(e.target.value);
-                          if (sameAsDriver) setVendorId(e.target.value);
-                        }} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Enter Driver ID" />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <label className="text-xs font-bold text-text-muted">Custom Rent Amount (Optional)</label>
-                          <label className="flex items-center gap-1.5 text-[10px] text-text-muted cursor-pointer hover:text-primary">
-                            <input 
-                              type="checkbox" 
-                              checked={customRentalPlan}
-                              onChange={(e) => setCustomRentalPlan(e.target.checked)}
-                              className="rounded border-border text-primary focus:ring-primary/20"
-                            />
-                            Custom Rent?
-                          </label>
-                        </div>
-                        <div className="relative">
-                          <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
-                          <input type="number" disabled={!customRentalPlan} value={customRentAmount} onChange={(e) => setCustomRentAmount(e.target.value)} className="w-full h-11 pl-9 pr-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="₹ per day" />
-                        </div>
-                      </div>
-                      <div className="space-y-2 col-span-1 md:col-span-2 lg:col-span-3 flex items-center pt-2">
-                        <label className="flex items-center gap-2 text-xs text-text-muted cursor-pointer hover:text-primary">
-                          <input 
-                            type="checkbox" 
-                            checked={sameAsDriver}
-                            onChange={(e) => {
-                              setSameAsDriver(e.target.checked);
-                              if (e.target.checked) {
-                                setVendorName(driverName);
-                                setVendorId(driverId);
-                              }
-                            }}
-                            className="rounded border-border text-primary focus:ring-primary/20"
-                          />
-                          Operator details same as Driver details (Individual)
-                        </label>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Operator Name</label>
-                        <input type="text" value={vendorName} onChange={(e) => setVendorName(e.target.value)} disabled={sameAsDriver} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="Enter Operator Name (if any)" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Operator ID</label>
-                        <input type="text" value={vendorId} onChange={(e) => setVendorId(e.target.value)} disabled={sameAsDriver} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="Enter Operator ID (if any)" />
-                      </div>
-                      
-                      {/* Third Party Platforms */}
-                      <div className="space-y-2 lg:col-span-1">
-                        <label className="text-xs font-bold text-text-muted">Third-Party Platform</label>
-                        <select 
-                          value={thirdPartyPlatform} 
-                          onChange={(e) => setThirdPartyPlatform(e.target.value)} 
-                          className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                        >
-                          <option value="None">None</option>
-                          <option value="Uber">Uber</option>
-                          <option value="Ola">Ola</option>
-                          <option value="Rapido">Rapido</option>
-                          <option value="Indrive">Indrive</option>
-                          <option value="BluSmart">BluSmart</option>
-                        </select>
-                      </div>
 
-                      {/* Present Address Fields */}
                       <div className="space-y-2 lg:col-span-3">
                         <label className="text-xs font-bold text-text-muted">Present Address *</label>
-                        <input type="text" required value={presentAddress} onChange={(e) => {
+                        <input type="text" required={currentStep === 1} value={presentAddress} onChange={(e) => {
                           setPresentAddress(e.target.value);
                           if (sameAsPresentAddress) setPermanentAddress(e.target.value);
                         }} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="House/Flat No, Building, Street" />
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Present Pincode *</label>
-                        <input type="text" required value={presentPincode} onChange={(e) => {
-                          setPresentPincode(e.target.value);
-                          if (sameAsPresentAddress) setPermanentPincode(e.target.value);
-                        }} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="e.g. 500001" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Present City *</label>
-                        <input type="text" required value={presentCity} onChange={(e) => {
-                          setPresentCity(e.target.value);
-                          if (sameAsPresentAddress) setPermanentCity(e.target.value);
-                        }} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="e.g. Hyderabad" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Present State *</label>
-                        <input type="text" required value={presentState} onChange={(e) => {
-                          setPresentState(e.target.value);
-                          if (sameAsPresentAddress) setPermanentState(e.target.value);
-                        }} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="e.g. Telangana" />
-                      </div>
 
-                      {/* Permanent Address Fields */}
                       <div className="space-y-2 lg:col-span-3 pt-2">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between mb-1">
                           <label className="text-xs font-bold text-text-muted">Permanent Address *</label>
-                          <label className="flex items-center gap-2 text-xs text-text-muted cursor-pointer hover:text-primary">
-                            <input 
-                              type="checkbox" 
-                              checked={sameAsPresentAddress}
-                              onChange={(e) => {
+                          <label className="flex items-center gap-1.5 text-xs text-text-muted cursor-pointer hover:text-primary">
+                            <input type="checkbox" checked={sameAsPresentAddress} onChange={(e) => {
                                 setSameAsPresentAddress(e.target.checked);
                                 if (e.target.checked) {
                                   setPermanentAddress(presentAddress);
@@ -914,366 +809,406 @@ export default function OnboardingForm({
                                   setPermanentState(presentState);
                                   setPermanentPincode(presentPincode);
                                 }
-                              }}
-                              className="rounded border-border text-primary focus:ring-primary/20"
-                            />
-                            Same as Present Address
+                              }} className="rounded border-border text-primary focus:ring-primary/20" />
+                            Same as Present
                           </label>
                         </div>
-                        <input type="text" required value={permanentAddress} onChange={(e) => setPermanentAddress(e.target.value)} disabled={sameAsPresentAddress} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="House/Flat No, Building, Street" />
+                        <input type="text" required={currentStep === 1} value={permanentAddress} onChange={(e) => setPermanentAddress(e.target.value)} disabled={sameAsPresentAddress} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="House/Flat No, Building, Street" />
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Permanent Pincode *</label>
-                        <input type="text" required value={permanentPincode} onChange={(e) => setPermanentPincode(e.target.value)} disabled={sameAsPresentAddress} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="e.g. 500001" />
+                    </div>
+
+                    <div className="pt-6 border-t border-border/60">
+                      <h4 className="font-sans text-sm font-bold text-text-dim mb-4">Emergency Contact Details</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-text-muted">Emergency Contact Name *</label>
+                          <input type="text" required={currentStep === 1} value={emergencyName} onChange={(e) => setEmergencyName(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Name" />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-text-muted">Relationship *</label>
+                          <select required={currentStep === 1} value={emergencyRelationship} onChange={(e) => setEmergencyRelationship(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all">
+                            <option value="">Select Relation...</option>
+                            <option value="Father">Father</option>
+                            <option value="Mother">Mother</option>
+                            <option value="Spouse">Spouse</option>
+                            <option value="Sibling">Sibling</option>
+                            <option value="Friend">Friend</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-text-muted">Emergency Phone *</label>
+                          <input type="tel" required={currentStep === 1} value={emergencyPhone} onChange={(e) => setEmergencyPhone(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="10-digit number" />
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Permanent City *</label>
-                        <input type="text" required value={permanentCity} onChange={(e) => setPermanentCity(e.target.value)} disabled={sameAsPresentAddress} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="e.g. Hyderabad" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Permanent State *</label>
-                        <input type="text" required value={permanentState} onChange={(e) => setPermanentState(e.target.value)} disabled={sameAsPresentAddress} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="e.g. Telangana" />
+                    </div>
+
+                    <div className="pt-6 border-t border-border/60">
+                      <h4 className="font-sans text-sm font-bold text-text-dim mb-4">Third-Party Platforms</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-text-muted">Select Platform</label>
+                          <select value={thirdPartyPlatform} onChange={(e) => setThirdPartyPlatform(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none transition-all">
+                            <option value="None">None</option>
+                            <option value="Uber">Uber</option>
+                            <option value="Ola">Ola</option>
+                            <option value="Rapido">Rapido</option>
+                            <option value="Indrive">Indrive</option>
+                            <option value="BluSmart">BluSmart</option>
+                          </select>
+                        </div>
+                        
+                        {thirdPartyPlatform !== 'None' && (
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-text-muted">{thirdPartyPlatform} User ID (If verified)</label>
+                            <input type="text" value={platformDetails[thirdPartyPlatform]?.id || ""} onChange={(e) => setPlatformDetails(prev => ({...prev, [thirdPartyPlatform]: { ...prev[thirdPartyPlatform], id: e.target.value }}))} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none transition-all" placeholder={`Enter verified ${thirdPartyPlatform} ID`} />
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
- 
-                  {/* Section 2: Emergency */}
-                  <div className="flex flex-col gap-5 border-b border-border/40 pb-6 pt-6">
-                    <h3 className="font-sans text-xs font-bold text-primary flex items-center gap-1.5">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">2</span>
-                      Emergency Contact
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Emergency Contact Name *</label>
-                        <input type="text" required value={emergencyName} onChange={(e) => setEmergencyName(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Name" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Relationship *</label>
-                        <select required value={emergencyRelationship} onChange={(e) => setEmergencyRelationship(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all">
-                          <option value="">Select Relation...</option>
-                          <option value="Father">Father</option>
-                          <option value="Mother">Mother</option>
-                          <option value="Spouse">Spouse</option>
-                          <option value="Sibling">Sibling</option>
-                          <option value="Friend">Friend</option>
-                          <option value="Other">Other</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Emergency Phone *</label>
-                        <input type="tel" required value={emergencyPhone} onChange={(e) => setEmergencyPhone(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="10-digit emergency number" />
-                      </div>
-                    </div>
-                  </div>
- 
-                  {/* Section 3: Legal & KYC */}
-                  <div className="flex flex-col gap-5 border-b border-border/40 pb-6 pt-6">
-                    <h3 className="font-sans text-xs font-bold text-primary flex items-center gap-1.5">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">3</span>
-                      Document Verifications
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Driving License Number</label>
-                        <input type="text" value={dlNumber} onChange={(e) => setDlNumber(e.target.value.toUpperCase())} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="e.g. MH04 20110012345" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">DL Expiry Date</label>
-                        <input type="date" value={dlExpiryDate} onChange={(e) => setDlExpiryDate(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">PAN Number *</label>
-                        <input type="text" required value={panNumber} onChange={(e) => setPanNumber(e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 10))} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm font-mono focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="ABCDE1234F" maxLength={10} />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Aadhaar Number *</label>
-                        <input type="text" required value={aadhaarNumber} onChange={(e) => {
-                          let val = e.target.value.replace(/\D/g, '').slice(0, 12);
-                          val = val.replace(/(\d{4})(?=\d)/g, "$1 ");
-                          setAadhaarNumber(val);
-                        }} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm font-mono focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="0000 0000 0000" maxLength={14} />
-                      </div>
-                      
-                      <div className="space-y-2 lg:col-span-2">
-                        <label className="text-xs font-bold text-text-muted">Is PAN Linked to Aadhaar? *</label>
-                        <select required value={panAadhaarLinked} onChange={(e) => setPanAadhaarLinked(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all">
-                          <option value="Yes">Yes, Linked</option>
-                          <option value="No">No, Not Linked</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2 lg:col-span-1">
-                        <label className="text-xs font-bold text-text-muted">Lead Source</label>
-                        <select value={leadSource} onChange={(e) => setLeadSource(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all">
-                          <option value="">Select Source...</option>
-                          <option value="Social Media">Social Media</option>
-                          <option value="Person">Person / Referral</option>
-                          <option value="Agency">Agency</option>
-                          <option value="Direct">Direct</option>
-                          <option value="Other">Other</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2 lg:col-span-1">
-                        <label className="text-xs font-bold text-text-muted">Source Details</label>
-                        <input type="text" value={sourceDetails} onChange={(e) => setSourceDetails(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="e.g. Facebook, John Doe" />
-                      </div>
-                    </div>
+
+                  {/* ======================================= */}
+                  {/* STEP 2: DOCUMENTS & KYC                 */}
+                  {/* ======================================= */}
+                  <div className={`${currentStep === 2 ? 'block' : 'hidden'} space-y-8 animate-in fade-in slide-in-from-right-4 duration-500`}>
                     
-                    {/* Documents Verified Checkbox */}
-                    <div className="mt-6 flex items-start gap-3 bg-slate-50 border border-border p-4 rounded-xl">
-                      <input 
-                        type="checkbox" 
-                        required
-                        id="docs_verified"
-                        checked={documentsVerified}
-                        onChange={(e) => setDocumentsVerified(e.target.checked)}
-                        className="mt-1 h-5 w-5 rounded border-border text-primary focus:ring-primary/20"
-                      />
+                    {/* Driving License Block */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-text-muted">Driving License Number</label>
+                          <input type="text" value={dlNumber} onChange={(e) => setDlNumber(e.target.value.toUpperCase())} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm font-mono focus:bg-white focus:border-primary outline-none transition-all" placeholder="e.g. MH04 20110012345" />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-text-muted">DL Expiry Date</label>
+                          <input type="date" value={dlExpiryDate} onChange={(e) => setDlExpiryDate(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none transition-all" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-2 rounded-xl border border-dashed border-border bg-slate-50 p-3">
+                          <span className="font-sans text-[11px] font-bold text-text-muted text-center">DL Front</span>
+                          {dlFront ? (
+                            <div className="relative flex-grow flex items-center justify-center bg-white rounded-lg p-2">
+                              <img src={dlFront} alt="DL Front" className="max-h-20 object-contain rounded shadow-xs" />
+                              <button type="button" onClick={() => removePhoto("dl_front")} className="absolute top-1 right-1 rounded-full bg-rose-50 text-rose-500 p-1 hover:bg-rose-100 transition-all"><Trash2 className="h-3 w-3" /></button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center flex-grow p-2 gap-2 border border-border/50 bg-white rounded-lg">
+                              <div className="flex gap-1.5 w-full">
+                                <button type="button" onClick={() => setCameraActiveField("dl_front")} className="flex-1 flex items-center justify-center gap-1 rounded bg-primary text-white text-[10px] font-semibold py-1.5 hover:bg-primary-hover transition-colors"><Camera className="h-3 w-3" /> Capture</button>
+                                <label className="flex-1 flex items-center justify-center gap-1 rounded border border-border bg-white text-text-muted text-[10px] font-semibold py-1.5 hover:bg-slate-100 transition-colors cursor-pointer"><Upload className="h-3 w-3" /> Upload<input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, "dl_front")} /></label>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-2 rounded-xl border border-dashed border-border bg-slate-50 p-3">
+                          <span className="font-sans text-[11px] font-bold text-text-muted text-center">DL Back</span>
+                          {dlBack ? (
+                            <div className="relative flex-grow flex items-center justify-center bg-white rounded-lg p-2">
+                              <img src={dlBack} alt="DL Back" className="max-h-20 object-contain rounded shadow-xs" />
+                              <button type="button" onClick={() => removePhoto("dl_back")} className="absolute top-1 right-1 rounded-full bg-rose-50 text-rose-500 p-1 hover:bg-rose-100 transition-all"><Trash2 className="h-3 w-3" /></button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center flex-grow p-2 gap-2 border border-border/50 bg-white rounded-lg">
+                              <div className="flex gap-1.5 w-full">
+                                <button type="button" onClick={() => setCameraActiveField("dl_back")} className="flex-1 flex items-center justify-center gap-1 rounded bg-primary text-white text-[10px] font-semibold py-1.5 hover:bg-primary-hover transition-colors"><Camera className="h-3 w-3" /> Capture</button>
+                                <label className="flex-1 flex items-center justify-center gap-1 rounded border border-border bg-white text-text-muted text-[10px] font-semibold py-1.5 hover:bg-slate-100 transition-colors cursor-pointer"><Upload className="h-3 w-3" /> Upload<input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, "dl_back")} /></label>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <hr className="border-border/60" />
+
+                    {/* PAN Block */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-text-muted">PAN Number *</label>
+                          <input type="text" required={currentStep === 2} value={panNumber} onChange={(e) => setPanNumber(e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 10))} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm font-mono focus:bg-white focus:border-primary outline-none transition-all" placeholder="ABCDE1234F" maxLength={10} />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-text-muted block">Is THE PAN linked to Aadhaar? *</label>
+                          <div className="flex gap-4 mt-2 h-11 items-center">
+                            <label className="flex items-center gap-2 text-sm cursor-pointer text-text">
+                              <input type="radio" name="pan_linked" value="Yes" checked={panAadhaarLinked === "Yes"} onChange={(e) => setPanAadhaarLinked(e.target.value)} className="text-primary focus:ring-primary/20" /> 
+                              Yes, Linked
+                            </label>
+                            <label className="flex items-center gap-2 text-sm cursor-pointer text-text">
+                              <input type="radio" name="pan_linked" value="No" checked={panAadhaarLinked === "No"} onChange={(e) => setPanAadhaarLinked(e.target.value)} className="text-primary focus:ring-primary/20" /> 
+                              No, Not Linked
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-2 rounded-xl border border-dashed border-border bg-slate-50 p-3">
+                          <span className="font-sans text-[11px] font-bold text-text-muted text-center">PAN Card Photo</span>
+                          {panCardPhoto ? (
+                            <div className="relative flex-grow flex items-center justify-center bg-white rounded-lg p-2">
+                              <img src={panCardPhoto} alt="PAN Card" className="max-h-20 object-contain rounded shadow-xs" />
+                              <button type="button" onClick={() => removePhoto("pan")} className="absolute top-1 right-1 rounded-full bg-rose-50 text-rose-500 p-1 hover:bg-rose-100 transition-all"><Trash2 className="h-3 w-3" /></button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center flex-grow p-2 gap-2 border border-border/50 bg-white rounded-lg">
+                              <div className="flex gap-1.5 w-full">
+                                <button type="button" onClick={() => setCameraActiveField("pan")} className="flex-1 flex items-center justify-center gap-1 rounded bg-primary text-white text-[10px] font-semibold py-1.5 hover:bg-primary-hover transition-colors"><Camera className="h-3 w-3" /> Capture</button>
+                                <label className="flex-1 flex items-center justify-center gap-1 rounded border border-border bg-white text-text-muted text-[10px] font-semibold py-1.5 hover:bg-slate-100 transition-colors cursor-pointer"><Upload className="h-3 w-3" /> Upload<input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, "pan")} /></label>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <hr className="border-border/60" />
+
+                    {/* Aadhaar & Selfie Block */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-text-muted">Aadhaar Number *</label>
+                          <input type="text" required={currentStep === 2} value={aadhaarNumber} onChange={(e) => {
+                            let val = e.target.value.replace(/\D/g, '').slice(0, 12);
+                            val = val.replace(/(\d{4})(?=\d)/g, "$1 ");
+                            setAadhaarNumber(val);
+                          }} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm font-mono focus:bg-white focus:border-primary outline-none transition-all" placeholder="0000 0000 0000" maxLength={14} />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-2 rounded-xl border border-dashed border-border bg-slate-50 p-3">
+                          <span className="font-sans text-[11px] font-bold text-text-muted text-center">Aadhaar Card Photo</span>
+                          {aadhaarPhoto ? (
+                            <div className="relative flex-grow flex items-center justify-center bg-white rounded-lg p-2">
+                              <img src={aadhaarPhoto} alt="Aadhaar Card" className="max-h-20 object-contain rounded shadow-xs" />
+                              <button type="button" onClick={() => removePhoto("aadhaar")} className="absolute top-1 right-1 rounded-full bg-rose-50 text-rose-500 p-1 hover:bg-rose-100 transition-all"><Trash2 className="h-3 w-3" /></button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center flex-grow p-2 gap-2 border border-border/50 bg-white rounded-lg">
+                              <div className="flex gap-1.5 w-full">
+                                <button type="button" onClick={() => setCameraActiveField("aadhaar")} className="flex-1 flex items-center justify-center gap-1 rounded bg-primary text-white text-[10px] font-semibold py-1.5 hover:bg-primary-hover transition-colors"><Camera className="h-3 w-3" /> Capture</button>
+                                <label className="flex-1 flex items-center justify-center gap-1 rounded border border-border bg-white text-text-muted text-[10px] font-semibold py-1.5 hover:bg-slate-100 transition-colors cursor-pointer"><Upload className="h-3 w-3" /> Upload<input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, "aadhaar")} /></label>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-2 rounded-xl border border-dashed border-border bg-slate-50 p-3">
+                          <span className="font-sans text-[11px] font-bold text-text-muted text-center">Driver Selfie</span>
+                          {selfiePhoto ? (
+                            <div className="relative flex-grow flex items-center justify-center bg-white rounded-lg p-2">
+                              <img src={selfiePhoto} alt="Selfie" className="max-h-20 object-contain rounded shadow-xs" />
+                              <button type="button" onClick={() => removePhoto("selfie")} className="absolute top-1 right-1 rounded-full bg-rose-50 text-rose-500 p-1 hover:bg-rose-100 transition-all"><Trash2 className="h-3 w-3" /></button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center flex-grow p-2 gap-2 border border-border/50 bg-white rounded-lg">
+                              <div className="flex gap-1.5 w-full">
+                                <button type="button" onClick={() => setCameraActiveField("selfie")} className="flex-1 flex items-center justify-center gap-1 rounded bg-primary text-white text-[10px] font-semibold py-1.5 hover:bg-primary-hover transition-colors"><Camera className="h-3 w-3" /> Capture</button>
+                                <label className="flex-1 flex items-center justify-center gap-1 rounded border border-border bg-white text-text-muted text-[10px] font-semibold py-1.5 hover:bg-slate-100 transition-colors cursor-pointer"><Upload className="h-3 w-3" /> Upload<input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, "selfie")} /></label>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 flex items-start gap-3 bg-blue-50/50 border border-blue-100 p-4 rounded-xl">
+                      <input type="checkbox" required={currentStep === 2} id="docs_verified" checked={documentsVerified} onChange={(e) => setDocumentsVerified(e.target.checked)} className="mt-1 h-5 w-5 rounded border-border text-primary focus:ring-primary/20" />
                       <label htmlFor="docs_verified" className="text-sm font-semibold text-text-muted cursor-pointer">
-                        I verify that the candidate's name matches exactly across all uploaded documents (Aadhaar, PAN, DL, Bank details).
+                        I verify that the candidate's name and photo match exactly across all uploaded documents (Aadhaar, PAN, DL).
                       </label>
                     </div>
-                  </div>
- 
-                  {/* Section 4: Document Captures */}
-                  <div className="flex flex-col gap-5 pt-6">
-                    <h3 className="font-sans text-xs font-bold text-primary flex items-center gap-1.5">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">4</span>
-                      Document Captures
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      
-                      {[
-                        { id: "selfie", label: "Driver Selfie", val: selfiePhoto, setter: setSelfiePhoto },
-                        { id: "dl_front", label: "DL Front Image", val: dlFront, setter: setDlFront },
-                        { id: "dl_back", label: "DL Back Image", val: dlBack, setter: setDlBack },
-                        { id: "pan", label: "PAN Card Image", val: panCardPhoto, setter: setPanCardPhoto },
-                        { id: "aadhaar", label: "Aadhaar Card Image", val: aadhaarPhoto, setter: setAadhaarPhoto },
-                        { id: "cheque", label: "Cancelled Cheque (Optional)", val: cancelledChequePhoto, setter: setCancelledChequePhoto },
-                        { id: "signature", label: "Signature", val: signaturePhoto, setter: setSignaturePhoto },
-                      ].map((doc) => (
-                        <div key={doc.id} className="flex flex-col gap-2.5 rounded-xl border-2 border-dashed border-border bg-slate-50/50 p-4 relative">
-                          <span className="font-sans text-xs font-semibold text-text-muted">{doc.label}</span>
-                          
-                          {doc.val ? (
-                            <div className="relative flex flex-col items-center justify-center bg-slate-100 rounded-lg p-3 min-h-[140px]">
-                              <img 
-                                src={doc.val} 
-                                alt={`${doc.label} Thumbnail`} 
-                                className="max-h-28 w-auto object-contain rounded-md shadow-xs border border-border"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => doc.setter(null)}
-                                className="absolute top-2 right-2 rounded-full bg-rose-50 border border-rose-200 p-1.5 text-rose-500 hover:bg-rose-100 transition-all cursor-pointer"
-                                title="Remove image"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col items-center justify-center text-center p-6 min-h-[140px] gap-3 border border-border/50 bg-white rounded-lg">
-                              <div className="rounded-full bg-primary/10 p-3 text-primary">
-                                <Camera className="h-5 w-5" />
-                              </div>
-                              <span className="font-sans text-xs text-text-dim">No photo captured</span>
-                              <div className="flex gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => setCameraActiveField(doc.id as any)}
-                                  className="flex items-center gap-1.5 rounded-lg bg-primary hover:bg-primary-hover text-white text-[10px] font-semibold px-3 py-1.5 transition-colors cursor-pointer"
-                                >
-                                  <Camera className="h-3 w-3" />
-                                  Capture
-                                </button>
-                                <label className="flex items-center gap-1.5 rounded-lg border border-border bg-white hover:bg-slate-100 text-text-muted text-[10px] font-semibold px-3 py-1.5 transition-colors cursor-pointer">
-                                  <Upload className="h-3 w-3" />
-                                  Upload
-                                  <input 
-                                    type="file" 
-                                    accept="image/*" 
-                                    className="hidden" 
-                                    onChange={(e) => handleFileUpload(e, doc.id as any)}
-                                  />
-                                </label>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))}
 
-                      {/* Dynamic Third Party Platform Documents */}
-                      {[thirdPartyPlatform].filter(p => p !== 'None').map(platform => (
-                        <div key={platform} className="flex flex-col gap-2.5 rounded-xl border-2 border-dashed border-border bg-slate-50/50 p-4 relative">
-                          <span className="font-sans text-xs font-semibold text-text-muted">{platform} App Profile Screenshot</span>
-                          <input 
-                            type="text" 
-                            placeholder={`${platform} ID (Optional)`}
-                            value={platformDetails[platform]?.id || ""}
-                            onChange={(e) => setPlatformDetails(prev => ({...prev, [platform]: { ...prev[platform], id: e.target.value }}))}
-                            className="h-8 px-2 text-xs border border-border rounded"
-                          />
-                          {platformDetails[platform]?.photo ? (
-                            <div className="relative flex flex-col items-center justify-center bg-slate-100 rounded-lg p-3 min-h-[100px]">
-                              <img 
-                                src={platformDetails[platform].photo!} 
-                                alt={`${platform} Thumbnail`} 
-                                className="max-h-20 w-auto object-contain rounded-md shadow-xs border border-border"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setPlatformDetails(prev => ({...prev, [platform]: { ...prev[platform], photo: null }}))}
-                                className="absolute top-2 right-2 rounded-full bg-rose-50 border border-rose-200 p-1.5 text-rose-500 hover:bg-rose-100 transition-all cursor-pointer"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="flex gap-2 justify-center mt-2">
-                              <label className="flex items-center gap-1.5 rounded-lg border border-border bg-white hover:bg-slate-100 text-text-muted text-[10px] font-semibold px-3 py-1.5 transition-colors cursor-pointer w-full justify-center">
-                                <Upload className="h-3 w-3" /> Upload
-                                <input 
-                                  type="file" 
-                                  accept="image/*" 
-                                  className="hidden" 
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                      const reader = new FileReader();
-                                      reader.onloadend = () => {
-                                        if (typeof reader.result === "string") {
-                                          setPlatformDetails(prev => ({...prev, [platform]: { ...prev[platform], photo: reader.result as string }}));
-                                        }
-                                      };
-                                      reader.readAsDataURL(file);
-                                    }
-                                  }}
-                                />
-                              </label>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
                   </div>
- 
-                  {/* Section 5: Bank Details */}
-                  <div className="flex flex-col gap-5 border-b border-border/40 pb-6 pt-6">
-                    <h3 className="font-sans text-xs font-bold text-primary flex items-center gap-1.5">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">5</span>
-                      Bank Details
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                  {/* ======================================= */}
+                  {/* STEP 3: RENT & OPERATOR DETAILS         */}
+                  {/* ======================================= */}
+                  <div className={`${currentStep === 3 ? 'block' : 'hidden'} space-y-6 animate-in fade-in slide-in-from-right-4 duration-500`}>
+                    
+                    <h4 className="font-sans text-sm font-bold text-text-dim border-b border-border pb-2">Rental Configuration</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Bank Name</label>
-                        <select 
-                          value={bankName} 
-                          onChange={(e) => setBankName(e.target.value)} 
-                          className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                        >
-                          <option value="State Bank of India">State Bank of India (SBI)</option>
-                          <option value="HDFC Bank">HDFC Bank</option>
-                          <option value="ICICI Bank">ICICI Bank</option>
-                          <option value="Axis Bank">Axis Bank</option>
-                          <option value="Kotak Mahindra Bank">Kotak Mahindra Bank</option>
-                          <option value="IndusInd Bank">IndusInd Bank</option>
-                          <option value="Yes Bank">Yes Bank</option>
-                          <option value="Federal Bank">Federal Bank</option>
-                          <option value="Bank of Baroda">Bank of Baroda</option>
-                          <option value="Punjab National Bank">Punjab National Bank (PNB)</option>
-                          <option value="Canara Bank">Canara Bank</option>
-                          <option value="Union Bank of India">Union Bank of India</option>
-                          <option value="IDBI Bank">IDBI Bank</option>
-                          <option value="Other">Other (Specify below)</option>
-                        </select>
+                        <div className="flex items-center gap-2 mb-2">
+                          <input type="checkbox" id="customRent" checked={customRentalPlan} onChange={(e) => setCustomRentalPlan(e.target.checked)} className="rounded border-border text-primary focus:ring-primary/20" />
+                          <label htmlFor="customRent" className="text-xs font-bold text-text-muted cursor-pointer">Enable Custom Rental Plan?</label>
+                        </div>
+                        <div className="relative">
+                          <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
+                          <input type="number" disabled={!customRentalPlan} required={currentStep === 3 && customRentalPlan} value={customRentAmount} onChange={(e) => setCustomRentAmount(e.target.value)} className="w-full h-11 pl-9 pr-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none transition-all disabled:opacity-60" placeholder="₹ per day" />
+                        </div>
+                        {customRentalPlan && <p className="text-[10px] text-amber-600 italic">This will trigger a separate approval workflow for custom rates.</p>}
                       </div>
+                    </div>
 
-                      {bankName === "Other" && (
+                    <h4 className="font-sans text-sm font-bold text-text-dim border-b border-border pb-2 mt-8">Operator Linkage</h4>
+                    <div className="space-y-4">
+                      <label className="flex items-center gap-2 text-sm text-text-muted cursor-pointer hover:text-primary w-max">
+                        <input type="checkbox" checked={sameAsDriver} onChange={(e) => {
+                          setSameAsDriver(e.target.checked);
+                          if (e.target.checked) {
+                            setVendorName(driverName);
+                            setVendorId(driverId);
+                          }
+                        }} className="rounded border-border text-primary focus:ring-primary/20" />
+                        Operator details same as Driver details (Individual)
+                      </label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted">Specify Bank Name *</label>
-                          <input 
-                            type="text" 
-                            required={bankName === "Other"} 
-                            value={otherBankName} 
-                            onChange={(e) => setOtherBankName(e.target.value)} 
-                            className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
-                            placeholder="Enter bank name" 
-                          />
+                          <label className="text-xs font-bold text-text-muted">Operator Name</label>
+                          <input type="text" value={vendorName} onChange={(e) => setVendorName(e.target.value)} disabled={sameAsDriver} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none transition-all disabled:opacity-60" placeholder="Fetch/Enter Operator Name (Optional)" />
                         </div>
-                      )}
-
-                      <div className="space-y-2 lg:col-span-3">
-                        <label className="flex items-center gap-2 text-xs font-bold text-text-muted cursor-pointer hover:text-primary">
-                          <input 
-                            type="checkbox" 
-                            checked={sameAsCandidateName}
-                            onChange={(e) => setSameAsCandidateName(e.target.checked)}
-                            className="rounded border-border text-primary focus:ring-primary/20"
-                          />
-                          Account Holder Name is same as Candidate's Name ({driverName || "N/A"})
-                        </label>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Account Number</label>
-                        <input 
-                          type="text" 
-                          value={accountNumber} 
-                          onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ''))} 
-                          className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
-                          placeholder="9 to 18 digit account no." 
-                          maxLength={18}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">IFSC Code</label>
-                        <input 
-                          type="text" 
-                          value={ifscCode} 
-                          onChange={(e) => setIfscCode(e.target.value.toUpperCase())} 
-                          onBlur={handleIfscBlur}
-                          className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
-                          placeholder="e.g. IFSC0001234" 
-                          maxLength={11}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">UPI ID</label>
-                        <input 
-                          type="text" 
-                          value={upiId} 
-                          onChange={(e) => setUpiId(e.target.value.toLowerCase())} 
-                          className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
-                          placeholder="e.g. username@upi" 
-                        />
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-text-muted">Operator ID</label>
+                          <input type="text" value={vendorId} onChange={(e) => setVendorId(e.target.value)} disabled={sameAsDriver} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none transition-all disabled:opacity-60" placeholder="Fetch/Enter Operator ID (Optional)" />
+                        </div>
                       </div>
                     </div>
+
                   </div>
 
-                  <div className="pt-6 border-t border-border/40 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="flex flex-col gap-1 max-w-sm">
-                      <p className="text-xs text-text-muted leading-relaxed">
-                        By submitting this form, you verify that all uploaded documents have been inspected physically.
-                      </p>
-                      <p className="text-[10px] font-bold text-red-500">* Means Mandatory</p>
+                  {/* ======================================= */}
+                  {/* STEP 4: BANK DETAILS & SIGNATURE        */}
+                  {/* ======================================= */}
+                  <div className={`${currentStep === 4 ? 'block' : 'hidden'} space-y-6 animate-in fade-in slide-in-from-right-4 duration-500`}>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {/* Left: Inputs */}
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-text-muted">Bank Name</label>
+                          <select value={bankName} onChange={(e) => setBankName(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none transition-all">
+                            <option value="State Bank of India">State Bank of India (SBI)</option>
+                            <option value="HDFC Bank">HDFC Bank</option>
+                            <option value="ICICI Bank">ICICI Bank</option>
+                            <option value="Axis Bank">Axis Bank</option>
+                            <option value="Kotak Mahindra Bank">Kotak Mahindra Bank</option>
+                            <option value="IndusInd Bank">IndusInd Bank</option>
+                            <option value="Yes Bank">Yes Bank</option>
+                            <option value="Federal Bank">Federal Bank</option>
+                            <option value="Bank of Baroda">Bank of Baroda</option>
+                            <option value="Punjab National Bank">Punjab National Bank (PNB)</option>
+                            <option value="Canara Bank">Canara Bank</option>
+                            <option value="Union Bank of India">Union Bank of India</option>
+                            <option value="IDBI Bank">IDBI Bank</option>
+                            <option value="Other">Other (Specify below)</option>
+                          </select>
+                        </div>
+                        {bankName === "Other" && (
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-text-muted">Specify Bank Name *</label>
+                            <input type="text" required={currentStep === 4 && bankName === "Other"} value={otherBankName} onChange={(e) => setOtherBankName(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none transition-all" placeholder="Enter bank name" />
+                          </div>
+                        )}
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-text-muted">IFSC Code</label>
+                          <input type="text" value={ifscCode} onChange={(e) => setIfscCode(e.target.value.toUpperCase())} onBlur={handleIfscBlur} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm font-mono focus:bg-white focus:border-primary outline-none transition-all" placeholder="e.g. IFSC0001234" maxLength={11} />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-text-muted">Account Number</label>
+                          <input type="text" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ''))} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm font-mono focus:bg-white focus:border-primary outline-none transition-all" placeholder="9 to 18 digit account no." maxLength={18} />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-text-muted">UPI ID</label>
+                          <input type="text" value={upiId} onChange={(e) => setUpiId(e.target.value.toLowerCase())} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none transition-all" placeholder="e.g. username@upi" />
+                        </div>
+                        <div className="pt-2">
+                          <label className="flex items-center gap-2 text-sm font-bold text-text-muted cursor-pointer hover:text-primary">
+                            <input type="checkbox" checked={sameAsCandidateName} onChange={(e) => setSameAsCandidateName(e.target.checked)} className="rounded border-border text-primary focus:ring-primary/20" />
+                            Account Holder Name is same as Candidate's Name ({driverName || "N/A"})
+                          </label>
+                        </div>
+                      </div>
+                      
+                      {/* Right: Cheque and Signature Captures */}
+                      <div className="grid grid-cols-1 gap-6">
+                        <div className="h-40 flex flex-col gap-2 rounded-xl border border-dashed border-border bg-slate-50 p-3">
+                          <span className="font-sans text-[11px] font-bold text-text-muted text-center">Cancelled Cheque (Optional)</span>
+                          {cancelledChequePhoto ? (
+                            <div className="relative flex-grow flex items-center justify-center bg-white rounded-lg p-2">
+                              <img src={cancelledChequePhoto} alt="Cheque" className="max-h-24 object-contain rounded shadow-xs" />
+                              <button type="button" onClick={() => removePhoto("cheque")} className="absolute top-1 right-1 rounded-full bg-rose-50 text-rose-500 p-1 hover:bg-rose-100 transition-all"><Trash2 className="h-3 w-3" /></button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center flex-grow p-2 gap-2 border border-border/50 bg-white rounded-lg">
+                              <div className="flex gap-1.5 w-full">
+                                <button type="button" onClick={() => setCameraActiveField("cheque")} className="flex-1 flex items-center justify-center gap-1 rounded bg-primary text-white text-[10px] font-semibold py-1.5 hover:bg-primary-hover transition-colors"><Camera className="h-3 w-3" /> Capture</button>
+                                <label className="flex-1 flex items-center justify-center gap-1 rounded border border-border bg-white text-text-muted text-[10px] font-semibold py-1.5 hover:bg-slate-100 transition-colors cursor-pointer"><Upload className="h-3 w-3" /> Upload<input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, "cheque")} /></label>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="h-40 flex flex-col gap-2 rounded-xl border border-dashed border-border bg-slate-50 p-3">
+                          <span className="font-sans text-[11px] font-bold text-text-muted text-center">Driver Signature (Capture Physical Form)</span>
+                          {signaturePhoto ? (
+                            <div className="relative flex-grow flex items-center justify-center bg-white rounded-lg p-2">
+                              <img src={signaturePhoto} alt="Signature" className="max-h-24 object-contain rounded shadow-xs" />
+                              <button type="button" onClick={() => removePhoto("signature")} className="absolute top-1 right-1 rounded-full bg-rose-50 text-rose-500 p-1 hover:bg-rose-100 transition-all"><Trash2 className="h-3 w-3" /></button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center flex-grow p-2 gap-2 border border-border/50 bg-white rounded-lg">
+                              <div className="flex gap-1.5 w-full">
+                                <button type="button" onClick={() => setCameraActiveField("signature")} className="flex-1 flex items-center justify-center gap-1 rounded bg-primary text-white text-[10px] font-semibold py-1.5 hover:bg-primary-hover transition-colors"><Camera className="h-3 w-3" /> Capture</button>
+                                <label className="flex-1 flex items-center justify-center gap-1 rounded border border-border bg-white text-text-muted text-[10px] font-semibold py-1.5 hover:bg-slate-100 transition-colors cursor-pointer"><Upload className="h-3 w-3" /> Upload<input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, "signature")} /></label>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <button
-                      type="submit"
-                      className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-sm font-bold text-white hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all active:scale-95"
+
+                  </div>
+
+                  {/* Form Footer Navigation */}
+                  <div className="pt-8 mt-8 border-t border-border flex items-center justify-between">
+                    <button 
+                      type="button" 
+                      onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border text-sm font-bold text-text-muted hover:bg-slate-50 transition-colors cursor-pointer ${currentStep === 1 ? 'invisible' : 'visible'}`}
                     >
-                      <CheckCircle className="h-5 w-5" />
-                      {editingId ? "Update Onboarding Record" : "Submit Onboarding Record"}
+                      <ChevronLeft className="h-4 w-4" /> Back
                     </button>
+                    
+                    {currentStep < 4 ? (
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          const form = e.currentTarget.closest('form');
+                          if (form && !form.checkValidity()) {
+                            form.reportValidity();
+                            return;
+                          }
+                          setCurrentStep(currentStep + 1);
+                        }}
+                        className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-hover shadow-sm transition-colors cursor-pointer"
+                      >
+                        Next Step <ChevronRight className="h-4 w-4" />
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-4">
+                        <p className="hidden sm:block text-[10px] text-text-muted leading-tight max-w-[200px]">
+                          By submitting, you verify all documents have been inspected physically.
+                        </p>
+                        <button
+                          type="submit"
+                          className="flex items-center gap-2 px-8 py-3 rounded-xl bg-green text-white text-sm font-bold hover:bg-emerald-600 shadow-lg shadow-green/20 transition-all active:scale-95 cursor-pointer"
+                        >
+                          <CheckCircle className="h-5 w-5" /> {editingId ? "Update Record" : "Submit Onboarding"}
+                        </button>
+                      </div>
+                    )}
                   </div>
+
                 </form>
               </div>
             </div>
           </div>
         )}
 
-        {/* --- REGISTRY TAB --- */}
+        {/* --- REGISTRY TAB (UNTOUCHED) --- */}
         {activeTab === "registry" && (
           <div className="space-y-6">
             
@@ -1302,7 +1237,7 @@ export default function OnboardingForm({
               <div className="rounded-xl border border-border bg-white p-5 shadow-xs flex justify-between items-center">
                 <div className="flex flex-col">
                   <span className="font-sans text-[10px] font-bold text-text-dim">
-                    No. of Vendors
+                    No. of Operators
                   </span>
                   <span className="font-sans text-3xl font-extrabold text-green mt-1">
                     {stats.vendor_count}
@@ -1418,7 +1353,7 @@ export default function OnboardingForm({
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim text-left">Driver Details</th>
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim text-left">License & KYC</th>
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim text-left">Location</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim text-left">Vendor & Emergency</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim text-left">Operator & Emergency</th>
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim text-center">Actions</th>
                     </tr>
                   </thead>
@@ -1521,6 +1456,8 @@ export default function OnboardingForm({
             if (cameraActiveField === "dl_back") setDlBack(dataUrl);
             if (cameraActiveField === "pan") setPanCardPhoto(dataUrl);
             if (cameraActiveField === "aadhaar") setAadhaarPhoto(dataUrl);
+            if (cameraActiveField === "cheque") setCancelledChequePhoto(dataUrl);
+            if (cameraActiveField === "signature") setSignaturePhoto(dataUrl);
             setCameraActiveField(null);
           }}
         />

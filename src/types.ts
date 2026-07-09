@@ -4,15 +4,15 @@ export type OnboardingOutcome = "Onboarding Process Initiated" | "Successfully O
 export interface WalkInRecord {
   id: number;
   visitor_type: VisitorType;
-  event_date: string; // YYYY-MM-DD
+  event_date: string; 
   city: string;
   operating_place?: string;
   person_name: string;
   person_number: string;
   dl_number: string;
   aadhaar_number?: string;
-  aadhaar_image?: string; // base64 data URL
-  dl_image?: string; // base64 data URL
+  aadhaar_image?: string; 
+  dl_image?: string; 
   visiting_reason: string;
   joined_status: OnboardingOutcome;
   remarks?: string;
@@ -32,6 +32,7 @@ export interface OnboardingRecord {
   permanent_address: string;
   emergency_name: string;
   emergency_phone: string;
+  emergency_relationship?: string;
   dl_number?: string;
   dl_expiry_date?: string;
   lead_source?: string;
@@ -43,14 +44,20 @@ export interface OnboardingRecord {
   dl_back?: string;
   pan_card_photo?: string;
   aadhaar_card_photo?: string;
-  vendor_name?: string;
+  vendor_name?: string; 
   vendor_id?: string;
-  father_name: string;
+  father_name: string; 
   bank_name?: string;
   other_bank_name?: string;
   account_number?: string;
   ifsc_code?: string;
   upi_id?: string;
+  documents_verified?: boolean;
+  custom_rental_plan?: boolean;
+  custom_rent_amount?: string;
+  cancelled_cheque_photo?: string;
+  signature_photo?: string;
+  platform_details?: string | Record<string, any>;
   created_at: string;
 }
 
@@ -79,6 +86,14 @@ export interface AdjustmentRecord {
   status: "Completed" | "Hold" | "Declined";
   photo?: string;
   created_at: string;
+  // NEW LETZRYD DOCUMENT FIELDS
+  hisaab_number?: string;
+  contested_line_items?: string;
+  severity_level?: string;
+  cost_level?: string;
+  escalate_to?: string;
+  submitter_comments?: string;
+  sent_for_approval?: string;
 }
 
 export interface AllocationRecord {
@@ -113,7 +128,6 @@ export interface ExpenseRecord {
   is_migrated?: boolean;
   created_at: string;
 }
-
 
 export interface User {
   username: string;
@@ -296,7 +310,6 @@ export interface AccidentRecord {
 
 export interface MaintenanceRecord {
   id: number;
-  // Panel 1
   vehicle_number: string;
   city_name: string;
   model: string;
@@ -306,8 +319,6 @@ export interface MaintenanceRecord {
   vehicle_in_date: string;
   initial_remarks?: string;
   vehicle_damage_photos?: string;
-  
-  // Panel 2
   workshop_name: string;
   allocation_date?: string;
   estimated_delivery_date?: string;
@@ -318,8 +329,6 @@ export interface MaintenanceRecord {
   approved_by?: string;
   approval_date?: string;
   approval_file?: string;
-  
-  // Panel 3
   maintenance_status?: string;
   vehicle_status_date?: string;
   daily_vehicle_remarks?: string;
@@ -329,8 +338,6 @@ export interface MaintenanceRecord {
   tat?: string;
   pdi_status?: string;
   maintenance_steps?: any[] | string;
-  
-  // Panel 4
   invoice_no?: string;
   invoice_date?: string;
   invoice_amount?: string;
@@ -342,8 +349,6 @@ export interface MaintenanceRecord {
   entry_remarks?: string;
   invoice_file?: string;
   invoices?: any[] | string;
-  
-  // Panel 5 (PDI)
   pdi_front_photo?: string;
   pdi_back_photo?: string;
   pdi_lh_photo?: string;
@@ -366,7 +371,6 @@ export interface MaintenanceRecord {
   pdi_lh_front_tyre?: string;
   pdi_rh_rear_tyre?: string;
   pdi_lh_rear_tyre?: string;
-  
   created_at?: string;
 }
 

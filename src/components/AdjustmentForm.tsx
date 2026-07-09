@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { 
   Calendar, MapPin, User, Phone, FileText, CheckCircle, 
   Clock, ArrowLeft, Download, Search, Trash2, Edit, Camera, 
-  Upload, X, RefreshCw, AlertTriangle, ShieldCheck, Filter, Plus, ChevronLeft, Settings, DollarSign
+  Upload, X, RefreshCw, AlertTriangle, ShieldCheck, Filter, Plus, ChevronLeft, IndianRupee, Settings, DollarSign
 } from "lucide-react";
 import { AdjustmentRecord, User as UserSession, CITIES } from "../types";
 import CameraCapture from "./CameraCapture";
@@ -13,12 +13,15 @@ interface AdjustmentFormProps {
   onLogout: () => void;
 }
 
+const CONTESTED_OPTIONS = ["Base Rent", "Tolls", "Penalties", "Vehicle Damage", "Device Deposit", "Others"];
+
 export default function AdjustmentForm({ 
   user, 
   onBackToSelector, 
   onLogout
 }: AdjustmentFormProps) {
   const [activeTab, setActiveTab] = useState<"form" | "registry">("form");
+  const [formMode, setFormMode] = useState<"new" | "edit">("new");
   
   // Header clock state
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString("en-IN", {
@@ -36,32 +39,29 @@ export default function AdjustmentForm({
     return () => clearInterval(timer);
   }, []);
 
-  // Form Fields State
+  // LetzRyd Document State Fields
   const [editingId, setEditingId] = useState<number | null>(null);
   const [partnerName, setPartnerName] = useState("");
   const [partnerCode, setPartnerCode] = useState("");
   const [driverId, setDriverId] = useState("");
-  const [partnerNumber, setPartnerNumber] = useState("");
-  const [vehicleNumber, setVehicleNumber] = useState("");
-  const [cityName, setCityName] = useState("Hyderabad");
-  const [partnerType, setPartnerType] = useState<"Individual" | "Fleet" | "Rental">("Individual");
   
-  const [adjustmentLevel, setAdjustmentLevel] = useState<"Vehicle" | "Operator" | "Operator+Driver" | "Individual">("Vehicle");
-  const [adjustmentNature, setAdjustmentNature] = useState<"Monetary" | "Time">("Monetary");
-  const [timeDuration, setTimeDuration] = useState("");
-  const [customTimeDuration, setCustomTimeDuration] = useState("");
-
-  const [adjustmentType, setAdjustmentType] = useState<"Credit" | "Debit">("Credit");
-  const [adjustmentDate, setAdjustmentDate] = useState(new Date().toISOString().split("T")[0]);
+  // New Fields
+  const [hisaabNumber, setHisaabNumber] = useState("");
+  const [adjustmentLevel, setAdjustmentLevel] = useState<"Operator" | "Driver">("Operator");
+  const [adjustmentType, setAdjustmentType] = useState<"Credit" | "Debit" | "Waiver">("Credit");
+  const [adjustmentDate, setAdjustmentDate] = useState(new Date().toISOString().split("T")[0]); // Hardcoded today
   const [enterAmount, setEnterAmount] = useState("");
-  const [remittanceTowards, setRemittanceTowards] = useState("");
-  const [adjustmentRelatedTo, setAdjustmentRelatedTo] = useState("");
-  const [remarks, setRemarks] = useState("");
+  const [contestedLineItems, setContestedLineItems] = useState<string[]>([]);
+  
+  // Approvals & Proof
+  const [severityLevel, setSeverityLevel] = useState("Low");
+  const [costLevel, setCostLevel] = useState("Minor (<₹1k)");
+  const [escalateTo, setEscalateTo] = useState("");
+  const [submitterComments, setSubmitterComments] = useState("");
+  const [sentForApproval, setSentForApproval] = useState<"Yes" | "No">("No");
 
-  const [firstLevelApprovalBy, setFirstLevelApprovalBy] = useState("");
+  // Legacy fields (kept in state for backend compatibility)
   const [financeTeamStatus, setFinanceTeamStatus] = useState<"Approved" | "Pending" | "Rejected">("Pending");
-  const [financeTeamRemarks, setFinanceTeamRemarks] = useState("");
-  const [finalLevelApprovalBy, setFinalLevelApprovalBy] = useState("");
   const [status, setStatus] = useState<"Completed" | "Hold" | "Declined">("Hold");
   
   const [stats, setStats] = useState({
@@ -81,8 +81,7 @@ export default function AdjustmentForm({
   const [filterAdjType, setFilterAdjType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   
-  // Top header quick search
-  const [retrieveIdInput, setRetrieveIdInput] = useState("");
+  const [retrieveSearchInput, setRetrieveSearchInput] = useState("");
 
   const displayName = user.name || user.username || "User";
   const initials = displayName
@@ -142,6 +141,12 @@ export default function AdjustmentForm({
     }
   };
 
+  const handleContestedToggle = (item: string) => {
+    setContestedLineItems(prev => 
+      prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]
+    );
+  };
+
   const loadRecordForEdit = async (id: number) => {
     try {
       const token = localStorage.getItem("lr_token");
@@ -155,130 +160,106 @@ export default function AdjustmentForm({
       setPartnerName(data.partner_name || "");
       setPartnerCode(data.partner_code || "");
       setDriverId(data.driver_id || "");
-      setPartnerNumber(data.partner_number || "");
-      setVehicleNumber(data.vehicle_number || "");
-      setCityName(data.city_name || "Hyderabad");
-      setPartnerType(data.partner_type || "Individual");
       
-      setAdjustmentLevel(data.adjustment_level || "Vehicle");
-      setAdjustmentNature(data.adjustment_nature || "Monetary");
+      setHisaabNumber(data.hisaab_number || "");
+      setAdjustmentLevel((data.adjustment_level === "Driver" || data.adjustment_level === "Operator") ? data.adjustment_level : "Operator");
+      setAdjustmentType(data.adjustment_type || "Credit");
+      setAdjustmentDate(data.adjustment_date || new Date().toISOString().split("T")[0]);
+      setEnterAmount(data.enter_amount || "");
       
-      const dur = data.time_duration || "";
-      if (dur && !["Half Day", "1 Day", "2 Days", "3 Days"].includes(dur)) {
-        setTimeDuration("Custom");
-        setCustomTimeDuration(dur);
+      if (data.contested_line_items) {
+        try {
+          setContestedLineItems(JSON.parse(data.contested_line_items));
+        } catch {
+          setContestedLineItems(data.contested_line_items.split(','));
+        }
       } else {
-        setTimeDuration(dur);
-        setCustomTimeDuration("");
+        setContestedLineItems([]);
       }
 
-      setAdjustmentType(data.adjustment_type || "Credit");
-      setAdjustmentDate(data.adjustment_date || "");
-      setEnterAmount(data.enter_amount || "");
-      setRemittanceTowards(data.remittance_towards || "");
-      setAdjustmentRelatedTo(data.adjustment_related_to || "");
-      setRemarks(data.remarks || "");
-      
-      setFirstLevelApprovalBy(data.first_level_approval_by || "");
+      setSeverityLevel(data.severity_level || "Low");
+      setCostLevel(data.cost_level || "Minor (<₹1k)");
+      setEscalateTo(data.escalate_to || "");
+      setSubmitterComments(data.submitter_comments || data.remarks || "");
+      setSentForApproval(data.sent_for_approval || "No");
+
       setFinanceTeamStatus(data.finance_team_status || "Pending");
-      setFinanceTeamRemarks(data.finance_team_remarks || "");
-      setFinalLevelApprovalBy(data.final_level_approval_by || "");
       setStatus(data.status || "Hold");
       setPhoto(data.photo || null);
       
+      setFormMode("edit");
       setActiveTab("form");
-      setRetrieveIdInput("");
+      setRetrieveSearchInput("");
     } catch (err: any) {
       alert(err.message);
     }
   };
 
-  const handleRetrieveId = async () => {
-    const id = parseInt(retrieveIdInput);
-    if (!id || id <= 0) return alert("Please enter a valid numeric ID");
-    await loadRecordForEdit(id);
-  };
-
   const resetForm = () => {
     setEditingId(null);
+    setFormMode("new");
     setPartnerName("");
     setPartnerCode("");
     setDriverId("");
-    setPartnerNumber("");
-    setVehicleNumber("");
-    setCityName("Hyderabad");
-    setPartnerType("Individual");
     
-    setAdjustmentLevel("Vehicle");
-    setAdjustmentNature("Monetary");
-    setTimeDuration("");
-    setCustomTimeDuration("");
-
+    setHisaabNumber("");
+    setAdjustmentLevel("Operator");
     setAdjustmentType("Credit");
     setAdjustmentDate(new Date().toISOString().split("T")[0]);
     setEnterAmount("");
-    setRemittanceTowards("");
-    setAdjustmentRelatedTo("");
-    setRemarks("");
+    setContestedLineItems([]);
     
-    setFirstLevelApprovalBy("");
+    setSeverityLevel("Low");
+    setCostLevel("Minor (<₹1k)");
+    setEscalateTo("");
+    setSubmitterComments("");
+    setSentForApproval("No");
+
     setFinanceTeamStatus("Pending");
-    setFinanceTeamRemarks("");
-    setFinalLevelApprovalBy("");
     setStatus("Hold");
     setPhoto(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if ((adjustmentLevel === "Operator" || adjustmentLevel === "Operator+Driver") && (!partnerName.trim() || !partnerCode.trim() || !partnerNumber.trim())) {
-      return alert("Partner Name, Code, and Number are required for this adjustment level");
-    }
-    if ((adjustmentLevel === "Individual" || adjustmentLevel === "Operator+Driver") && !driverId.trim()) {
-      return alert("Driver ID is required for this adjustment level");
-    }
-    if (adjustmentLevel === "Individual" && !partnerNumber.trim()) {
-      return alert("Contact Number is required");
-    }
-    if (adjustmentLevel === "Vehicle" && !vehicleNumber.trim()) {
-      return alert("Vehicle Number is required for this adjustment level");
-    }
-    if (adjustmentLevel === "Vehicle" && !partnerNumber.trim()) {
-      return alert("Contact Number is required");
-    }
-    if (adjustmentNature === "Monetary" && (!enterAmount || parseFloat(enterAmount) <= 0)) {
+
+    if (!enterAmount || parseFloat(enterAmount) <= 0) {
       return alert("Please enter a valid Amount");
-    }
-    if (adjustmentNature === "Time" && !timeDuration) {
-      return alert("Please select a Time Duration");
-    }
-    if (adjustmentNature === "Time" && timeDuration === "Custom" && !customTimeDuration.trim()) {
-      return alert("Please specify the custom duration details");
     }
 
     const payload = {
       partner_name: partnerName.trim(),
       partner_code: partnerCode.trim(),
       driver_id: driverId.trim() || null,
-      partner_number: partnerNumber.trim(),
-      vehicle_number: vehicleNumber.trim() || null,
-      city_name: cityName,
-      partner_type: partnerType,
+      
+      // Legacy overrides to satisfy backend Pydantic schema
+      partner_number: null,
+      vehicle_number: null,
+      city_name: null,
+      partner_type: null,
+      adjustment_nature: "Monetary",
+      time_duration: null,
+      remittance_towards: null,
+      adjustment_related_to: null,
+      first_level_approval_by: user.name,
+      finance_team_remarks: null,
+      final_level_approval_by: null,
+
       adjustment_level: adjustmentLevel,
-      adjustment_nature: adjustmentNature,
-      time_duration: adjustmentNature === "Time" 
-        ? (timeDuration === "Custom" ? customTimeDuration.trim() : timeDuration)
-        : null,
       adjustment_type: adjustmentType,
       adjustment_date: adjustmentDate,
-      enter_amount: adjustmentNature === "Monetary" ? enterAmount : "0",
-      remittance_towards: remittanceTowards.trim() || null,
-      adjustment_related_to: adjustmentRelatedTo.trim() || null,
-      remarks: remarks.trim() || null,
-      first_level_approval_by: firstLevelApprovalBy.trim() || null,
+      enter_amount: enterAmount,
+      
+      hisaab_number: hisaabNumber.trim(),
+      contested_line_items: JSON.stringify(contestedLineItems),
+      severity_level: severityLevel,
+      cost_level: costLevel,
+      escalate_to: escalateTo,
+      submitter_comments: submitterComments.trim(),
+      sent_for_approval: sentForApproval,
+      remarks: submitterComments.trim(), // sync to legacy remarks
+
       finance_team_status: financeTeamStatus,
-      finance_team_remarks: financeTeamRemarks.trim() || null,
-      final_level_approval_by: finalLevelApprovalBy.trim() || null,
       status: status,
       photo: photo
     };
@@ -302,7 +283,7 @@ export default function AdjustmentForm({
         throw new Error(errorText || "Failed to submit adjustment request");
       }
 
-      alert(editingId ? "Adjustment Request Updated Successfully!" : "Adjustment Request Submitted Successfully!");
+      alert(editingId ? "Hisaab Adjustment Updated Successfully!" : "Hisaab Adjustment Submitted Successfully!");
       resetForm();
       fetchStats();
       fetchRecords();
@@ -332,22 +313,17 @@ export default function AdjustmentForm({
   // Filter and Search logic
   const filteredRecords = useMemo(() => {
     return records.filter((r) => {
-      // City Filter
       if (filterCity !== "all" && r.city_name !== filterCity) return false;
-      // Adjustment Type Filter
       if (filterAdjType !== "all" && r.adjustment_type !== filterAdjType) return false;
-      // Status Filter
       if (filterStatus !== "all" && r.status !== filterStatus) return false;
 
-      // Query Search
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return (
           (r.partner_name || "").toLowerCase().includes(q) ||
           (r.partner_code || "").toLowerCase().includes(q) ||
           (r.driver_id || "").toLowerCase().includes(q) ||
-          (r.partner_number || "").includes(q) ||
-          (r.vehicle_number || "").toLowerCase().includes(q) ||
+          (r.hisaab_number || "").toLowerCase().includes(q) ||
           String(r.id).includes(q)
         );
       }
@@ -355,14 +331,24 @@ export default function AdjustmentForm({
     });
   }, [records, searchQuery, filterCity, filterAdjType, filterStatus]);
 
+  // Searchable Dropdown Logic
+  const handleRetrieveSearchSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setRetrieveSearchInput(val);
+    const match = records.find(r => `[#${r.id}] ${r.partner_name} - ${r.hisaab_number || r.partner_code}` === val);
+    if (match) {
+      loadRecordForEdit(match.id);
+    }
+  };
+
   // CSV Export
   const handleExportCSV = () => {
     if (filteredRecords.length === 0) return alert("No records to export");
     const headers = [
-      "ID", "Partner Name", "Partner Code", "Driver ID", "Partner Number", 
-      "Vehicle Number", "City", "Partner Type", "Adj Level", "Adj Nature", "Time Duration", "Adjustment Type", "Date", 
-      "Amount", "Remittance Towards", "Related To", "Remarks", 
-      "1st Level Approval", "Finance Status", "Finance Remarks", "Final Approval", "Status", "Created At"
+      "ID", "Partner Name", "Partner Code", "Driver ID", "Hisaab Number", 
+      "Adj Level", "Adjustment Type", "Date", 
+      "Amount", "Contested Items", "Severity", "Cost Level", "Escalated To", "Submitter Comments", 
+      "Sent For Approval", "Finance Status", "Status", "Created At"
     ];
 
     const rows = filteredRecords.map((r) => [
@@ -370,23 +356,18 @@ export default function AdjustmentForm({
       `"${r.partner_name.replace(/"/g, '""')}"`,
       `"${r.partner_code.replace(/"/g, '""')}"`,
       r.driver_id || "",
-      r.partner_number,
-      r.vehicle_number || "",
-      r.city_name,
-      r.partner_type,
+      r.hisaab_number || "",
       r.adjustment_level || "",
-      r.adjustment_nature || "",
-      r.time_duration || "",
       r.adjustment_type,
       r.adjustment_date,
       r.enter_amount,
-      `"${(r.remittance_towards || "").replace(/"/g, '""')}"`,
-      `"${(r.adjustment_related_to || "").replace(/"/g, '""')}"`,
-      `"${(r.remarks || "").replace(/"/g, '""')}"`,
-      r.first_level_approval_by || "",
+      `"${(r.contested_line_items || "").replace(/"/g, '""')}"`,
+      r.severity_level || "",
+      r.cost_level || "",
+      r.escalate_to || "",
+      `"${(r.submitter_comments || r.remarks || "").replace(/"/g, '""')}"`,
+      r.sent_for_approval || "",
       r.finance_team_status,
-      `"${(r.finance_team_remarks || "").replace(/"/g, '""')}"`,
-      r.final_level_approval_by || "",
       r.status,
       r.created_at
     ]);
@@ -397,7 +378,7 @@ export default function AdjustmentForm({
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `letzryd_adjustments_${new Date().toISOString().split("T")[0]}.csv`);
+    link.setAttribute("download", `letzryd_hisaab_adjustments_${new Date().toISOString().split("T")[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -425,7 +406,7 @@ export default function AdjustmentForm({
             />
             <span className="hidden h-5 border-l border-border sm:inline-block" />
             <span className="hidden font-sans text-xs font-medium text-text-muted sm:inline-block">
-              Adjustment
+              Hisaab Adjustments Application
             </span>
           </div>
 
@@ -487,9 +468,36 @@ export default function AdjustmentForm({
         
         {activeTab === "form" ? (
           <div>
+            {/* Form Mode Toggle */}
+            <div className="flex bg-slate-100 p-1 rounded-xl w-full max-w-lg mx-auto mb-8 border border-border shadow-xs">
+              <button type="button" onClick={() => { setFormMode('new'); setEditingId(null); resetForm(); }} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${formMode === 'new' && !editingId ? 'bg-white text-primary shadow-sm' : 'text-text-muted hover:text-text'}`}>New Adjustment Request</button>
+              <button type="button" onClick={() => setFormMode('edit')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${formMode === 'edit' || editingId ? 'bg-white text-primary shadow-sm' : 'text-text-muted hover:text-text'}`}>Review / Edit Existing Request</button>
+            </div>
+
+            {formMode === 'edit' && !editingId && (
+              <div className="bg-slate-50 border border-border/80 rounded-xl p-5 mb-8 flex flex-col items-start justify-center gap-4 w-full max-w-2xl mx-auto shadow-sm">
+                <label className="font-sans text-sm font-bold text-primary flex items-center gap-2">
+                  <Search className="h-4 w-4 text-primary" /> 
+                  Search Existing Request
+                </label>
+                <input 
+                  list="adjustment-records"
+                  value={retrieveSearchInput}
+                  onChange={handleRetrieveSearchSelect}
+                  placeholder="Type to search by Partner Name or Hisaab Number..."
+                  className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all shadow-2xs"
+                />
+                <datalist id="adjustment-records">
+                  {records.map(r => (
+                    <option key={r.id} value={`[#${r.id}] ${r.partner_name} - ${r.hisaab_number || r.partner_code}`} />
+                  ))}
+                </datalist>
+                <p className="text-xs text-text-muted italic">Select a record from the dropdown to edit it.</p>
+              </div>
+            )}
+
             {/* Form card header */}
-            <div className="rounded-2xl border border-border bg-white shadow-xl overflow-hidden mb-10">
-              
+            <div className={`rounded-2xl border border-border bg-white shadow-xl overflow-hidden mb-10 transition-all ${formMode === 'edit' && !editingId ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
               <div className="bg-primary text-white px-8 py-6 relative">
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary-hover via-primary to-primary opacity-60" />
                 <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden w-full">
@@ -498,38 +506,16 @@ export default function AdjustmentForm({
                     <div className="flex items-center gap-3 mb-2">
                       <img src="https://letzryd.com/replica-assets/letzryd-long-png-logo-Aq2o3DNOw1i2kBMB-7ab04eaa76.png" className="h-8 brightness-0 invert" alt="LetzRyd" referrerPolicy="no-referrer" />
                       <span className="px-2 py-0.5 rounded border border-white/30 bg-white/20 text-white text-[10px] font-bold tracking-widest backdrop-blur-sm">
-                        LetzRyd Desk
+                        Hisaab Management
                       </span>
                     </div>
                     <h1 className="font-sans text-2xl font-bold tracking-tight text-white leading-tight">
-                      {editingId ? `Edit Adjustment Record #${editingId}` : "Adjustment Form"}
+                      {editingId ? `Edit Adjustment Record #${editingId}` : "Hisaab Adjustments Application"}
                     </h1>
-                  </div>
-
-                  {/* Header Search bar */}
-                  <div className="relative z-10 flex w-full sm:w-auto mt-2 sm:mt-0">
-                    <div className="relative flex w-full sm:w-72 items-center">
-                      <Search className="absolute left-3 h-4 w-4 text-white/60" />
-                      <input 
-                        type="number" 
-                        placeholder="Edit existing record (ID)..." 
-                        value={retrieveIdInput}
-                        onChange={(e) => setRetrieveIdInput(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleRetrieveId()}
-                        className="h-10 w-full rounded-l-xl border border-white/20 bg-white/10 py-2 pl-10 pr-3 text-sm text-white placeholder-white/50 backdrop-blur-md outline-none transition-all focus:border-white focus:bg-white/20 focus:ring-2 focus:ring-white/20"
-                      />
-                      <button 
-                        onClick={handleRetrieveId}
-                        className="h-10 rounded-r-xl border border-white/20 border-l-0 bg-white px-4 text-xs font-bold text-green hover:bg-slate-50 transition-colors cursor-pointer"
-                      >
-                        Retrieve
-                      </button>
-                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Edit Mode Banner */}
               {editingId && (
                 <div className="bg-yellow-50 px-8 py-3 border-b border-yellow-200 flex justify-between items-center">
                   <div className="flex items-center gap-2 text-yellow-800 text-sm font-semibold">
@@ -565,57 +551,38 @@ export default function AdjustmentForm({
                           onChange={(e) => setAdjustmentLevel(e.target.value as any)}
                           className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:outline-none transition-all shadow-2xs cursor-pointer"
                         >
-                          <option value="Vehicle">Vehicle</option>
                           <option value="Operator">Operator</option>
-                          <option value="Operator+Driver">Operator + Driver</option>
-                          <option value="Individual">Individual</option>
+                          <option value="Driver">Driver</option>
                         </select>
                       </div>
 
-                      {/* CONDITIONAL FIELDS BASED ON ADJUSTMENT LEVEL */}
-                      {(adjustmentLevel === "Operator" || adjustmentLevel === "Operator+Driver") && (
-                        <>
-                          <div>
-                            <label className="block font-sans text-xs font-bold text-text-muted mb-2">Partner Name <span className="text-red-500">*</span></label>
-                            <input 
-                              type="text" 
-                              placeholder="Enter full name..."
-                              value={partnerName}
-                              onChange={(e) => setPartnerName(e.target.value)}
-                              className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
-                            />
-                          </div>
-                          <div>
-                            <label className="block font-sans text-xs font-bold text-text-muted mb-2">Partner Code <span className="text-red-500">*</span></label>
-                            <input 
-                              type="text" 
-                              placeholder="Unique LetzRyd ID..."
-                              value={partnerCode}
-                              onChange={(e) => setPartnerCode(e.target.value)}
-                              className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
-                            />
-                          </div>
-                          <div>
-                            <label className="block font-sans text-xs font-bold text-text-muted mb-2">Partner Type <span className="text-red-500">*</span></label>
-                            <div className="flex gap-4">
-                              {["Individual", "Fleet", "Rental"].map((type) => (
-                                <label key={type} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-bold hover:bg-bg cursor-pointer transition-all shadow-2xs">
-                                  <input 
-                                    type="radio" 
-                                    name="partnerType" 
-                                    checked={partnerType === type}
-                                    onChange={() => setPartnerType(type as any)}
-                                    className="text-primary focus:ring-primary cursor-pointer"
-                                  />
-                                  {type}
-                                </label>
-                              ))}
-                            </div>
-                          </div>
-                        </>
+                      <div>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Partner / Driver Name <span className="text-red-500">*</span></label>
+                        <input 
+                          type="text" 
+                          placeholder="Enter full name..."
+                          value={partnerName}
+                          onChange={(e) => setPartnerName(e.target.value)}
+                          required
+                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
+                        />
+                      </div>
+                      
+                      {adjustmentLevel === "Operator" && (
+                        <div>
+                          <label className="block font-sans text-xs font-bold text-text-muted mb-2">Partner Code <span className="text-red-500">*</span></label>
+                          <input 
+                            type="text" 
+                            placeholder="Unique LetzRyd ID..."
+                            value={partnerCode}
+                            onChange={(e) => setPartnerCode(e.target.value)}
+                            required
+                            className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
+                          />
+                        </div>
                       )}
 
-                      {(adjustmentLevel === "Operator+Driver" || adjustmentLevel === "Individual") && (
+                      {adjustmentLevel === "Driver" && (
                         <div>
                           <label className="block font-sans text-xs font-bold text-text-muted mb-2">Driver ID <span className="text-red-500">*</span></label>
                           <input 
@@ -623,50 +590,22 @@ export default function AdjustmentForm({
                             placeholder="Enter Driver ID..."
                             value={driverId}
                             onChange={(e) => setDriverId(e.target.value)}
-                            className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
-                          />
-                        </div>
-                      )}
-
-                      {adjustmentLevel === "Vehicle" && (
-                        <div>
-                          <label className="block font-sans text-xs font-bold text-text-muted mb-2">Vehicle Number <span className="text-red-500">*</span></label>
-                          <input 
-                            type="text" 
-                            placeholder="e.g. TS09 EA 1234..."
-                            value={vehicleNumber}
-                            onChange={(e) => setVehicleNumber(e.target.value)}
+                            required
                             className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
                           />
                         </div>
                       )}
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Contact Number <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Hisaab Number <span className="text-red-500">*</span></label>
                         <input 
-                          type="tel" 
-                          placeholder="+91 10-digit mobile..."
-                          value={partnerNumber}
-                          onChange={(e) => setPartnerNumber(e.target.value)}
+                          type="text" 
+                          placeholder="Reference Hisaab Bill No..."
+                          value={hisaabNumber}
+                          onChange={(e) => setHisaabNumber(e.target.value)}
                           required
-                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
+                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs font-mono"
                         />
-                      </div>
-
-                      <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">City Name <span className="text-red-500">*</span></label>
-                        <select 
-                          value={cityName}
-                          onChange={(e) => setCityName(e.target.value)}
-                          required
-                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:outline-none transition-all shadow-2xs cursor-pointer"
-                        >
-                          {CITIES.map((c) => (
-                            <option key={c.value} value={c.value}>{c.text}</option>
-                          ))}
-                          <option value="Chennai">Chennai</option>
-                          <option value="Delhi">Delhi</option>
-                        </select>
                       </div>
                     </div>
                   </div>
@@ -681,62 +620,10 @@ export default function AdjustmentForm({
                     </div>
 
                     <div className="space-y-4">
-
-                      <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Adjustment Nature <span className="text-red-500">*</span></label>
-                        <div className="flex gap-4">
-                          {["Monetary", "Time"].map((type) => (
-                            <label key={type} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-bold hover:bg-bg cursor-pointer transition-all shadow-2xs">
-                              <input 
-                                type="radio" 
-                                name="adjustmentNature" 
-                                checked={adjustmentNature === type}
-                                onChange={() => { setAdjustmentNature(type as any); if (type === "Monetary") setTimeDuration(""); }}
-                                className="text-primary focus:ring-primary cursor-pointer"
-                              />
-                              {type}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      {adjustmentNature === "Time" && (
-                        <div>
-                          <label className="block font-sans text-xs font-bold text-text-muted mb-2">Time Duration <span className="text-red-500">*</span></label>
-                          <select 
-                            value={timeDuration}
-                            onChange={(e) => setTimeDuration(e.target.value)}
-                            required
-                            className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:outline-none transition-all shadow-2xs cursor-pointer"
-                          >
-                            <option value="">Select Duration...</option>
-                            <option value="Half Day">Half Day (0.5 Days)</option>
-                            <option value="1 Day">1 Day</option>
-                            <option value="2 Days">2 Days</option>
-                            <option value="3 Days">3 Days</option>
-                            <option value="Custom">Custom...</option>
-                          </select>
-                        </div>
-                      )}
-
-                      {adjustmentNature === "Time" && timeDuration === "Custom" && (
-                        <div>
-                          <label className="block font-sans text-xs font-bold text-text-muted mb-2">Custom Time Duration <span className="text-red-500">*</span></label>
-                          <input 
-                            type="text" 
-                            placeholder="e.g. 5 Days, 1.5 Days, Half Day Leave..."
-                            value={customTimeDuration}
-                            onChange={(e) => setCustomTimeDuration(e.target.value)}
-                            required
-                            className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
-                          />
-                        </div>
-                      )}
-
                       <div>
                         <label className="block font-sans text-xs font-bold text-text-muted mb-2">Adjustment Type <span className="text-red-500">*</span></label>
                         <div className="flex gap-4">
-                          {["Credit", "Debit"].map((type) => (
+                          {["Credit", "Debit", "Waiver"].map((type) => (
                             <label key={type} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-bold hover:bg-bg cursor-pointer transition-all shadow-2xs">
                               <input 
                                 type="radio" 
@@ -751,144 +638,135 @@ export default function AdjustmentForm({
                         </div>
                       </div>
 
-                      <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Adjustment Date <span className="text-red-500">*</span></label>
-                        <input 
-                          type="date" 
-                          value={adjustmentDate}
-                          onChange={(e) => setAdjustmentDate(e.target.value)}
-                          required
-                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:outline-none transition-all shadow-2xs cursor-pointer"
-                        />
-                      </div>
-
-                      {adjustmentNature === "Monetary" && (
-                        <div>
+                      <div className="flex gap-4">
+                        <div className="flex-1">
                           <label className="block font-sans text-xs font-bold text-text-muted mb-2">Enter Amount (₹) <span className="text-red-500">*</span></label>
+                          <div className="relative">
+                            <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
+                            <input 
+                              type="number" 
+                              placeholder="0.00"
+                              value={enterAmount}
+                              onChange={(e) => setEnterAmount(e.target.value)}
+                              required
+                              className="w-full pl-9 rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <label className="block font-sans text-xs font-bold text-text-muted mb-2">Date of Application</label>
                           <input 
-                            type="number" 
-                            placeholder="0.00"
-                            value={enterAmount}
-                            onChange={(e) => setEnterAmount(e.target.value)}
-                            required
-                            className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
+                            type="date" 
+                            value={adjustmentDate}
+                            disabled
+                            className="w-full rounded-xl border border-border bg-slate-50 px-4 py-2.5 font-sans text-sm outline-none transition-all shadow-2xs cursor-not-allowed opacity-70"
                           />
                         </div>
-                      )}
-
-                      <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Remittance Towards (Optional)</label>
-                        <input 
-                          type="text" 
-                          placeholder="Reason for remittance..."
-                          value={remittanceTowards}
-                          onChange={(e) => setRemittanceTowards(e.target.value)}
-                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
-                        />
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Adjustment Related To (Optional)</label>
-                        <input 
-                          type="text" 
-                          placeholder="e.g. Maintenance, Tolls, Penalty..."
-                          value={adjustmentRelatedTo}
-                          onChange={(e) => setAdjustmentRelatedTo(e.target.value)}
-                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
-                        />
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Contested Hisaab Line Items <span className="text-red-500">*</span></label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {CONTESTED_OPTIONS.map(option => (
+                            <label key={option} className="flex items-center gap-2 text-sm text-text cursor-pointer hover:bg-slate-50 p-1.5 rounded border border-transparent hover:border-border">
+                              <input 
+                                type="checkbox"
+                                checked={contestedLineItems.includes(option)}
+                                onChange={() => handleContestedToggle(option)}
+                                className="rounded text-primary focus:ring-primary"
+                              />
+                              {option}
+                            </label>
+                          ))}
+                        </div>
+                        {contestedLineItems.length === 0 && <p className="text-[10px] text-red-500 mt-1">Please select at least one contested item.</p>}
                       </div>
 
-                      <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Detailed Remarks</label>
-                        <textarea 
-                          placeholder="Enter detailed adjustment remarks here..."
-                          value={remarks}
-                          onChange={(e) => setRemarks(e.target.value)}
-                          rows={4}
-                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs resize-none"
-                        />
-                      </div>
                     </div>
                   </div>
 
-                  {/* COLUMN 3: FINANCE & APPROVALS */}
-                  <div className="space-y-6">
+                  {/* COLUMN 3: APPROVALS & ESCALATIONS */}
+                  <div className="space-y-6 lg:col-span-2 border-t border-border pt-6">
                     <div className="border-b border-border pb-3">
                       <h3 className="font-sans text-sm font-bold text-primary flex items-center gap-2">
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">3</span>
-                        Finance & Approvals
+                        Approvals & Escalations
                       </h3>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">First Level Approval By</label>
-                        <input 
-                          type="text" 
-                          placeholder="Approver name..."
-                          value={firstLevelApprovalBy}
-                          onChange={(e) => setFirstLevelApprovalBy(e.target.value)}
-                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
-                        />
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Severity Level</label>
+                        <select 
+                          value={severityLevel}
+                          onChange={(e) => setSeverityLevel(e.target.value)}
+                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:outline-none transition-all shadow-2xs cursor-pointer"
+                        >
+                          <option value="Low">Low</option>
+                          <option value="Medium">Medium</option>
+                          <option value="High">High</option>
+                          <option value="Critical">Critical</option>
+                        </select>
                       </div>
 
                       <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Finance Team Status <span className="text-red-500">*</span></label>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Cost Level</label>
+                        <select 
+                          value={costLevel}
+                          onChange={(e) => setCostLevel(e.target.value)}
+                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:outline-none transition-all shadow-2xs cursor-pointer"
+                        >
+                          <option value="Minor (<₹1k)">Minor (&lt;₹1,000)</option>
+                          <option value="Moderate (₹1k-₹5k)">Moderate (₹1,000 - ₹5,000)</option>
+                          <option value="Major (>₹5k)">Major (&gt;₹5,000)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Escalate To</label>
+                        <select 
+                          value={escalateTo}
+                          onChange={(e) => setEscalateTo(e.target.value)}
+                          required
+                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:outline-none transition-all shadow-2xs cursor-pointer"
+                        >
+                          <option value="">Select Approver...</option>
+                          <option value="City Head">City Head</option>
+                          <option value="Operations Head">Operations Head</option>
+                          <option value="Finance Manager">Finance Manager</option>
+                        </select>
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Submitter Comments (Justification) <span className="text-red-500">*</span></label>
+                        <textarea 
+                          placeholder="Provide detailed context for this adjustment..."
+                          value={submitterComments}
+                          onChange={(e) => setSubmitterComments(e.target.value)}
+                          required
+                          rows={3}
+                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs resize-none"
+                        />
+                      </div>
+
+                      <div className="flex flex-col justify-center bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                        <label className="block font-sans text-xs font-bold text-primary mb-3">Sent for Approval? <span className="text-red-500">*</span></label>
                         <div className="flex gap-4">
-                          {["Approved", "Pending", "Rejected"].map((fStatus) => (
-                            <label key={fStatus} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-bold hover:bg-bg cursor-pointer transition-all shadow-2xs">
+                          {["Yes", "No"].map((opt) => (
+                            <label key={opt} className="flex items-center gap-2 text-sm text-text cursor-pointer">
                               <input 
                                 type="radio" 
-                                name="financeTeamStatus" 
-                                checked={financeTeamStatus === fStatus}
-                                onChange={() => setFinanceTeamStatus(fStatus as any)}
-                                className="text-primary focus:ring-primary cursor-pointer"
+                                name="sentForApproval" 
+                                checked={sentForApproval === opt}
+                                onChange={() => setSentForApproval(opt as any)}
+                                className="text-primary focus:ring-primary"
                               />
-                              {fStatus}
+                              {opt}
                             </label>
                           ))}
                         </div>
                       </div>
 
-                      <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Finance Team Remarks (Optional)</label>
-                        <input 
-                          type="text" 
-                          placeholder="Finance comments..."
-                          value={financeTeamRemarks}
-                          onChange={(e) => setFinanceTeamRemarks(e.target.value)}
-                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Final Level Approval By</label>
-                        <input 
-                          type="text" 
-                          placeholder="Final approver name..."
-                          value={finalLevelApprovalBy}
-                          onChange={(e) => setFinalLevelApprovalBy(e.target.value)}
-                          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 font-sans text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all shadow-2xs"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block font-sans text-xs font-bold text-text-muted mb-2">Final Status <span className="text-red-500">*</span></label>
-                        <div className="flex gap-4">
-                          {["Completed", "Hold", "Declined"].map((fStatus) => (
-                            <label key={fStatus} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-bold hover:bg-bg cursor-pointer transition-all shadow-2xs">
-                              <input 
-                                type="radio" 
-                                name="finalStatus" 
-                                checked={status === fStatus}
-                                onChange={() => setStatus(fStatus as any)}
-                                className="text-primary focus:ring-primary cursor-pointer"
-                              />
-                              {fStatus}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -897,7 +775,7 @@ export default function AdjustmentForm({
                 <div className="border-t border-border pt-10">
                   <div className="border-b border-border pb-3 mb-6">
                     <h3 className="font-sans text-sm font-bold text-primary">
-                      4. Attachments & Proof
+                      4. Attachments & Proof (Optional)
                     </h3>
                     <p className="font-sans text-xs text-text-muted mt-1">Upload any receipts, bills, or proof related to this adjustment.</p>
                   </div>
@@ -967,6 +845,7 @@ export default function AdjustmentForm({
                     </button>
                     <button 
                       type="submit"
+                      disabled={contestedLineItems.length === 0}
                       className="rounded-xl bg-primary hover:bg-primary-hover px-6 py-3.5 font-sans text-sm font-bold text-white shadow-sm transition-all cursor-pointer disabled:opacity-50"
                     >
                       {editingId ? "Save Changes" : "Submit Request"}
@@ -1002,7 +881,7 @@ export default function AdjustmentForm({
                   <span className="font-sans text-3xl font-extrabold text-amber-600 tracking-tight block mt-1">₹{stats.total_amount.toLocaleString("en-IN")}</span>
                   <span className="font-sans text-[10px] text-text-muted block mt-0.5">Net adjustment value</span>
                 </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-light text-amber-600">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-50 text-amber-600">
                   <DollarSign className="h-6 w-6" />
                 </div>
               </div>
@@ -1014,7 +893,7 @@ export default function AdjustmentForm({
                   <span className="font-sans text-3xl font-extrabold text-green tracking-tight block mt-1">{stats.approved_count}</span>
                   <span className="font-sans text-[10px] text-text-muted block mt-0.5">Ready for settlement</span>
                 </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-light text-green">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green/10 text-green">
                   <CheckCircle className="h-6 w-6" />
                 </div>
               </div>
@@ -1054,7 +933,7 @@ export default function AdjustmentForm({
                       resetForm();
                       setActiveTab("form");
                     }}
-                    className="flex items-center gap-1.5 rounded-xl bg-green px-4 py-2 font-sans text-xs font-bold text-white hover:bg-green-hover transition-colors shadow-xs cursor-pointer"
+                    className="flex items-center gap-1.5 rounded-xl bg-green px-4 py-2 font-sans text-xs font-bold text-white hover:bg-green/90 transition-colors shadow-xs cursor-pointer"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Add Adjustment
@@ -1069,7 +948,7 @@ export default function AdjustmentForm({
                   <Search className="absolute left-3.5 h-4 w-4 text-text-muted pointer-events-none" />
                   <input 
                     type="text" 
-                    placeholder="Search name, code, vehicle..." 
+                    placeholder="Search name, code, Hisaab..." 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full rounded-xl border border-border bg-white pl-10 pr-4 py-2 font-sans text-xs focus:border-primary focus:outline-none transition-all shadow-2xs"
@@ -1124,10 +1003,9 @@ export default function AdjustmentForm({
                   <thead>
                     <tr className="border-b border-border bg-bg/50 select-none">
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left w-16">ID</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left">Partner Details</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left">Contact & Driver</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left">Details</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left">City & Vehicle</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left">Partner / Hisaab</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left">Adj. Details</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left">Amount & Type</th>
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left">Approvals</th>
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-left">Status</th>
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-muted text-right w-24">Actions</th>
@@ -1136,7 +1014,7 @@ export default function AdjustmentForm({
                   <tbody className="divide-y divide-border bg-white">
                     {filteredRecords.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="px-6 py-12 text-center text-text-muted font-sans text-xs">
+                        <td colSpan={7} className="px-6 py-12 text-center text-text-muted font-sans text-xs">
                           No matching adjustment records found in the database.
                         </td>
                       </tr>
@@ -1147,29 +1025,26 @@ export default function AdjustmentForm({
                             <td className="px-6 py-4 font-mono text-xs font-bold text-primary">#{r.id}</td>
                             <td className="px-6 py-4">
                               <div className="font-sans text-xs font-bold text-text">{r.partner_name}</div>
-                              <div className="font-mono text-[10px] text-text-muted mt-0.5">{r.partner_code} · {r.partner_type}</div>
+                              <div className="font-mono text-[10px] text-text-muted mt-0.5">{r.partner_code} · {r.adjustment_level}</div>
+                              {r.hisaab_number && <div className="font-mono text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded w-max mt-1 text-bold">Hisaab: {r.hisaab_number}</div>}
                             </td>
                             <td className="px-6 py-4">
-                              <div className="font-sans text-xs font-bold text-text">{r.partner_number}</div>
+                              <div className="font-sans text-[10px] font-bold text-text">Severity: {r.severity_level || "N/A"}</div>
                               {r.driver_id && <div className="font-mono text-[10px] text-text-muted mt-0.5">Driver ID: #{r.driver_id}</div>}
                             </td>
                             <td className="px-6 py-4">
                               <div className="font-sans text-xs font-extrabold text-primary">₹{parseFloat(r.enter_amount).toLocaleString("en-IN")}</div>
-                              <span className={`inline-block rounded-md px-1.5 py-0.5 font-mono text-[9px] font-bold mt-1 ${ r.adjustment_type === "Credit" ? "bg-green-light text-green" : r.adjustment_type === "Debit" ? "bg-red-50 text-red-600 border border-red-100" : "bg-amber-50 text-amber-600 border border-amber-100" }`}>
+                              <span data-name="hisaab_line_items" className={`inline-block rounded-md px-1.5 py-0.5 font-mono text-[9px] font-bold mt-1 ${ r.adjustment_type === "Credit" ? "bg-green/10 text-green" : r.adjustment_type === "Debit" ? "bg-red-50 text-red-600 border border-red-100" : "bg-amber-50 text-amber-600 border border-amber-100" }`}>
                                 {r.adjustment_type}
                               </span>
                               <div className="font-sans text-[9px] text-text-muted mt-1">{r.adjustment_date}</div>
                             </td>
                             <td className="px-6 py-4">
-                              <div className="font-sans text-xs font-bold text-text">{r.city_name}</div>
-                              {r.vehicle_number && <div className="font-mono text-[10px] text-text-muted mt-0.5">{r.vehicle_number}</div>}
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className={`inline-block rounded-full px-2 py-0.5 text-[9px] font-extrabold ${ r.finance_team_status === "Approved" ? "bg-green/10 text-green" : r.finance_team_status === "Rejected" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700" }`}>
+                              <span data-name="sent_for_approval" className={`inline-block rounded-full px-2 py-0.5 text-[9px] font-extrabold ${ r.finance_team_status === "Approved" ? "bg-green/10 text-green" : r.finance_team_status === "Rejected" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700" }`}>
                                 {r.finance_team_status}
                               </span>
-                              {r.final_level_approval_by && (
-                                <div className="font-sans text-[9px] text-text-muted mt-1">By: {r.final_level_approval_by}</div>
+                              {r.escalate_to && (
+                                <div className="font-sans text-[9px] text-text-muted mt-1">To: {r.escalate_to}</div>
                               )}
                             </td>
                             <td className="px-6 py-4">
@@ -1225,7 +1100,7 @@ export default function AdjustmentForm({
       )}
 
       {/* FOOTER SECTION */}
-      <footer className="bg-primary py-8 text-center text-xs text-white/50 border-t border-primary-hover font-sans mt-auto">
+      <footer className="bg-primary py-8 text-center text-xs text-white/50 border-t border-primary/20 font-sans mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <img 
@@ -1233,7 +1108,7 @@ export default function AdjustmentForm({
               alt="LetzRyd" 
               className="h-6 w-auto brightness-0 invert"
             />
-             <span className="font-semibold text-white/80">LetzRyd Adjustment Desk</span>
+             <span className="font-semibold text-white/80">Hisaab Application Desk</span>
           </div>
           <span>© Copyright 2026 | All Rights Reserved</span>
         </div>
