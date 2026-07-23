@@ -27,6 +27,14 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
+// MASKING FUNCTION (Req 9): Masks all but the last 4 digits of sensitive IDs
+const maskSensitiveID = (idString: string | null | undefined) => {
+  if (!idString) return "—";
+  const cleanStr = idString.replace(/\s/g, ''); // Remove spaces
+  if (cleanStr.length <= 4) return cleanStr;
+  return "*".repeat(cleanStr.length - 4) + cleanStr.slice(-4);
+};
+
 export default function WalkInForm({ 
   user, 
   onBackToSelector, 
@@ -58,9 +66,9 @@ export default function WalkInForm({
   const [visitingReason, setVisitingReason] = useState<string>("Onboarding");
   
   const [city, setCity] = useState("Hyderabad");
+  const [personNumber, setPersonNumber] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [personNumber, setPersonNumber] = useState("");
   const [dlNumber, setDlNumber] = useState("");
   const [aadhaarNumber, setAadhaarNumber] = useState("");
   
@@ -109,6 +117,50 @@ export default function WalkInForm({
       setEnquiryTime(now.toTimeString().slice(0, 5));
     }
   }, [editingId, enquiryDate]);
+
+  // AUTO-FILL & DUPLICATE LOGIC (Req 2 & 11)
+  useEffect(() => {
+    const checkExistingPhone = async () => {
+      const cleanPhone = personNumber.replace(/\D/g, "");
+      // Only check when exactly 10 digits are typed and we are not currently editing an old record
+      if (cleanPhone.length === 10 && !editingId) {
+        try {
+          const token = localStorage.getItem("lr_token");
+          const res = await fetch(`/api/walkins/search?q=${cleanPhone}`, {
+            headers: { "Authorization": `Bearer ${token}` }
+          });
+          const data = await res.json();
+          
+          if (data && data.length > 0) {
+            const match = data[0]; // Take the most recent match
+            
+            // Pre-fill fields automatically
+            setFirstName(match.first_name || match.person_name?.split(" ")[0] || "");
+            setLastName(match.last_name || match.person_name?.split(" ").slice(1).join(" ") || "");
+            if (match.dl_number) setDlNumber(match.dl_number);
+            if (match.aadhaar_number) setAadhaarNumber(match.aadhaar_number);
+            if (match.city) setCity(match.city);
+            
+            // Duplicate Warning check
+            if (match.joined_status === "Successfully Onboarded") {
+              alert(`Already filled: A record for ${match.person_name || 'this candidate'} is already fully onboarded in the system.`);
+            } else {
+              alert(`Candidate found! Details have been auto-filled from previous visit.`);
+            }
+          }
+        } catch (e) {
+          console.error("Error auto-filling candidate details", e);
+        }
+      }
+    };
+    
+    // Slight debounce so it doesn't trigger on every single keystroke if they type fast
+    const timeoutId = setTimeout(() => {
+      checkExistingPhone();
+    }, 400);
+    
+    return () => clearTimeout(timeoutId);
+  }, [personNumber, editingId]);
 
   const fetchData = async (pageNum = 1) => {
     try {
@@ -216,8 +268,8 @@ export default function WalkInForm({
       dl_image: visitingReason === "Onboarding" ? (dlImage || undefined) : undefined,
       visiting_reason: visitingReason,
       mode_of_enquiry: modeOfEnquiry,
-      referred_by_name: referredByName.trim() || undefined,
-      referred_by_phone: referredByPhone.trim() || undefined,
+      referred_by_name: modeOfEnquiry === "Referral" ? (referredByName.trim() || undefined) : undefined,
+      referred_by_phone: modeOfEnquiry === "Referral" ? (referredByPhone.trim() || undefined) : undefined,
       joined_status: joinedStatus,
       remarks: remarks.trim() || undefined
     };
@@ -347,7 +399,7 @@ export default function WalkInForm({
 
     const rows = records.map((r) => [
       r.id, r.event_date, r.enquiry_time, `"${r.city_name}"`, `"${r.first_name || ''}"`, `"${r.last_name || ''}"`,
-      r.person_number, r.dl_number, r.aadhaar_number || "—", r.visitor_type,
+      r.person_number, r.dl_number, maskSensitiveID(r.aadhaar_number), r.visitor_type,
       `"${r.visiting_reason}"`, `"${r.mode_of_enquiry}"`, r.joined_status, `"${r.executive_name}"`
     ]);
 
@@ -384,32 +436,32 @@ export default function WalkInForm({
               onClick={onBackToSelector}
             />
             <span className="hidden h-5 border-l border-border sm:inline-block" />
-            <span className="hidden font-sans text-xs font-medium text-text-muted sm:inline-block">Lead Generation Form</span>
+            <span className="hidden font-sans text-xs font-medium text-text-muted sm:inline-block">Walk-In Form</span>
           </div>
 
           <nav className="flex gap-2">
             <button
               onClick={() => setActiveTab("form")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all cursor-pointer ${ activeTab === "form" ? "bg-primary text-white" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all cursor-pointer ${ activeTab === "form" ? "bg-primary text-slate-900" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
-              <FileText className="h-4 w-4" /> Lead Generation Form
+              <FileText className="h-4 w-4" /> Walk-In Form
             </button>
             <button
               onClick={() => setActiveTab("registry")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all cursor-pointer ${ activeTab === "registry" ? "bg-primary text-white" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all cursor-pointer ${ activeTab === "registry" ? "bg-primary text-slate-900" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
-              Lead Generation Registry
+              Walk-In Registry
             </button>
           </nav>
 
           <div className="hidden items-center gap-4 lg:flex">
             <div className="text-right">
               <span className="block text-[9px] font-bold text-text-dim">Current Time (IST)</span>
-              <span className="font-mono text-xs font-extrabold text-green">{currentTime}</span>
+              <span className="font-mono text-xs font-extrabold text-primary">{currentTime}</span>
             </div>
             <span className="h-5 border-l border-border" />
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-white">{initials}</div>
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-slate-900">{initials}</div>
               <div className="flex flex-col">
                 <span className="font-sans text-xs font-semibold leading-none text-text">{user.name}</span>
               </div>
@@ -427,19 +479,19 @@ export default function WalkInForm({
         {activeTab === "form" && (
           <div className="mx-auto max-w-5xl flex flex-col gap-6">
             
-            <div className="relative overflow-visible rounded-2xl bg-primary p-6 text-white shadow-sm md:p-8">
-              <div className="absolute inset-0 bg-radial-gradient from-green/10 to-transparent pointer-events-none rounded-2xl" />
+            <div className="relative overflow-visible rounded-2xl bg-primary p-6 text-slate-900 shadow-sm md:p-8">
+              <div className="absolute inset-0 bg-radial-gradient from-white/20 to-transparent pointer-events-none rounded-2xl" />
               <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold tracking-widest">LetzRyd Desk</span>
+                    <span className="rounded-md bg-white/40 px-2 py-0.5 text-[9px] font-bold tracking-widest text-slate-900">LetzRyd Desk</span>
                   </div>
-                  <h1 className="font-sans text-2xl font-bold">{editingId ? `Edit Walk-in #${editingId}` : "Lead Generation Form"}</h1>
+                  <h1 className="font-sans text-2xl font-bold">{editingId ? `Edit Walk-in #${editingId}` : "Walk-In Form"}</h1>
                 </div>
 
                 <div className="relative w-full max-w-sm">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/50" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-700" />
                     <input
                       type="text"
                       placeholder="Search to edit... (Name, Phone, ID)"
@@ -447,7 +499,7 @@ export default function WalkInForm({
                       onChange={(e) => setSearchRetrieveQuery(e.target.value)}
                       onFocus={() => setIsRetrieveFocused(true)}
                       onBlur={() => setTimeout(() => setIsRetrieveFocused(false), 200)}
-                      className="h-10 w-full rounded-lg bg-white/10 border border-white/15 pl-9 pr-4 text-sm text-white placeholder:text-white/40 outline-none focus:bg-white focus:text-primary transition-all"
+                      className="h-10 w-full rounded-lg bg-white/30 border border-white/50 pl-9 pr-4 text-sm font-semibold text-slate-900 placeholder:text-slate-700 outline-none focus:bg-white transition-all"
                     />
                   </div>
                   {isRetrieveFocused && retrieveResults.length > 0 && (
@@ -457,10 +509,10 @@ export default function WalkInForm({
                           key={r.id}
                           type="button"
                           onMouseDown={() => fetchRecordDetailsForEdit(r.id)}
-                          className="flex flex-col items-start px-4 py-3 border-b border-border hover:bg-slate-50 transition-colors text-left"
+                          className="flex flex-col items-start px-4 py-3 border-b border-border hover:bg-green-50 transition-colors text-left"
                         >
                           <div className="flex justify-between w-full">
-                            <span className="font-bold text-sm text-text">#{r.id} - {r.first_name} {r.last_name}</span>
+                            <span className="font-bold text-sm text-slate-900">#{r.id} - {r.first_name} {r.last_name}</span>
                             <span className="text-xs font-mono text-text-dim">{r.person_number}</span>
                           </div>
                           <span className="text-xs text-text-muted mt-1">{r.city}</span>
@@ -479,7 +531,7 @@ export default function WalkInForm({
                 {/* Check-in info */}
                 <div className="flex flex-col gap-5">
                   <div className="flex items-center gap-2 border-b border-border pb-2">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white font-bold text-[10px]">1</div>
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-slate-900 font-bold text-[10px]">1</div>
                     <h3 className="font-sans text-xs font-bold text-primary">Enquiry Details</h3>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -514,9 +566,19 @@ export default function WalkInForm({
                 {/* Person info */}
                 <div className="flex flex-col gap-5">
                   <div className="flex items-center gap-2 border-b border-border pb-2">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white font-bold text-[10px]">2</div>
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-slate-900 font-bold text-[10px]">2</div>
                     <h3 className="font-sans text-xs font-bold text-primary">Candidate Information</h3>
                   </div>
+                  
+                  {/* PHONE MOVED TO THE TOP FOR AUTO-FILL (Req 10) */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-sans text-xs font-semibold text-text-muted flex justify-between">
+                      <span>Phone Number *</span>
+                      <span className="text-[10px] text-primary italic font-bold">Will auto-fill if candidate exists</span>
+                    </label>
+                    <input type="tel" placeholder="Enter 10-digit number" required value={personNumber} onChange={(e) => setPersonNumber(e.target.value)} className="h-11 rounded-lg border border-border px-3 text-sm bg-white outline-none focus:border-primary" />
+                  </div>
+
                   {(visitingReason === "Onboarding" || visitingReason !== "Onboarding") && (
                     <>
                       <div className="grid grid-cols-2 gap-4">
@@ -529,28 +591,23 @@ export default function WalkInForm({
                           <input type="text" required value={lastName} onChange={(e) => setLastName(e.target.value)} className="h-11 rounded-lg border border-border px-3 text-sm bg-white outline-none focus:border-primary" />
                         </div>
                       </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <label className="font-sans text-xs font-semibold text-text-muted">Phone Number *</label>
-                        <input type="tel" required value={personNumber} onChange={(e) => setPersonNumber(e.target.value)} className="h-11 rounded-lg border border-border px-3 text-sm bg-white outline-none focus:border-primary" />
-                      </div>
                     </>
                   )}
 
                   {visitingReason === "Onboarding" && (
                     <div className="grid grid-cols-2 gap-4 mt-2 p-4 bg-slate-50 border border-border rounded-xl">
                       <div className="col-span-2">
-                        <h4 className="text-xs font-bold text-primary mb-3 flex items-center gap-2"><Upload className="w-4 h-4" /> Upload Documents</h4>
+                        <h4 className="text-xs font-bold text-primary mb-3 flex items-center gap-2"><Upload className="w-4 h-4" /> Upload Documents (Optional)</h4>
                       </div>
                       
                       {/* Aadhaar group */}
                       <div className="flex flex-col gap-3 border-r border-border/50 pr-4">
                         <div className="flex flex-col gap-1.5">
                           <label className="font-sans text-[10px] font-semibold text-text-muted">Aadhaar Number</label>
-                          <input type="text" value={aadhaarNumber} onChange={(e) => setAadhaarNumber(e.target.value)} className="h-9 rounded border border-border px-2 text-xs" />
+                          <input type="text" value={aadhaarNumber} onChange={(e) => setAadhaarNumber(e.target.value)} className="h-9 rounded border border-border px-2 text-xs outline-none focus:border-primary" />
                         </div>
                         <div className="flex flex-col gap-2 relative">
-                          <label className="font-sans text-[10px] font-semibold text-text-muted">Aadhaar Image</label>
+                          <label className="font-sans text-[10px] font-semibold text-text-muted">Aadhaar Image (Optional)</label>
                           {aadhaarImage ? (
                             <div className="relative">
                               <img src={aadhaarImage} alt="Aadhaar" className="w-full h-16 object-cover rounded border border-border" />
@@ -558,8 +615,8 @@ export default function WalkInForm({
                             </div>
                           ) : (
                             <div className="flex gap-1">
-                              <button type="button" onClick={() => setCameraActiveField("aadhaar")} className="flex-1 bg-slate-100 hover:bg-slate-200 text-[10px] py-1.5 rounded text-center border border-border">Camera</button>
-                              <label className="flex-1 bg-slate-100 hover:bg-slate-200 text-[10px] py-1.5 rounded text-center border border-border cursor-pointer">
+                              <button type="button" onClick={() => setCameraActiveField("aadhaar")} className="flex-1 bg-white hover:bg-slate-100 text-[10px] py-1.5 rounded text-center border border-border cursor-pointer transition-colors">Camera</button>
+                              <label className="flex-1 bg-white hover:bg-slate-100 text-[10px] py-1.5 rounded text-center border border-border cursor-pointer transition-colors">
                                 File <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, "aadhaar")} />
                               </label>
                             </div>
@@ -571,10 +628,10 @@ export default function WalkInForm({
                       <div className="flex flex-col gap-3 pl-2">
                         <div className="flex flex-col gap-1.5">
                           <label className="font-sans text-[10px] font-semibold text-text-muted">DL Number</label>
-                          <input type="text" value={dlNumber} onChange={(e) => setDlNumber(e.target.value)} className="h-9 rounded border border-border px-2 text-xs" />
+                          <input type="text" value={dlNumber} onChange={(e) => setDlNumber(e.target.value)} className="h-9 rounded border border-border px-2 text-xs outline-none focus:border-primary" />
                         </div>
                         <div className="flex flex-col gap-2 relative">
-                          <label className="font-sans text-[10px] font-semibold text-text-muted">DL Image</label>
+                          <label className="font-sans text-[10px] font-semibold text-text-muted">DL Image (Optional)</label>
                           {dlImage ? (
                             <div className="relative">
                               <img src={dlImage} alt="DL" className="w-full h-16 object-cover rounded border border-border" />
@@ -582,8 +639,8 @@ export default function WalkInForm({
                             </div>
                           ) : (
                             <div className="flex gap-1">
-                              <button type="button" onClick={() => setCameraActiveField("dl")} className="flex-1 bg-slate-100 hover:bg-slate-200 text-[10px] py-1.5 rounded text-center border border-border">Camera</button>
-                              <label className="flex-1 bg-slate-100 hover:bg-slate-200 text-[10px] py-1.5 rounded text-center border border-border cursor-pointer">
+                              <button type="button" onClick={() => setCameraActiveField("dl")} className="flex-1 bg-white hover:bg-slate-100 text-[10px] py-1.5 rounded text-center border border-border cursor-pointer transition-colors">Camera</button>
+                              <label className="flex-1 bg-white hover:bg-slate-100 text-[10px] py-1.5 rounded text-center border border-border cursor-pointer transition-colors">
                                 File <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, "dl")} />
                               </label>
                             </div>
@@ -600,43 +657,56 @@ export default function WalkInForm({
               {/* Status and Referrals */}
               <div className="flex flex-col gap-5">
                  <div className="flex items-center gap-2 border-b border-border pb-2">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white font-bold text-[10px]">3</div>
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-slate-900 font-bold text-[10px]">3</div>
                     <h3 className="font-sans text-xs font-bold text-primary">Classifications & Outcome</h3>
                  </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                  
                  <div className="flex flex-col gap-4">
-                    <h3 className="font-sans text-xs font-bold text-primary hidden">Classifications & Source</h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="flex flex-col gap-1.5">
                         <label className="font-sans text-xs font-semibold text-text-muted">Interested Position</label>
                         <select value={interestedPosition} onChange={(e) => setInterestedPosition(e.target.value)} className="h-10 rounded border border-border px-3 text-sm bg-white outline-none focus:border-primary">
                           <option value="Driver">Driver</option>
                           <option value="Operator">Operator</option>
+                          <option value="Enquiry">Enquiry</option>
                         </select>
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <label className="font-sans text-xs font-semibold text-text-muted">Mode of Enquiry</label>
-                        <select value={modeOfEnquiry} onChange={(e) => setModeOfEnquiry(e.target.value)} className="h-10 rounded border border-border px-3 text-sm bg-white outline-none focus:border-primary">
+                        <select 
+                          value={modeOfEnquiry} 
+                          onChange={(e) => {
+                            setModeOfEnquiry(e.target.value);
+                            if (e.target.value !== "Referral") {
+                              setReferredByName("");
+                              setReferredByPhone("");
+                            }
+                          }} 
+                          className="h-10 rounded border border-border px-3 text-sm bg-white outline-none focus:border-primary"
+                        >
                           <option value="In-person Visit">In-person Visit</option>
                           <option value="Enquiry on Phone">Enquiry on Phone</option>
+                          <option value="Referral">Referral</option>
                         </select>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="font-sans text-xs font-semibold text-text-muted">Referred By (Name)</label>
-                        <input type="text" value={referredByName} onChange={(e) => setReferredByName(e.target.value)} className="h-10 rounded border border-border px-3 text-sm bg-white outline-none focus:border-primary" />
+
+                    {modeOfEnquiry === "Referral" && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="font-sans text-xs font-semibold text-text-muted">Referred By (Name) *</label>
+                          <input type="text" required value={referredByName} onChange={(e) => setReferredByName(e.target.value)} className="h-10 rounded border border-border px-3 text-sm bg-white outline-none focus:border-primary" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="font-sans text-xs font-semibold text-text-muted">Referred By (Phone) *</label>
+                          <input type="tel" required value={referredByPhone} onChange={(e) => setReferredByPhone(e.target.value)} className="h-10 rounded border border-border px-3 text-sm bg-white outline-none focus:border-primary" />
+                        </div>
                       </div>
-                      <div className="flex flex-col gap-1.5">
-                        <label className="font-sans text-xs font-semibold text-text-muted">Referred By (Phone)</label>
-                        <input type="text" value={referredByPhone} onChange={(e) => setReferredByPhone(e.target.value)} className="h-10 rounded border border-border px-3 text-sm bg-white outline-none focus:border-primary" />
-                      </div>
-                    </div>
+                    )}
                  </div>
 
                  <div className="flex flex-col gap-4">
-                    <h3 className="font-sans text-xs font-bold text-primary hidden">Outcome</h3>
                     <div className="flex flex-col gap-1.5">
                       <label className="font-sans text-xs font-semibold text-text-muted">Onboarding Outcome Status *</label>
                       <select required value={joinedStatus} onChange={(e) => setJoinedStatus(e.target.value as OnboardingOutcome)} className="h-10 rounded border border-border px-3 text-sm bg-white outline-none focus:border-primary">
@@ -660,8 +730,8 @@ export default function WalkInForm({
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-2 pt-6 border-t border-border">
                 <p className="text-[10px] font-bold text-red-500">* Mandatory Fields</p>
                 <div className="flex gap-3">
-                  {editingId && <button type="button" onClick={() => { resetForm(); setActiveTab("registry"); }} className="h-11 rounded-lg border border-border bg-white px-5 font-sans text-sm font-semibold text-text-muted hover:bg-slate-100">Cancel Edit</button>}
-                  <button type="submit" className="h-11 rounded-lg bg-primary hover:bg-primary-hover text-white px-6 font-sans text-sm font-semibold shadow-md cursor-pointer">{editingId ? "Update Walk-In Entry" : "Save Walk-In Entry"}</button>
+                  {editingId && <button type="button" onClick={() => { resetForm(); setActiveTab("registry"); }} className="h-11 rounded-lg border border-border bg-white px-5 font-sans text-sm font-semibold text-text-muted hover:bg-slate-100 cursor-pointer">Cancel Edit</button>}
+                  <button type="submit" className="h-11 rounded-lg bg-primary hover:bg-primary-hover text-slate-900 px-6 font-sans text-sm font-semibold shadow-md cursor-pointer transition-colors">{editingId ? "Update Walk-In Entry" : "Save Walk-In Entry"}</button>
                 </div>
               </div>
 
@@ -682,7 +752,7 @@ export default function WalkInForm({
                   placeholder="Search candidate, phone, DL, ID..."
                   value={searchQuery}
                   onChange={(e) => {setSearchQuery(e.target.value); setPage(1);}}
-                  className="h-10 w-full rounded-lg border border-border pl-9 pr-4 font-sans text-xs text-text bg-white outline-none focus:border-primary"
+                  className="h-10 w-full rounded-lg border border-border pl-9 pr-4 font-sans text-xs text-text bg-white outline-none focus:border-primary transition-colors"
                 />
               </div>
 
@@ -721,23 +791,23 @@ export default function WalkInForm({
               <div className="rounded-xl border border-border bg-white p-5 shadow-xs flex justify-between items-center">
                 <div className="flex flex-col">
                   <span className="font-sans text-[10px] font-bold text-text-dim">Total Walk-Ins</span>
-                  <span className="font-sans text-3xl font-extrabold text-primary mt-1">{metrics.total}</span>
+                  <span className="font-sans text-3xl font-extrabold text-slate-900 mt-1">{metrics.total}</span>
                 </div>
-                <div className="rounded-xl bg-teal-50/50 text-green p-3"><User className="h-6 w-6" /></div>
+                <div className="rounded-xl bg-slate-100 text-slate-600 p-3"><User className="h-6 w-6" /></div>
               </div>
               <div className="rounded-xl border border-border bg-white p-5 shadow-xs flex justify-between items-center">
                 <div className="flex flex-col">
                   <span className="font-sans text-[10px] font-bold text-text-dim">Successful onboardings</span>
-                  <span className="font-sans text-3xl font-extrabold text-green mt-1">{metrics.joined}</span>
+                  <span className="font-sans text-3xl font-extrabold text-primary mt-1">{metrics.joined}</span>
                 </div>
-                <div className="rounded-xl bg-green-light/40 text-green p-3"><CheckCircle className="h-6 w-6" /></div>
+                <div className="rounded-xl bg-green-50 text-primary p-3"><CheckCircle className="h-6 w-6" /></div>
               </div>
               <div className="rounded-xl border border-border bg-white p-5 shadow-xs flex justify-between items-center">
                 <div className="flex-grow flex flex-col">
                   <span className="font-sans text-[10px] font-bold text-text-dim">Conversion Rate</span>
-                  <span className="font-sans text-3xl font-extrabold text-primary mt-1">{metrics.conversionRate}%</span>
+                  <span className="font-sans text-3xl font-extrabold text-slate-900 mt-1">{metrics.conversionRate}%</span>
                 </div>
-                <div className="rounded-xl bg-slate-50 text-text-muted p-3"><ShieldCheck className="h-6 w-6" /></div>
+                <div className="rounded-xl bg-slate-100 text-slate-600 p-3"><ShieldCheck className="h-6 w-6" /></div>
               </div>
               <div className="rounded-xl border border-border bg-white p-5 shadow-xs flex justify-between items-center">
                 <div className="flex flex-col">
@@ -753,12 +823,12 @@ export default function WalkInForm({
               
               <div className="border-b border-border p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h3 className="font-sans text-lg font-bold text-primary tracking-tight">Lead Records Registry</h3>
+                  <h3 className="font-sans text-lg font-bold text-slate-900 tracking-tight">Walk-In Registry</h3>
                   <p className="font-sans text-xs text-text-muted mt-1">Search, Edit, Follow up and review on Walk-in leads</p>
                 </div>
                 <div className="flex gap-2">
                   <button onClick={handleExportCSV} className="flex h-10 items-center justify-center gap-1.5 rounded-lg border border-border bg-white hover:bg-slate-50 px-4 font-sans text-xs font-semibold text-text-muted transition-colors cursor-pointer shadow-2xs"><Download className="h-4 w-4" /> Export CSV</button>
-                  <button onClick={() => { resetForm(); setActiveTab("form"); }} className="flex h-10 items-center justify-center gap-1.5 rounded-lg bg-green hover:bg-green/95 px-4 font-sans text-xs font-semibold text-white transition-colors cursor-pointer shadow-xs"><Plus className="h-4 w-4" /> Add Walk-In</button>
+                  <button onClick={() => { resetForm(); setActiveTab("form"); }} className="flex h-10 items-center justify-center gap-1.5 rounded-lg bg-primary hover:bg-primary-hover px-4 font-sans text-xs font-semibold text-slate-900 transition-colors cursor-pointer shadow-xs"><Plus className="h-4 w-4" /> Add Walk-In</button>
                 </div>
               </div>
 
@@ -771,7 +841,7 @@ export default function WalkInForm({
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim">City</th>
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim">Contact</th>
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim">Position</th>
-                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim">Purpose</th>
+                      <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim">Gov. IDs</th>
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim">Recorded By</th>
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim">Outcome Status</th>
                       <th className="px-6 py-3.5 font-sans text-[10px] font-bold text-text-dim text-center">Action</th>
@@ -783,24 +853,27 @@ export default function WalkInForm({
                     ) : (
                       records.map((r) => {
                         let statusColor = "bg-slate-100 text-slate-700 border-slate-200";
-                        if (r.joined_status === "Successfully Onboarded" || r.joined_status === "Joined" || r.joined_status === "Onboarded") statusColor = "bg-green-light border-green/20 text-green";
+                        if (r.joined_status === "Successfully Onboarded" || r.joined_status === "Joined" || r.joined_status === "Onboarded") statusColor = "bg-green-50 border-green-200 text-primary";
                         else if (r.joined_status === "Follow Up Required" || r.joined_status === "Pending") statusColor = "bg-amber-50 text-amber-700 border-amber-200";
                         else if (r.joined_status === "Onboarding Process Initiated") statusColor = "bg-blue-50 text-blue-700 border-blue-200";
                         else if (r.joined_status === "No Follow Up Required / Closed" || r.joined_status === "Not Interested") statusColor = "bg-red-50 border-red-100 text-red-600";
 
                         return (
                           <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-6 py-4 font-mono text-xs font-bold text-primary">#{r.id}</td>
+                            <td className="px-6 py-4 font-mono text-xs font-bold text-slate-900">#{r.id}</td>
                             <td className="px-6 py-4">
                               <div className="font-sans text-sm font-bold text-gray-900">{r.first_name ? `${r.first_name} ${r.last_name}`.trim() : (r.person_name || 'N/A')}</div>
                               <div className="font-sans text-[10px] text-text-dim">{r.event_date}</div>
                             </td>
-                            <td className="px-6 py-4 font-sans text-xs font-bold text-primary bg-primary/5 rounded">{r.city || r.city_name || '-'}</td>
+                            <td className="px-6 py-4 font-sans text-xs font-bold text-slate-700 bg-slate-100/50 rounded">{r.city || r.city_name || '-'}</td>
                             <td className="px-6 py-4 font-sans text-xs font-semibold text-text">{r.person_number}</td>
                             <td className="px-6 py-4">
-                              <span className="inline-block rounded-md px-2 py-0.5 text-[10px] font-bold bg-blue-50 text-primary">{r.visitor_type}</span>
+                              <span className="inline-block rounded-md px-2 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-700">{r.visitor_type}</span>
                             </td>
-                            <td className="px-6 py-4 font-sans text-[11px] text-text-muted font-semibold">{r.visiting_reason}</td>
+                            <td className="px-6 py-4 font-mono text-[11px] text-text-muted font-semibold flex flex-col gap-1">
+                               <span>DL: {maskSensitiveID(r.dl_number)}</span>
+                               <span>ID: {maskSensitiveID(r.aadhaar_number)}</span>
+                            </td>
                             <td className="px-6 py-4">
                               <div className="font-sans text-xs font-semibold text-text">{r.executive_name}</div>
                               <div className="font-mono text-[10px] text-text-dim">ID: {r.executive_id}</div>
@@ -824,8 +897,8 @@ export default function WalkInForm({
               <div className="bg-slate-50 p-4 border-t border-border/40 flex items-center justify-between text-xs font-sans">
                 <span className="text-text-dim">Showing {(page-1)*10 + 1} - {Math.min(page*10, totalRecords)} of {totalRecords} records</span>
                 <div className="flex gap-2">
-                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="h-8 px-3 rounded border border-border bg-white disabled:opacity-50 flex items-center cursor-pointer"><ChevronLeft className="w-3 h-3 mr-1" /> Prev</button>
-                  <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages || totalRecords === 0} className="h-8 px-3 rounded border border-border bg-white disabled:opacity-50 flex items-center cursor-pointer">Next <ChevronRight className="w-3 h-3 ml-1" /></button>
+                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="h-8 px-3 rounded border border-border bg-white disabled:opacity-50 flex items-center cursor-pointer transition-colors hover:bg-slate-100"><ChevronLeft className="w-3 h-3 mr-1" /> Prev</button>
+                  <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages || totalRecords === 0} className="h-8 px-3 rounded border border-border bg-white disabled:opacity-50 flex items-center cursor-pointer transition-colors hover:bg-slate-100">Next <ChevronRight className="w-3 h-3 ml-1" /></button>
                 </div>
               </div>
 
@@ -844,7 +917,7 @@ export default function WalkInForm({
         />
       )}
 
-      <footer className="bg-primary py-8 text-center text-xs text-white/50 border-t border-primary-hover font-sans mt-auto">
+      <footer className="bg-primary py-8 text-center text-xs font-bold text-slate-900 border-t border-primary-hover font-sans mt-auto">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4">
           <span>Walk-In Operations Registry</span>
           <span>LetzRyd © 2026</span>

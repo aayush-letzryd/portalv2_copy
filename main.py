@@ -283,7 +283,6 @@ def startup_event():
         """)
 
         # Add columns if migrating an existing table
-        # Add columns if migrating an existing table
         for col in [
             "vendor_type VARCHAR(50)", 
             "driver_id VARCHAR(50)", 
@@ -293,7 +292,9 @@ def startup_event():
             "documents_verified BOOLEAN DEFAULT FALSE",
             "custom_rental_plan BOOLEAN DEFAULT FALSE",
             "cancelled_cheque_photo TEXT",
-            "signature_photo TEXT"
+            "signature_photo TEXT",
+            "account_name VARCHAR(255)",     # <--- ADD THIS
+            "account_type VARCHAR(50)"       # <--- ADD THIS
         ]:
             cur.execute(f"ALTER TABLE copy_form_onboarding ADD COLUMN IF NOT EXISTS {col};")
 
@@ -1500,6 +1501,8 @@ class OnboardingData(BaseModel):
     account_number: Optional[str] = None
     ifsc_code: Optional[str] = None
     upi_id: Optional[str] = None
+    account_name: Optional[str] = None
+    account_type: Optional[str] = None
     vendor_type: Optional[str] = "Individual"
     driver_id: Optional[str] = None
     custom_rent_amount: Optional[str] = None
@@ -2564,7 +2567,9 @@ def get_walkin(walkin_id: int):
                 w.visitor_type, w.event_date, w.city, w.operating_place, w.executive_id,
                 w.person_name, w.person_number, w.aadhaar_number, w.dl_number,
                 w.visiting_reason, w.joined_status, w.remarks,
-                COALESCE(u.name, '') AS executive_name
+                COALESCE(u.name, '') AS executive_name,
+                w.first_name, w.last_name, w.enquiry_time, w.mode_of_enquiry,
+                w.referred_by_name, w.referred_by_phone
             FROM copy_walkins w
             LEFT JOIN copy_users u ON u.id = w.executive_id
             WHERE w.id = %s;
@@ -2577,12 +2582,12 @@ def get_walkin(walkin_id: int):
                 "aadhaar_number": r[7], "dl_number": r[8],
                 "visiting_reason": r[9], "joined_status": r[10], "remarks": r[11],
                 "executive_name": r[12],
+                "first_name": r[13], "last_name": r[14], "enquiry_time": r[15],
+                "mode_of_enquiry": r[16], "referred_by_name": r[17], "referred_by_phone": r[18]
             }
         raise HTTPException(status_code=404, detail="Walkin not found")
     finally:
         postgreSQL_pool.putconn(conn)
-
-
 # ─────────────────────────────────────────────────────────
 # Walk-ins — Create
 # ─────────────────────────────────────────────────────────
@@ -2606,8 +2611,9 @@ def create_walkin(data: WalkinData, authorization: Optional[str] = Header(None))
             INSERT INTO copy_walkins
               (visitor_type, event_date, city, operating_place, executive_id, person_name,
                person_number, aadhaar_number, dl_number, aadhaar_image,
-               dl_image, visiting_reason, joined_status, remarks)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+               dl_image, visiting_reason, joined_status, remarks,
+               first_name, last_name, enquiry_time, mode_of_enquiry, referred_by_name, referred_by_phone)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             RETURNING id;
         """, (
             data.visitor_type,
@@ -2624,15 +2630,18 @@ def create_walkin(data: WalkinData, authorization: Optional[str] = Header(None))
             data.visiting_reason,
             data.joined_status,
             data.remarks,
+            data.first_name,
+            data.last_name,
+            data.enquiry_time,
+            data.mode_of_enquiry,
+            data.referred_by_name,
+            data.referred_by_phone
         ))
         walkin_id = cur.fetchone()[0]
         conn.commit()
         return {"success": True, "walkin_id": walkin_id}
     finally:
         postgreSQL_pool.putconn(conn)
-
-
-
 
 
 # ─────────────────────────────────────────────────────────
@@ -2665,7 +2674,9 @@ def update_walkin(walkin_id: int, data: WalkinData, authorization: Optional[str]
             UPDATE copy_walkins SET
                 visitor_type=%s, event_date=%s, city=%s, operating_place=%s, executive_id=%s,
                 person_name=%s, person_number=%s, aadhaar_number=%s, dl_number=%s,
-                visiting_reason=%s, joined_status=%s, remarks=%s
+                visiting_reason=%s, joined_status=%s, remarks=%s,
+                first_name=%s, last_name=%s, enquiry_time=%s, mode_of_enquiry=%s, 
+                referred_by_name=%s, referred_by_phone=%s
             WHERE id=%s;
         """, (
             data.visitor_type,
@@ -2680,13 +2691,18 @@ def update_walkin(walkin_id: int, data: WalkinData, authorization: Optional[str]
             data.visiting_reason,
             data.joined_status,
             data.remarks,
+            data.first_name,
+            data.last_name,
+            data.enquiry_time,
+            data.mode_of_enquiry,
+            data.referred_by_name,
+            data.referred_by_phone,
             walkin_id,
         ))
         conn.commit()
         return {"success": True}
     finally:
         postgreSQL_pool.putconn(conn)
-
 
 # ─────────────────────────────────────────────────────────
 # Walk-ins — Delete
@@ -2758,8 +2774,9 @@ def create_onboarding(data: OnboardingData):
                 account_number, ifsc_code, upi_id,
                 vendor_type, driver_id, custom_rent_amount,
                 walkin_id, emergency_relationship, platform_details, documents_verified, 
-                custom_rental_plan, cancelled_cheque_photo, signature_photo
-            ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                custom_rental_plan, cancelled_cheque_photo, signature_photo,
+                account_name, account_type
+            ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             RETURNING id;
         """, (
             data.driver_name, data.phone_number, data.whatsapp_number, data.dob, data.city, data.operating_place,
@@ -2773,7 +2790,8 @@ def create_onboarding(data: OnboardingData):
             data.account_number, data.ifsc_code, data.upi_id,
             data.vendor_type, data.driver_id, data.custom_rent_amount,
             data.walkin_id, data.emergency_relationship, json.dumps(data.platform_details) if data.platform_details else None, data.documents_verified,
-            data.custom_rental_plan, extract_image(data.cancelled_cheque_photo), extract_image(data.signature_photo)
+            data.custom_rental_plan, extract_image(data.cancelled_cheque_photo), extract_image(data.signature_photo),
+            data.account_name, data.account_type
         ))
         new_id = cur.fetchone()[0]
         
@@ -2828,7 +2846,8 @@ def get_onboarding(id: int):
                 selfie_photo, dl_front, dl_back, pan_card_photo,
                 vendor_type, driver_id, custom_rent_amount,
                 walkin_id, emergency_relationship, platform_details, documents_verified,
-                custom_rental_plan, cancelled_cheque_photo, signature_photo
+                custom_rental_plan, cancelled_cheque_photo, signature_photo,
+                account_name, account_type
             FROM copy_form_onboarding
             WHERE id = %s;
         """, (id,))
@@ -2850,7 +2869,8 @@ def get_onboarding(id: int):
                 "vendor_type": r[29], "driver_id": r[30], "custom_rent_amount": r[31],
                 "walkin_id": r[32], "emergency_relationship": r[33], "platform_details": r[34],
                 "documents_verified": r[35], "custom_rental_plan": r[36],
-                "cancelled_cheque_photo": r[37], "signature_photo": r[38]
+                "cancelled_cheque_photo": r[37], "signature_photo": r[38],
+                "account_name": r[39], "account_type": r[40]
             }
             if r[29] == "Operator" and r[17]:
                 cur.execute("""
@@ -2898,7 +2918,7 @@ def update_onboarding(id: int, data: OnboardingData):
                 father_name=%s, bank_name=%s, other_bank_name=%s,
                 account_number=%s, ifsc_code=%s, upi_id=%s,
                 walkin_id=%s, emergency_relationship=%s, platform_details=%s, documents_verified=%s,
-                custom_rental_plan=%s
+                custom_rental_plan=%s, account_name=%s, account_type=%s
             WHERE id=%s;
         """, (
             data.driver_name, data.phone_number, data.whatsapp_number, data.dob, data.city, data.operating_place,
@@ -2909,7 +2929,7 @@ def update_onboarding(id: int, data: OnboardingData):
             data.father_name, data.bank_name, data.other_bank_name,
             data.account_number, data.ifsc_code, data.upi_id,
             data.walkin_id, data.emergency_relationship, json.dumps(data.platform_details) if data.platform_details else None, data.documents_verified,
-            data.custom_rental_plan,
+            data.custom_rental_plan, data.account_name, data.account_type,
             id
         ))
         

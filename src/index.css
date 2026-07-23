@@ -4,8 +4,11 @@
 @theme {
   --font-sans: "Inter", sans-serif;
   
-  --color-primary: #0A1650;
-  --color-primary-hover: #0F1F6B;
+  /* --- CHANGED THESE TWO LINES TO LIGHT GREEN --- */
+  --color-primary: #22c55e;
+  --color-primary-hover: #16a34a;
+  /* ---------------------------------------------- */
+
   --color-green: #0B9218;
   --color-green-light: #e8f9eb;
   --color-yellow: #C9CA48;

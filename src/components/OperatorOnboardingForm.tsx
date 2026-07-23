@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { 
   User, FileText, CheckCircle, 
   ChevronLeft, Search, Trash2, Edit, Camera, 
-  Upload, X, RefreshCw, Plus, UserCheck, Database, IndianRupee
+  Upload, X, RefreshCw, Plus, UserCheck, Database, IndianRupee, MapPin, CreditCard, Users
 } from "lucide-react";
 import { OnboardingRecord, User as UserSession, CITIES } from "../types";
 import CameraCapture from "./CameraCapture";
@@ -38,8 +38,6 @@ interface DriverSubForm {
   aadhaar_card_photo: string | null;
 }
 
-
-
 export default function OperatorOnboardingForm({ 
   user, 
   onBackToSelector, 
@@ -51,7 +49,9 @@ export default function OperatorOnboardingForm({
     hour12: true
   }));
 
-  // Retrieve / Edit state
+  // Wizard & Mode State
+  const [currentStep, setCurrentStep] = useState(1);
+  const [entryMode, setEntryMode] = useState<"new" | "walkin" | "edit">("new");
   const [retrieveIdInput, setRetrieveIdInput] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
 
@@ -69,14 +69,23 @@ export default function OperatorOnboardingForm({
   const [vendorName, setVendorName] = useState("");
   const [vendorId, setVendorId] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [isWhatsappSame, setIsWhatsappSame] = useState(true);
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [city, setCity] = useState("Hyderabad");
   const [operatingPlace, setOperatingPlace] = useState("");
-  const [presentAddress, setPresentAddress] = useState("");
-  const [permanentAddress, setPermanentAddress] = useState("");
-  const [sameAsPresentAddress, setSameAsPresentAddress] = useState(false);
-  const [customRentAmount, setCustomRentAmount] = useState("");
-  const [bankName, setBankName] = useState("State Bank of India");
+  
+  // Business Address State
+  const [businessLine1, setBusinessLine1] = useState("");
+  const [businessLine2, setBusinessLine2] = useState("");
+  const [businessArea, setBusinessArea] = useState("");
+  const [businessCity, setBusinessCity] = useState("Hyderabad");
+  const [businessPincode, setBusinessPincode] = useState("");
+  
+  // Bank Details State
+  const [isAccountNameSame, setIsAccountNameSame] = useState(true);
+  const [accountName, setAccountName] = useState("");
+  const [accountType, setAccountType] = useState("Current");
+  const [bankName, setBankName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [ifscCode, setIfscCode] = useState("");
   const [upiId, setUpiId] = useState("");
@@ -87,6 +96,7 @@ export default function OperatorOnboardingForm({
   const [operatorAadhaarPhoto, setOperatorAadhaarPhoto] = useState<string | null>(null);
   const [operatorPan, setOperatorPan] = useState("");
   const [operatorAadhaar, setOperatorAadhaar] = useState("");
+  const [documentsVerified, setDocumentsVerified] = useState(false);
 
   // 2. Drivers List
   const [drivers, setDrivers] = useState<DriverSubForm[]>([]);
@@ -189,25 +199,32 @@ export default function OperatorOnboardingForm({
     setVendorName("");
     setVendorId("");
     setPhoneNumber("");
+    setIsWhatsappSame(true);
     setWhatsappNumber("");
     setOperatingPlace("");
-    setPresentAddress("");
-    setPermanentAddress("");
-    setCustomRentAmount("");
+    setBusinessLine1("");
+    setBusinessLine2("");
+    setBusinessArea("");
+    setBusinessPincode("");
     setOperatorSelfie(null);
     setOperatorPanPhoto(null);
     setOperatorAadhaarPhoto(null);
     setOperatorPan("");
     setOperatorAadhaar("");
-    setBankName("State Bank of India");
+    setDocumentsVerified(false);
+    setIsAccountNameSame(true);
+    setAccountName("");
+    setAccountType("Current");
+    setBankName("");
     setAccountNumber("");
     setIfscCode("");
     setUpiId("");
     setDrivers([]);
     setEditingId(null);
+    setCurrentStep(1);
+    setEntryMode("new");
   };
 
-  // Load operator record for edit by ID
   const loadRecordForEdit = async (id: number) => {
     try {
       const token = localStorage.getItem("lr_token");
@@ -223,28 +240,37 @@ export default function OperatorOnboardingForm({
       }
 
       setEditingId(data.id);
+      setEntryMode("edit");
       setVendorName(data.driver_name || data.vendor_name || "");
       setVendorId(data.vendor_id || "");
       setPhoneNumber(data.phone_number || "");
       setWhatsappNumber(data.whatsapp_number || "");
+      setIsWhatsappSame(data.phone_number === data.whatsapp_number);
       setCity(data.city || "Hyderabad");
       setOperatingPlace(data.operating_place || "");
-      setPresentAddress(data.present_address || "");
-      setPermanentAddress(data.permanent_address || "");
-      setSameAsPresentAddress(data.present_address === data.permanent_address);
+      
+      // Attempt to split address back into fields
+      if (data.present_address) {
+        const parts = data.present_address.split(", ");
+        setBusinessLine1(parts[0] || data.present_address);
+        setBusinessLine2(parts[1] || "");
+        setBusinessArea(parts[2] || "");
+      }
+
       setOperatorPan(data.pan_number || "");
       setOperatorAadhaar(data.aadhaar_number || "");
-      setCustomRentAmount(data.custom_rent_amount || "");
       setOperatorSelfie(data.selfie_photo || null);
       setOperatorPanPhoto(data.pan_card_photo || null);
       setOperatorAadhaarPhoto(data.aadhaar_card_photo || null);
-      setBankName(data.bank_name || "State Bank of India");
+      
+      setBankName(data.bank_name || "");
       setAccountNumber(data.account_number || "");
       setIfscCode(data.ifsc_code || "");
       setUpiId(data.upi_id || "");
-      setDrivers([]);
+      setDrivers([]); // Drivers fetching logic would ideally hit a /drivers endpoint
 
       setActiveTab("form");
+      setCurrentStep(1);
       setRetrieveIdInput("");
     } catch (err: any) {
       alert(err.message);
@@ -366,18 +392,20 @@ export default function OperatorOnboardingForm({
       return alert("Please add at least one driver under this Operator.");
     }
 
+    const fullBusinessAddress = `${businessLine1}, ${businessLine2}, ${businessArea}, ${businessCity}, ${businessPincode}`.replace(/(^[,\s]+)|([,\s]+$)/g, '');
+
     try {
       const token = localStorage.getItem("lr_token");
 
       const payload = {
         driver_name: vendorName, 
         phone_number: phoneNumber,
-        whatsapp_number: whatsappNumber,
+        whatsapp_number: isWhatsappSame ? phoneNumber : whatsappNumber,
         dob: "1970-01-01",
         city,
         operating_place: operatingPlace,
-        present_address: presentAddress,
-        permanent_address: sameAsPresentAddress ? presentAddress : permanentAddress,
+        present_address: fullBusinessAddress,
+        permanent_address: fullBusinessAddress,
         emergency_name: "N/A",
         emergency_phone: "0000000000",
         pan_number: operatorPan || "PENDING",
@@ -389,7 +417,6 @@ export default function OperatorOnboardingForm({
         vendor_id: vendorId,
         vendor_type: "Operator",
         father_name: "N/A",
-        custom_rent_amount: customRentAmount || undefined,
         bank_name: bankName,
         account_number: accountNumber || undefined,
         ifsc_code: ifscCode || undefined,
@@ -569,94 +596,98 @@ export default function OperatorOnboardingForm({
         </div>
       </header>
 
-      <main className="flex-grow mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-grow mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
         
         {activeTab === "form" && (
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-surface rounded-2xl shadow-xl shadow-slate-200/50 border border-border/40 overflow-hidden relative bg-white">
-              
-              {/* CARD HEADER */}
-              <div className="bg-primary px-8 py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden text-white">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-20 -mt-20 pointer-events-none"></div>
-                <div className="relative z-10">
-                  <div className="flex items-center gap-3 mb-2">
-                    <img src="https://letzryd.com/replica-assets/letzryd-long-png-logo-Aq2o3DNOw1i2kBMB-7ab04eaa76.png" className="h-8 brightness-0 invert" alt="LetzRyd" referrerPolicy="no-referrer" />
-                    <span className="px-2 py-0.5 rounded border border-white/30 bg-white/20 text-white text-[10px] font-bold tracking-widest backdrop-blur-sm">
-                      Operator Desk
-                    </span>
-                  </div>
-                  <h1 className="font-sans text-2xl font-bold tracking-tight text-white leading-tight">
-                    {editingId ? `Edit Operator Record #${editingId}` : "Operator Onboarding Form"}
-                  </h1>
+          <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-border/40 overflow-hidden relative">
+            
+            {/* CARD HEADER */}
+            <div className="bg-primary px-8 py-6 flex flex-col relative overflow-hidden text-white">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-20 -mt-20 pointer-events-none"></div>
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-2">
+                  <img src="https://letzryd.com/replica-assets/letzryd-long-png-logo-Aq2o3DNOw1i2kBMB-7ab04eaa76.png" className="h-8 brightness-0 invert" alt="LetzRyd" referrerPolicy="no-referrer" />
+                  <span className="px-2 py-0.5 rounded border border-white/30 bg-white/20 text-white text-[10px] font-bold tracking-widest backdrop-blur-sm">
+                    Operator Desk
+                  </span>
                 </div>
+                <h1 className="font-sans text-2xl font-bold tracking-tight text-white leading-tight">
+                  Operator Onboarding Form
+                </h1>
+              </div>
+            </div>
 
-                {/* Retrieve by ID */}
-                <div className="relative z-10 flex w-full sm:w-auto mt-2 sm:mt-0">
-                  <div className="relative flex w-full sm:w-72 items-center">
-                    <Search className="absolute left-3 h-4 w-4 text-white/60" />
-                    <input
-                      type="number"
-                      placeholder="Edit existing record (ID)..."
-                      value={retrieveIdInput}
-                      onChange={(e) => setRetrieveIdInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleRetrieveId()}
-                      className="h-10 w-full rounded-l-xl border border-white/20 bg-white/10 py-2 pl-10 pr-3 text-sm text-white placeholder-white/50 backdrop-blur-md outline-none transition-all focus:border-white focus:bg-white/20 focus:ring-2 focus:ring-white/20"
-                    />
-                    <button 
-                      type="button"
-                      onClick={handleRetrieveId}
-                      className="h-10 rounded-r-xl border border-white/20 border-l-0 bg-white px-4 text-xs font-bold text-green hover:bg-slate-50 transition-colors"
-                    >
-                      Retrieve
-                    </button>
-                  </div>
-                </div>
+            {/* ENTRY MODE TOGGLES */}
+            <div className="bg-slate-50 border-b border-border p-4">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 max-w-2xl mx-auto bg-white p-1 rounded-xl shadow-sm border border-border">
+                <button type="button" onClick={() => {setEntryMode("new"); setEditingId(null);}} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${entryMode === 'new' && !editingId ? 'bg-slate-100 text-primary' : 'text-text-muted hover:text-text'}`}>New Entry</button>
+                <button type="button" onClick={() => {setEntryMode("walkin"); setEditingId(null);}} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${entryMode === 'walkin' && !editingId ? 'bg-slate-100 text-primary' : 'text-text-muted hover:text-text'}`}>Link Walk-in</button>
+                <button type="button" onClick={() => setEntryMode("edit")} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${entryMode === 'edit' || editingId ? 'bg-slate-100 text-primary' : 'text-text-muted hover:text-text'}`}>Retrieve Unverified</button>
               </div>
 
-              {/* Edit mode banner */}
-              {editingId && (
-                <div className="bg-yellow-50 px-8 py-3 border-b border-yellow-200 flex justify-between items-center">
-                  <div className="flex items-center gap-2 text-yellow-800 text-sm font-semibold">
-                    <Edit className="h-4 w-4" />
-                    Editing Operator Record #{editingId}
+              {/* Retrieve Bar (Only shows when entry mode is edit/retrieve) */}
+              {(entryMode === 'edit' || entryMode === 'walkin') && !editingId && (
+                <div className="mt-4 flex max-w-xl mx-auto items-center">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green" />
+                    <input type="text" placeholder={entryMode === 'walkin' ? "Link to Walk-in Record (Name, Phone, ID)..." : "Retrieve Unverified Record (ID)..."} value={retrieveIdInput} onChange={(e) => setRetrieveIdInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleRetrieveId()} className="h-11 w-full rounded-l-xl border border-green border-r-0 bg-white py-2 pl-10 pr-3 text-sm outline-none focus:ring-1 focus:ring-green" />
                   </div>
-                  <button 
-                    type="button"
-                    onClick={resetOperatorForm}
-                    className="text-xs text-yellow-700 hover:text-yellow-900 font-bold underline cursor-pointer"
-                  >
-                    Cancel Edit
-                  </button>
+                  <button type="button" onClick={handleRetrieveId} className="h-11 rounded-r-xl bg-green px-6 text-xs font-bold text-white hover:bg-green-hover transition-colors">Search</button>
                 </div>
               )}
+            </div>
 
+            {/* WIZARD PROGRESS BAR */}
+            <div className="px-8 pt-8 pb-4">
+              <div className="flex justify-between items-center relative">
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-0.5 bg-slate-100 -z-10"></div>
+                <div className={`absolute left-0 top-1/2 -translate-y-1/2 h-0.5 bg-primary -z-10 transition-all duration-300 ${currentStep === 1 ? 'w-0' : currentStep === 2 ? 'w-1/3' : currentStep === 3 ? 'w-2/3' : 'w-full'}`}></div>
+                
+                {[
+                  { step: 1, label: "Operator Info", icon: User },
+                  { step: 2, label: "Documents", icon: FileText },
+                  { step: 3, label: "Drivers", icon: Users },
+                  { step: 4, label: "Bank & Verify", icon: CreditCard }
+                ].map((s) => (
+                  <div key={s.step} className="flex flex-col items-center gap-2 bg-white px-2">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors ${currentStep >= s.step ? 'bg-primary border-primary text-white shadow-md' : 'bg-white border-border text-text-muted'}`}>
+                      {currentStep > s.step ? <CheckCircle className="w-4 h-4" /> : s.step}
+                    </div>
+                    <span className={`text-[10px] font-bold ${currentStep >= s.step ? 'text-primary' : 'text-text-muted'}`}>{s.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-
-              <div className="p-8 pb-10">
-                <form onSubmit={handleSubmit} className="space-y-8">
-                  
-                  {/* SECTION 1: OPERATOR PROFILE DETAILS */}
-                  <div className="flex flex-col gap-5 border-b border-border/40 pb-6">
-                    <h3 className="font-sans text-xs font-bold text-primary flex items-center gap-1.5">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">1</span>
-                      Operator Profile Details
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="p-8 pb-10">
+              <form onSubmit={handleSubmit} className="space-y-8">
+                
+                {/* STEP 1: OPERATOR PROFILE & ADDRESS */}
+                {currentStep === 1 && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Operator Name *</label>
-                        <input type="text" required value={vendorName} onChange={(e) => setVendorName(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Fleet/Operator Name" />
+                        <label className="text-xs font-bold text-text-muted">Operator's Name *</label>
+                        <input type="text" required value={vendorName} disabled={!!editingId} onChange={(e) => setVendorName(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60" placeholder="Full legal name" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Operator ID (Vendor ID) *</label>
-                        <input type="text" required value={vendorId} onChange={(e) => setVendorId(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Unique Vendor ID (e.g. VND-HYD-001)" />
+                        <label className="text-xs font-bold text-text-muted">Operator's Company Name (Optional)</label>
+                        <input type="text" value={vendorId} onChange={(e) => setVendorId(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Fleet Agency Name" />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-text-muted">Phone Number *</label>
-                        <input type="tel" required value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="10-digit mobile" />
+                        <input type="tel" required value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="10-digit mobile" maxLength={10}/>
+                        <p className="text-[10px] text-text-muted italic leading-tight mt-1">This is the primary number we will be contacting you via text messages and whatsapp if possible.</p>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">WhatsApp Number</label>
-                        <input type="tel" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="WhatsApp Number" />
+                        <div className="flex justify-between items-center">
+                          <label className="text-xs font-bold text-text-muted">WhatsApp Number</label>
+                          <label className="flex items-center gap-1.5 text-xs text-text-muted cursor-pointer hover:text-primary">
+                            <input type="checkbox" checked={isWhatsappSame} onChange={(e) => setIsWhatsappSame(e.target.checked)} className="rounded border-border text-primary" />
+                            Same as Phone
+                          </label>
+                        </div>
+                        <input type="tel" disabled={isWhatsappSame} value={isWhatsappSame ? phoneNumber : whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value.replace(/\D/g, '').slice(0, 10))} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-50" placeholder="10-digit mobile" maxLength={10} />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-text-muted">Operating City *</label>
@@ -668,292 +699,301 @@ export default function OperatorOnboardingForm({
                         <label className="text-xs font-bold text-text-muted">Operating Place / Hub</label>
                         <input type="text" value={operatingPlace} onChange={(e) => setOperatingPlace(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="e.g. HITEC Hub" />
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Custom Operator Rent / Day (Optional)</label>
-                        <div className="relative">
-                          <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
-                          <input type="number" value={customRentAmount} onChange={(e) => setCustomRentAmount(e.target.value)} className="w-full h-11 pl-9 pr-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Operator Rent Per Day" />
+                    </div>
+
+                    <div className="border-t border-border pt-6 mt-6">
+                      <h4 className="text-sm font-bold text-primary mb-4 flex items-center gap-2"><MapPin className="w-4 h-4" /> Operator's Office/Present Address</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2 md:col-span-2">
+                          <label className="text-xs font-bold text-text-muted">Address Line 1 *</label>
+                          <input type="text" required value={businessLine1} onChange={(e) => setBusinessLine1(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none" placeholder="Flat, House no., Building, Company" />
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                          <label className="text-xs font-bold text-text-muted">Address Line 2</label>
+                          <input type="text" value={businessLine2} onChange={(e) => setBusinessLine2(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none" placeholder="Area, Street, Sector, Village" />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-text-muted">Locality / Area *</label>
+                          <input type="text" required value={businessArea} onChange={(e) => setBusinessArea(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none" placeholder="e.g. Madhapur" />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-text-muted">City / Town *</label>
+                          <input type="text" required value={businessCity} onChange={(e) => setBusinessCity(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none" placeholder="City Name" />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-text-muted">Pincode *</label>
+                          <input type="text" required pattern="[0-9]{6}" value={businessPincode} onChange={(e) => setBusinessPincode(e.target.value.replace(/\D/g, '').slice(0,6))} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none" placeholder="6-digit pincode" maxLength={6} />
                         </div>
                       </div>
-                      <div className="space-y-2 lg:col-span-2">
-                        <label className="text-xs font-bold text-text-muted">Business Address</label>
-                        <input type="text" value={presentAddress} onChange={(e) => setPresentAddress(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Registered business address" />
+                    </div>
+                  </div>
+                )}
+
+                {/* STEP 2: KYC & DOCUMENTS */}
+                {currentStep === 2 && (
+                  <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="grid grid-cols-1 gap-8">
+                      {/* PAN Section */}
+                      <div className="bg-slate-50 border border-border p-6 rounded-xl flex flex-col md:flex-row gap-6 items-start">
+                        <div className="flex-1 w-full space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-text-muted">PAN Number *</label>
+                            <input type="text" required value={operatorPan} onChange={(e) => setOperatorPan(e.target.value.toUpperCase())} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary outline-none uppercase" placeholder="ABCDE1234F" />
+                          </div>
+                        </div>
+                        <div className="w-full md:w-72 shrink-0">
+                          {renderDocCard("operator_pan", "Upload PAN Image", operatorPanPhoto, setOperatorPanPhoto, true)}
+                        </div>
+                      </div>
+
+                      {/* Aadhaar Section */}
+                      <div className="bg-slate-50 border border-border p-6 rounded-xl flex flex-col md:flex-row gap-6 items-start">
+                        <div className="flex-1 w-full space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-text-muted">Aadhaar Number *</label>
+                            <input type="text" required value={operatorAadhaar} onChange={(e) => setOperatorAadhaar(e.target.value.replace(/\D/g, '').slice(0, 12))} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary outline-none" placeholder="12-digit Aadhaar No." />
+                          </div>
+                        </div>
+                        <div className="w-full md:w-72 shrink-0">
+                          {renderDocCard("operator_aadhaar", "Upload Aadhaar Image", operatorAadhaarPhoto, setOperatorAadhaarPhoto, true)}
+                        </div>
+                      </div>
+
+                      {/* Selfie Section */}
+                      <div className="bg-slate-50 border border-border p-6 rounded-xl flex flex-col items-center justify-center max-w-sm mx-auto w-full">
+                        {renderDocCard("operator_selfie", "Operator Live Selfie", operatorSelfie, setOperatorSelfie)}
                       </div>
                     </div>
                   </div>
+                )}
 
-                  {/* SECTION 2: OPERATOR BANK ACCOUNT */}
-                  <div className="flex flex-col gap-5 border-b border-border/40 pb-6 pt-2">
-                    <h3 className="font-sans text-xs font-bold text-primary flex items-center gap-1.5">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">2</span>
-                      Operator Bank Details
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Bank Name</label>
-                        <input type="text" value={bankName} onChange={(e) => setBankName(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="SBI, HDFC, ICICI..." />
+                {/* STEP 3: DRIVERS ATTACHED */}
+                {currentStep === 3 && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="flex justify-between items-center bg-slate-50 p-4 border border-border rounded-xl">
+                      <div>
+                        <h3 className="font-sans text-sm font-bold text-primary flex items-center gap-2">
+                          <Users className="w-5 h-5" />
+                          Drivers attached to this Operator ({drivers.length})
+                        </h3>
+                        <p className="text-xs text-text-muted mt-1">Add drivers manually or link existing profiles.</p>
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Account Number</label>
-                        <input type="text" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Account No" />
+                      <div className="flex gap-2">
+                        <button 
+                          type="button"
+                          className="hidden sm:flex items-center gap-1.5 bg-white border border-border text-text text-xs font-bold px-4 py-2 rounded-xl hover:bg-slate-100 transition-all cursor-not-allowed opacity-60"
+                          title="Feature pending API integration"
+                        >
+                          <Search className="h-4 w-4" /> Search Existing Driver
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={() => { resetDriverForm(); setShowDriverForm(true); }} 
+                          className="flex items-center gap-1.5 bg-primary text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-primary-hover shadow-sm transition-all active:scale-95 cursor-pointer"
+                        >
+                          <Plus className="h-4 w-4" /> Add Driver
+                        </button>
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">IFSC Code</label>
-                        <input type="text" value={ifscCode} onChange={(e) => setIfscCode(e.target.value.toUpperCase())} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="IFSC Code" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">UPI ID</label>
-                        <input type="text" value={upiId} onChange={(e) => setUpiId(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="operator@upi" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* SECTION 3: OPERATOR KYC & DOCUMENTS */}
-                  <div className="flex flex-col gap-5 border-b border-border/40 pb-6 pt-2">
-                    <h3 className="font-sans text-xs font-bold text-primary flex items-center gap-1.5">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">3</span>
-                      Operator KYC &amp; Documents
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">PAN Number</label>
-                        <input type="text" value={operatorPan} onChange={(e) => setOperatorPan(e.target.value.toUpperCase())} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="PAN Card No." />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-text-muted">Aadhaar Number</label>
-                        <input type="text" value={operatorAadhaar} onChange={(e) => setOperatorAadhaar(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Aadhaar Card No." />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-2">
-                      {renderDocCard("operator_selfie", "Operator Photo / Selfie", operatorSelfie, setOperatorSelfie)}
-                      {renderDocCard("operator_pan", "Operator PAN Copy", operatorPanPhoto, setOperatorPanPhoto, true)}
-                      {renderDocCard("operator_aadhaar", "Operator Aadhaar Copy", operatorAadhaarPhoto, setOperatorAadhaarPhoto, true)}
-                    </div>
-                  </div>
-
-                  {/* SECTION 4: DRIVERS UNDER THIS OPERATOR */}
-                  <div className="flex flex-col gap-5 pt-2">
-                    <div className="flex justify-between items-center">
-                      <h3 className="font-sans text-xs font-bold text-primary flex items-center gap-1.5">
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">4</span>
-                        Drivers under this Operator ({drivers.length})
-                      </h3>
-                      <button 
-                        type="button" 
-                        onClick={() => { resetDriverForm(); setShowDriverForm(true); }} 
-                        className="flex items-center gap-1.5 bg-primary text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-primary-hover shadow-sm transition-all active:scale-95 cursor-pointer"
-                      >
-                        <Plus className="h-4 w-4" /> Add Driver
-                      </button>
                     </div>
 
                     {drivers.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {drivers.map((drv, index) => (
-                          <div key={index} className="flex justify-between items-start p-4 bg-slate-50 border border-border/60 rounded-xl relative">
+                          <div key={index} className="flex justify-between items-start p-4 bg-white border border-border rounded-xl shadow-xs relative hover:border-primary/50 transition-colors">
                             <div className="flex-1">
                               <p className="font-bold text-sm text-text">{drv.driver_name}</p>
                               <p className="text-xs text-text-muted mt-0.5">ID: <span className="font-mono font-bold text-primary">{drv.driver_id}</span> | Phone: {drv.phone_number}</p>
                               {drv.dl_number && <p className="text-xs text-text-muted mt-0.5">DL: {drv.dl_number} {drv.dl_expiry_date ? `(Exp: ${drv.dl_expiry_date})` : ""}</p>}
-                              <p className="text-xs text-green font-semibold mt-1">
-                                Rent: {drv.custom_rent_amount ? `₹${drv.custom_rent_amount}/day` : "Baseline default"}
-                              </p>
                             </div>
-                            <div className="flex gap-1">
-                              <button 
-                                type="button" 
-                                onClick={() => openEditDriver(index)} 
-                                className="p-2 rounded-full text-primary hover:bg-primary/10 transition-colors cursor-pointer"
-                                title="Edit Driver"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </button>
-                              <button 
-                                type="button" 
-                                onClick={() => handleRemoveDriver(index)} 
-                                className="p-2 rounded-full text-rose-500 hover:bg-rose-50 transition-colors cursor-pointer"
-                                title="Remove Driver"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
+                            <div className="flex gap-1 bg-slate-50 rounded-lg p-1 border border-border/50">
+                              <button type="button" onClick={() => openEditDriver(index)} className="p-1.5 rounded-md text-primary hover:bg-primary/10 transition-colors cursor-pointer" title="Edit Driver"><Edit className="h-4 w-4" /></button>
+                              <button type="button" onClick={() => handleRemoveDriver(index)} className="p-1.5 rounded-md text-rose-500 hover:bg-rose-50 transition-colors cursor-pointer" title="Remove Driver"><Trash2 className="h-4 w-4" /></button>
                             </div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-8 text-text-dim text-xs bg-slate-50/50 rounded-xl border border-dashed border-border flex flex-col items-center justify-center gap-2">
-                        <User className="h-8 w-8 opacity-40 text-primary" />
-                        <span>No drivers added yet. Click <strong>Add Driver</strong> to begin.</span>
+                      <div className="text-center py-12 text-text-dim text-xs bg-slate-50/50 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-3">
+                        <Users className="h-10 w-10 opacity-30 text-primary" />
+                        <span className="text-sm">No drivers attached yet.</span>
+                        <span>Click <strong>Add Driver</strong> to begin onboarding fleet members.</span>
+                      </div>
+                    )}
+
+                    {/* DRIVER ADDER BOX (SLIDE-DOWN SUBFORM) */}
+                    {showDriverForm && (
+                      <div className="p-6 border border-primary/30 rounded-2xl bg-white shadow-xl space-y-6 relative mt-6">
+                        <div className="absolute -top-3 left-8 w-6 h-6 bg-white border-t border-l border-primary/30 rotate-45"></div>
+                        <div className="flex justify-between items-center border-b border-border pb-3 relative z-10">
+                          <h4 className="font-sans text-sm font-bold text-primary">
+                            {editingDriverIdx !== null ? `Edit Driver #${editingDriverIdx + 1}` : "New Driver Details"}
+                          </h4>
+                          <button type="button" onClick={() => { setShowDriverForm(false); resetDriverForm(); }} className="p-1.5 rounded-full bg-slate-100 text-text-muted hover:text-text hover:bg-slate-200 cursor-pointer transition-colors">
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+
+                        {/* Driver Basic Info */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-text-muted">Driver Name *</label>
+                            <input type="text" value={dName} onChange={(e) => setDName(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none" placeholder="Full Name" />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-text-muted">Phone Number *</label>
+                            <input type="tel" value={dPhone} onChange={(e) => setDPhone(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none" placeholder="10-digit phone" />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-text-muted">WhatsApp Number</label>
+                            <input type="tel" value={dWhatsapp} onChange={(e) => setDWhatsapp(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none" placeholder="Same as phone if blank" />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-text-muted">Driver ID *</label>
+                            <input type="text" value={dDriverId} onChange={(e) => setDDriverId(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none" placeholder="e.g. DR-HYD-001" />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-text-muted">DL Number</label>
+                            <input type="text" value={dDlNum} onChange={(e) => setDDlNum(e.target.value.toUpperCase())} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none" placeholder="Driving Licence No." />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-text-muted">PAN Number *</label>
+                            <input type="text" value={dPanNum} onChange={(e) => setDPanNum(e.target.value.toUpperCase())} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none" placeholder="PAN Card No." />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-text-muted">Aadhaar Number *</label>
+                            <input type="text" value={dAadhaarNum} onChange={(e) => setDAadhaarNum(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none" placeholder="Aadhaar No." />
+                          </div>
+                        </div>
+
+                        {/* Driver KYC Images */}
+                        <div className="border-t border-border pt-4 relative z-10">
+                          <label className="text-xs font-bold text-text-muted block mb-3">Driver KYC Documents</label>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {renderDocCard("d_selfie", "Driver Selfie", dSelfie, setDSelfie)}
+                            {renderDocCard("d_dl_front", "DL Front", dDlFront, setDDlFront, true)}
+                            {renderDocCard("d_pan", "PAN Card", dPanPhoto, setDPanPhoto, true)}
+                            {renderDocCard("d_aadhaar", "Aadhaar Card", dAadhaarPhoto, setDAadhaarPhoto, true)}
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end gap-3 pt-4 border-t border-border relative z-10">
+                          <button type="button" onClick={() => { setShowDriverForm(false); resetDriverForm(); }} className="px-5 py-2.5 bg-slate-100 rounded-xl text-xs font-bold hover:bg-slate-200 cursor-pointer transition-colors">Cancel</button>
+                          <button type="button" onClick={handleAddDriver} className="px-5 py-2.5 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary-hover shadow-md cursor-pointer transition-colors">
+                            {editingDriverIdx !== null ? "Update Driver" : "Save Driver to Fleet"}
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
+                )}
 
-                  {/* DRIVER ADDER BOX (SLIDE-DOWN SUBFORM) */}
-                  {showDriverForm && (
-                    <div className="p-6 border-2 border-primary/20 rounded-2xl bg-slate-50/50 space-y-6">
-                      <div className="flex justify-between items-center border-b border-border pb-3">
-                        <h4 className="font-sans text-sm font-bold text-primary">
-                          {editingDriverIdx !== null ? `Edit Driver #${editingDriverIdx + 1}` : "New Driver Details"}
-                        </h4>
-                        <button type="button" onClick={() => { setShowDriverForm(false); resetDriverForm(); }} className="text-text-muted hover:text-text cursor-pointer">
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-
-                      {/* Driver Basic Info */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted">Driver Name *</label>
-                          <input type="text" value={dName} onChange={(e) => setDName(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Full Name" />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted">Father's Name</label>
-                          <input type="text" value={dFather} onChange={(e) => setDFather(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Father's Name" />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted">Phone Number *</label>
-                          <input type="tel" value={dPhone} onChange={(e) => setDPhone(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="10-digit phone" />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted">WhatsApp Number</label>
-                          <input type="tel" value={dWhatsapp} onChange={(e) => setDWhatsapp(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Same as phone if blank" />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted">Date of Birth</label>
-                          <input type="date" value={dDob} onChange={(e) => setDDob(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted">Driver ID *</label>
-                          <input type="text" value={dDriverId} onChange={(e) => setDDriverId(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="e.g. DR-HYD-001" />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted">Custom Driver Rent / Day (Optional)</label>
-                          <div className="relative">
-                            <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
-                            <input type="number" value={dCustomRent} onChange={(e) => setDCustomRent(e.target.value)} className="w-full h-11 pl-9 pr-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Driver Rent Per Day" />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted">DL Number</label>
-                          <input type="text" value={dDlNum} onChange={(e) => setDDlNum(e.target.value.toUpperCase())} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Driving Licence No." />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted">DL Expiry Date</label>
-                          <input type="date" value={dDlExpiry} onChange={(e) => setDDlExpiry(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted">PAN Number *</label>
-                          <input type="text" value={dPanNum} onChange={(e) => setDPanNum(e.target.value.toUpperCase())} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="PAN Card No." />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted">Aadhaar Number *</label>
-                          <input type="text" value={dAadhaarNum} onChange={(e) => setDAadhaarNum(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Aadhaar No." />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted">PAN-Aadhaar Linked</label>
-                          <select value={dPanAadhaarLinked} onChange={(e) => setDPanAadhaarLinked(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none">
-                            <option value="Yes">Yes</option>
-                            <option value="No">No</option>
-                            <option value="Pending">Pending Verification</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      {/* Address */}
+                {/* STEP 4: BANK DETAILS & VERIFICATION */}
+                {currentStep === 4 && (
+                  <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
+                    
+                    {/* SECTION 2: OPERATOR BANK ACCOUNT */}
+                    <div className="flex flex-col gap-5 border-b border-border/40 pb-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted">Present Address</label>
-                          <input type="text" value={dPresentAddr} onChange={(e) => setDPresentAddr(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Present Address" />
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <label className="text-xs font-bold text-text-muted">Permanent Address</label>
-                            <label className="flex items-center gap-1.5 text-xs text-text-muted cursor-pointer hover:text-primary">
-                              <input type="checkbox" checked={dSameAsPresent} onChange={(e) => setDSameAsPresent(e.target.checked)} className="rounded border-border text-primary" />
-                              Same as Present
+                        <div className="space-y-2 md:col-span-2">
+                          <div className="flex justify-between items-center">
+                            <label className="text-xs font-bold text-text-muted">Account Holder Name *</label>
+                            <label className="flex items-center gap-1.5 text-xs font-bold text-primary cursor-pointer hover:underline">
+                              <input type="checkbox" checked={isAccountNameSame} onChange={(e) => setIsAccountNameSame(e.target.checked)} className="rounded border-border text-primary" />
+                              Same as Operator's Name
                             </label>
                           </div>
-                          <input type="text" value={dPermanentAddr} onChange={(e) => setDPermanentAddr(e.target.value)} disabled={dSameAsPresent} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary outline-none disabled:opacity-60" placeholder="Permanent Address" />
-                        </div>
-                      </div>
-
-                      {/* Emergency Contact */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-border pt-4">
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted">Emergency Contact Name</label>
-                          <input type="text" value={dEmergName} onChange={(e) => setDEmergName(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary outline-none" placeholder="Relation & Name" />
+                          <input type="text" disabled={isAccountNameSame} value={isAccountNameSame ? vendorName : accountName} onChange={(e) => setAccountName(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none disabled:opacity-60" placeholder="Name on Bank Account" />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-xs font-bold text-text-muted">Emergency Phone</label>
-                          <input type="tel" value={dEmergPhone} onChange={(e) => setDEmergPhone(e.target.value)} className="w-full h-11 px-4 bg-white border border-border rounded-xl text-sm focus:border-primary outline-none" placeholder="Emergency Mobile" />
+                          <label className="text-xs font-bold text-text-muted">Account Type *</label>
+                          <select value={accountType} onChange={(e) => setAccountType(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none">
+                            <option value="Current">Current Account</option>
+                            <option value="Savings">Savings Account</option>
+                          </select>
                         </div>
-                      </div>
-
-                      {/* Driver KYC Images */}
-                      <div className="border-t border-border pt-4">
-                        <label className="text-xs font-bold text-text-muted block mb-3">Driver KYC Documents</label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                          {renderDocCard("d_selfie", "Driver Selfie / Photo", dSelfie, setDSelfie)}
-                          {renderDocCard("d_dl_front", "DL Front Copy", dDlFront, setDDlFront, true)}
-                          {renderDocCard("d_dl_back", "DL Back Copy", dDlBack, setDDlBack, true)}
-                          {renderDocCard("d_pan", "PAN Card Copy", dPanPhoto, setDPanPhoto, true)}
-                          {renderDocCard("d_aadhaar", "Aadhaar Card Copy", dAadhaarPhoto, setDAadhaarPhoto, true)}
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-text-muted">Account Number *</label>
+                          <input type="text" required value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none" placeholder="Account No" />
                         </div>
-                      </div>
-
-                      <div className="flex justify-end gap-3 pt-4 border-t border-border">
-                        <button type="button" onClick={() => { setShowDriverForm(false); resetDriverForm(); }} className="px-5 py-2.5 border border-border rounded-xl text-xs font-bold hover:bg-slate-100 cursor-pointer">Cancel</button>
-                        <button type="button" onClick={handleAddDriver} className="px-5 py-2.5 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary-hover shadow-md cursor-pointer">
-                          {editingDriverIdx !== null ? "Update Driver" : "Save Driver to Fleet"}
-                        </button>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-text-muted">IFSC Code *</label>
+                          <input type="text" required value={ifscCode} onChange={(e) => setIfscCode(e.target.value.toUpperCase())} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none" placeholder="IFSC Code" />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-text-muted">Bank Name & Branch *</label>
+                          <input type="text" required value={bankName} onChange={(e) => setBankName(e.target.value)} className="w-full h-11 px-4 bg-slate-50 border border-border rounded-xl text-sm focus:bg-white focus:border-primary outline-none" placeholder="SBI, HDFC, ICICI..." />
+                        </div>
                       </div>
                     </div>
-                  )}
 
-                  {/* SUBMIT BUTTON */}
-                  <div className="pt-6 border-t border-border flex justify-end gap-4">
-                    <button
-                      type="button"
-                      onClick={resetOperatorForm}
-                      className="px-6 py-3 border border-border rounded-xl text-sm font-bold text-text-muted hover:bg-slate-100 transition-all cursor-pointer"
-                    >
+                    <div className="bg-blue-50/50 border border-blue-100 p-5 rounded-xl">
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          required 
+                          checked={documentsVerified}
+                          onChange={(e) => setDocumentsVerified(e.target.checked)}
+                          className="mt-1 w-4 h-4 rounded border-blue-300 text-blue-600 focus:ring-blue-600"
+                        />
+                        <span className="text-sm text-blue-900 font-medium leading-snug">
+                          I verify that the Operator's name matches exactly across all uploaded KYC documents and bank details, and all attached drivers have been cross-verified.
+                        </span>
+                      </label>
+                    </div>
+
+                  </div>
+                )}
+
+                {/* FORM ACTIONS / NAVIGATION */}
+                <div className="pt-6 border-t border-border flex justify-between items-center">
+                  {currentStep > 1 ? (
+                    <button type="button" onClick={() => setCurrentStep(prev => prev - 1)} className="px-6 py-3 border border-border rounded-xl text-sm font-bold text-text hover:bg-slate-50 transition-all cursor-pointer">
+                      Back
+                    </button>
+                  ) : (
+                    <button type="button" onClick={resetOperatorForm} className="px-6 py-3 border border-border rounded-xl text-sm font-bold text-rose-500 hover:bg-rose-50 transition-all cursor-pointer">
                       Clear Form
                     </button>
-                    <button 
-                      type="submit" 
-                      className="flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-sm font-bold text-white hover:bg-primary-hover shadow-lg transition-all cursor-pointer active:scale-95"
-                    >
+                  )}
+
+                  {currentStep < 4 ? (
+                    <button type="button" onClick={() => setCurrentStep(prev => prev + 1)} className="px-8 py-3 bg-text text-white rounded-xl text-sm font-bold hover:bg-black transition-all cursor-pointer shadow-md">
+                      Next Step
+                    </button>
+                  ) : (
+                    <button type="submit" disabled={!documentsVerified} className="flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-sm font-bold text-white hover:bg-primary-hover shadow-lg transition-all cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
                       <CheckCircle className="h-5 w-5" />
                       {editingId ? "Update Operator Record" : "Submit Operator Onboarding"}
                     </button>
-                  </div>
-                </form>
-              </div>
+                  )}
+                </div>
 
+              </form>
             </div>
+
           </div>
         )}
 
+        {/* REGISTRY VIEW */}
         {activeTab === "registry" && (
           <div className="space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-white rounded-xl border border-border p-4 shadow-xs">
-                <p className="text-[10px] text-text-muted font-bold">Total Operators</p>
-                <p className="text-2xl font-bold text-primary mt-1">{records.length}</p>
+                <p className="text-[10px] text-text-muted font-bold tracking-wider uppercase">Total Operators</p>
+                <p className="text-3xl font-extrabold text-primary mt-1">{records.length}</p>
               </div>
               <div className="bg-white rounded-xl border border-border p-4 shadow-xs">
-                <p className="text-[10px] text-text-muted font-bold">Last 7 Days</p>
-                <p className="text-2xl font-bold text-green mt-1">{stats.last_7_days_count}</p>
+                <p className="text-[10px] text-text-muted font-bold tracking-wider uppercase">Last 7 Days</p>
+                <p className="text-3xl font-extrabold text-green mt-1">{stats.last_7_days_count}</p>
               </div>
               <div className="bg-white rounded-xl border border-border p-4 shadow-xs">
-                <p className="text-[10px] text-text-muted font-bold">Latest Onboarding</p>
-                <p className="text-sm font-bold text-text mt-1 truncate">{stats.latest_onboarding || "—"}</p>
+                <p className="text-[10px] text-text-muted font-bold tracking-wider uppercase">Latest Onboarding</p>
+                <p className="text-lg font-extrabold text-text mt-2 truncate">{stats.latest_onboarding || "—"}</p>
               </div>
               <div className="bg-white rounded-xl border border-border p-4 shadow-xs">
-                <p className="text-[10px] text-text-muted font-bold">Total Vendor Count</p>
-                <p className="text-2xl font-bold text-amber-600 mt-1">{stats.vendor_count}</p>
+                <p className="text-[10px] text-text-muted font-bold tracking-wider uppercase">Total Vendor Count</p>
+                <p className="text-3xl font-extrabold text-amber-600 mt-1">{stats.vendor_count}</p>
               </div>
             </div>
 
@@ -995,28 +1035,26 @@ export default function OperatorOnboardingForm({
                 <table className="w-full text-left whitespace-nowrap border-collapse">
                   <thead className="bg-slate-50 border-b border-border">
                     <tr>
-                      <th className="px-5 py-3.5 font-sans text-xs font-bold text-text-muted">ID</th>
-                      <th className="px-5 py-3.5 font-sans text-xs font-bold text-text-muted">Operator Name</th>
-                      <th className="px-5 py-3.5 font-sans text-xs font-bold text-text-muted">Vendor ID</th>
-                      <th className="px-5 py-3.5 font-sans text-xs font-bold text-text-muted">City</th>
-                      <th className="px-5 py-3.5 font-sans text-xs font-bold text-text-muted">Phone</th>
-                      <th className="px-5 py-3.5 font-sans text-xs font-bold text-text-muted">Rent / Day</th>
-                      <th className="px-5 py-3.5 font-sans text-xs font-bold text-text-muted">Bank</th>
-                      <th className="px-5 py-3.5 font-sans text-xs font-bold text-text-muted">Onboarded</th>
-                      <th className="px-5 py-3.5 font-sans text-xs font-bold text-text-muted">Actions</th>
+                      <th className="px-5 py-3.5 font-sans text-[10px] uppercase font-bold text-text-muted">ID</th>
+                      <th className="px-5 py-3.5 font-sans text-[10px] uppercase font-bold text-text-muted">Operator Name</th>
+                      <th className="px-5 py-3.5 font-sans text-[10px] uppercase font-bold text-text-muted">Vendor ID</th>
+                      <th className="px-5 py-3.5 font-sans text-[10px] uppercase font-bold text-text-muted">City</th>
+                      <th className="px-5 py-3.5 font-sans text-[10px] uppercase font-bold text-text-muted">Phone</th>
+                      <th className="px-5 py-3.5 font-sans text-[10px] uppercase font-bold text-text-muted">Rental Plan</th>
+                      <th className="px-5 py-3.5 font-sans text-[10px] uppercase font-bold text-text-muted">Bank</th>
+                      <th className="px-5 py-3.5 font-sans text-[10px] uppercase font-bold text-text-muted">Onboarding Date</th>
+                      <th className="px-5 py-3.5 font-sans text-[10px] uppercase font-bold text-text-muted text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-border/40">
                     {records.map((r) => (
-                      <tr key={r.id} className="border-b border-border hover:bg-slate-50/50 transition-colors">
-                        <td className="px-5 py-4 text-xs font-mono text-text-muted">#{r.id}</td>
-                        <td className="px-5 py-4 text-xs font-bold">{r.driver_name || r.vendor_name}</td>
-                        <td className="px-5 py-4 text-xs font-mono text-primary">{r.vendor_id || "—"}</td>
-                        <td className="px-5 py-4 text-xs">{r.city}</td>
-                        <td className="px-5 py-4 text-xs">{r.phone_number}</td>
-                        <td className="px-5 py-4 text-xs font-bold text-green">
-                          {(r as any).custom_rent_amount ? `₹${(r as any).custom_rent_amount}/day` : "—"}
-                        </td>
+                      <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-5 py-4 text-xs font-mono text-text-dim">#{r.id}</td>
+                        <td className="px-5 py-4 text-sm font-bold">{r.driver_name || r.vendor_name}</td>
+                        <td className="px-5 py-4 text-xs font-mono font-bold text-primary bg-primary/5 rounded px-2">{r.vendor_id || "—"}</td>
+                        <td className="px-5 py-4 text-xs font-semibold">{r.city}</td>
+                        <td className="px-5 py-4 text-xs text-text-muted">{r.phone_number}</td>
+                        <td className="px-5 py-4 text-xs font-bold text-text-dim">N/A</td>
                         <td className="px-5 py-4 text-xs text-text-muted">
                           {r.bank_name ? `${r.bank_name}` : "—"}
                           {(r as any).account_number ? ` (${String((r as any).account_number).slice(-4).padStart(String((r as any).account_number).length, '*')})` : ""}
@@ -1024,11 +1062,11 @@ export default function OperatorOnboardingForm({
                         <td className="px-5 py-4 text-xs text-text-muted">
                           {r.created_at ? new Date(r.created_at).toLocaleDateString("en-IN") : "—"}
                         </td>
-                        <td className="px-5 py-4">
+                        <td className="px-5 py-4 text-right">
                           <button
                             type="button"
                             onClick={() => loadRecordForEdit(r.id)}
-                            className="flex items-center gap-1 text-xs font-bold text-primary hover:text-primary-hover bg-primary/5 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary-hover bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-lg transition-colors cursor-pointer"
                           >
                             <Edit className="h-3.5 w-3.5" /> Edit
                           </button>
@@ -1038,12 +1076,12 @@ export default function OperatorOnboardingForm({
                     {records.length === 0 && (
                       <tr>
                         <td colSpan={9} className="text-center py-12 text-text-dim text-xs">
-                          <div className="flex flex-col items-center gap-2">
-                            <UserCheck className="h-8 w-8 opacity-30 text-primary" />
+                          <div className="flex flex-col items-center gap-3">
+                            <UserCheck className="h-10 w-10 opacity-30 text-primary" />
                             <span>No operator onboarding records found.</span>
                             <button
                               onClick={() => setActiveTab("form")}
-                              className="mt-1 text-primary font-bold underline cursor-pointer"
+                              className="mt-1 text-primary font-bold hover:underline cursor-pointer"
                             >
                               Onboard your first Operator
                             </button>
