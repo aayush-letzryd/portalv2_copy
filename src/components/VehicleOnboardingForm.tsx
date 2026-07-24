@@ -39,7 +39,7 @@ export default function VehicleOnboardingForm({
   // Form Fields State
   const [editingId, setEditingId] = useState<number | null>(null);
   
-  // Panel 1: Identity & Status (Req 18, 19, 20 & 24)
+  // Panel 1: Identity & Status
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [letzrydUniqueNo, setLetzrydUniqueNo] = useState("");
   const [cityName, setCityName] = useState("Hyderabad");
@@ -49,17 +49,21 @@ export default function VehicleOnboardingForm({
   const [manufacturerMonth, setManufacturerMonth] = useState("");
   const [receivedAllocated, setReceivedAllocated] = useState("Receiving");
 
-  // Panel 2: Compliance & Validities
+  // Panel 2: Compliance & Validities (UPDATED PER MEETING NOTES)
   const [registrationDate, setRegistrationDate] = useState("");
   const [rtoTaxValidity, setRtoTaxValidity] = useState("");
   const [permitValidity, setPermitValidity] = useState("");
   const [fitnessValidity, setFitnessValidity] = useState("");
   const [pollutionValidity, setPollutionValidity] = useState("");
-  const [insuranceValidity, setInsuranceValidity] = useState("");
   const [authorizationCertificate, setAuthorizationCertificate] = useState("");
-  const [insuranceMapping, setInsuranceMapping] = useState("");
+  
+  // New Insurance Fields
+  const [insuranceBroker, setInsuranceBroker] = useState("");
+  const [insuranceUnderwriter, setInsuranceUnderwriter] = useState("");
+  const [insuranceStartDate, setInsuranceStartDate] = useState("");
+  const [insuranceEndDate, setInsuranceEndDate] = useState("");
 
-  // Panel 3: Asset & Accessory Checklist (Req 21 & 23)
+  // Panel 3: Asset & Accessory Checklist
   const [kmsReading, setKmsReading] = useState("");
   const [gpsVendor, setGpsVendor] = useState("");
   const [gpsId, setGpsId] = useState("");
@@ -100,7 +104,7 @@ export default function VehicleOnboardingForm({
   const [lhRearTyreImg, setLhRearTyreImg] = useState<string | null>(null);
   const [spareWheelImg, setSpareWheelImg] = useState<string | null>(null);
 
-  // OCR Extracted Text State (Req 16 & 22)
+  // OCR Extracted Text State
   const [ocrData, setOcrData] = useState<Record<string, string>>({});
   const [isScanning, setIsScanning] = useState<string | null>(null);
 
@@ -147,7 +151,7 @@ export default function VehicleOnboardingForm({
   const fetchRecords = async () => {
     try {
       const token = localStorage.getItem("lr_token");
-      const queryParams = new URLSearchParams();
+      const queryParams = newSearchParams();
       if (searchQuery) queryParams.append("search", searchQuery);
       if (filterCity !== "all") queryParams.append("city", filterCity);
       if (filterType !== "all") queryParams.append("type", filterType);
@@ -185,19 +189,27 @@ export default function VehicleOnboardingForm({
     fetchModels();
   }, [searchQuery, filterCity, filterType]);
 
-  // OCR MOCK SIMULATION (Req 16 & 22)
+  // OCR MOCK SIMULATION (UPDATED: Now includes Insurance Dates extraction)
   const simulateOCR = (field: string) => {
-    const ocrFields = ["engine_chasis_no_img", "rh_fr_tyre_img", "lh_fr_tyre_img", "rh_rear_tyre_img", "lh_rear_tyre_img", "spare_wheel_img"];
+    const ocrFields = ["engine_chasis_no_img", "rh_fr_tyre_img", "lh_fr_tyre_img", "rh_rear_tyre_img", "lh_rear_tyre_img", "spare_wheel_img", "insurance_document"];
     if (ocrFields.includes(field)) {
       setIsScanning(field);
       setTimeout(() => {
-        let extracted = "";
-        if (field === "engine_chasis_no_img") extracted = "VIN" + Math.floor(Math.random() * 10000000000).toString();
-        else extracted = "TYRE-" + Math.floor(Math.random() * 10000).toString();
-        
-        setOcrData(prev => ({ ...prev, [field]: extracted }));
+        if (field === "insurance_document") {
+          // Simulate extracting coverage dates from an insurance doc
+          const today = new Date().toISOString().split('T')[0];
+          const nextYear = new Date();
+          nextYear.setFullYear(nextYear.getFullYear() + 1);
+          setInsuranceStartDate(today);
+          setInsuranceEndDate(nextYear.toISOString().split('T')[0]);
+        } else {
+          let extracted = "";
+          if (field === "engine_chasis_no_img") extracted = "VIN" + Math.floor(Math.random() * 10000000000).toString();
+          else extracted = "TYRE-" + Math.floor(Math.random() * 10000).toString();
+          setOcrData(prev => ({ ...prev, [field]: extracted }));
+        }
         setIsScanning(null);
-      }, 1500);
+      }, 1800); // 1.8 second delay to show the scanning animation
     }
   };
 
@@ -254,7 +266,7 @@ export default function VehicleOnboardingForm({
           };
           if (setters[field]) {
             setters[field](reader.result);
-            simulateOCR(field);
+            simulateOCR(field); // Triggers date extraction for insurance
           }
         }
       };
@@ -276,7 +288,6 @@ export default function VehicleOnboardingForm({
       setLetzrydUniqueNo(data.letzryd_unique_no || "");
       setCityName(data.city_name || "Hyderabad");
       
-      // Parse composite model string back if needed, or just set it
       setBrand(data.model?.split(" ")[0] || "");
       setModelName(data.model?.split(" ")[1] || "");
       
@@ -288,9 +299,14 @@ export default function VehicleOnboardingForm({
       setPermitValidity(data.permit_validity || "");
       setFitnessValidity(data.fitness_validity || "");
       setPollutionValidity(data.pollution_validity || "");
-      setInsuranceValidity(data.insurance_validity || "");
       setAuthorizationCertificate(data.authorization_certificate || "");
-      setInsuranceMapping(data.insurance_mapping || "");
+      
+      // We map the old single insurance_validity to the new End Date temporarily for legacy compatibility
+      setInsuranceEndDate(data.insurance_validity || "");
+      // If backend adds these specific fields, parse them here:
+      setInsuranceBroker(data.insurance_broker || "");
+      setInsuranceUnderwriter(data.insurance_underwriter || "");
+      setInsuranceStartDate(data.insurance_start_date || "");
       
       setKmsReading(data.kms_reading || "");
       setGpsVendor(data.tracking_device_vendor || "");
@@ -307,7 +323,6 @@ export default function VehicleOnboardingForm({
       setSeatCover(data.seat_cover || "Available");
       setFloorCarpet(data.floor_carpet || "Available");
 
-      // Set 15 photos
       setImageFront(data.image_front || null);
       setImageLh(data.image_lh || null);
       setImageBack(data.image_back || null);
@@ -324,7 +339,6 @@ export default function VehicleOnboardingForm({
       setLhRearTyreImg(data.lh_rear_tyre_img || null);
       setSpareWheelImg(data.spare_wheel_img || null);
 
-      // Documents
       setRcDocument(data.rc_document || null);
       setInsuranceDocument(data.insurance_document || null);
       setAuthorizationCertificateDoc(data.authorization_certificate_doc || null);
@@ -358,9 +372,13 @@ export default function VehicleOnboardingForm({
     setPermitValidity("");
     setFitnessValidity("");
     setPollutionValidity("");
-    setInsuranceValidity("");
     setAuthorizationCertificate("");
-    setInsuranceMapping("");
+    
+    setInsuranceBroker("");
+    setInsuranceUnderwriter("");
+    setInsuranceStartDate("");
+    setInsuranceEndDate("");
+
     setKmsReading("");
     setGpsVendor("");
     setGpsId("");
@@ -398,24 +416,21 @@ export default function VehicleOnboardingForm({
     setOcrData({});
   };
 
-  // ASYNCHRONOUS SAVING LOGIC (Req 17)
   const handleSubmit = async (e: React.FormEvent, isDraft: boolean = false) => {
     e.preventDefault();
     
-    // Bypass strict validation if saving as draft
     if (!isDraft) {
       if (!vehicleNumber.trim()) return alert("Vehicle Reg Number is required");
       if (!cityName.trim()) return alert("City is required");
-      if (!modelName.trim()) return alert("Model is required");
+      if (!modelName.trim()) return alert("Model Name is required");
       if (!registrationDate.trim()) return alert("Registration Date is required");
       if (!fitnessValidity.trim()) return alert("Fitness Validity is required");
-      if (!insuranceValidity.trim()) return alert("Insurance Validity is required");
+      if (!insuranceEndDate.trim()) return alert("Coverage End Date is required");
       if (!kmsReading.trim()) return alert("KMs Reading is required");
     } else {
       if (!vehicleNumber.trim()) return alert("At least a Vehicle Reg Number is required to save a draft.");
     }
 
-    // Concatenate metadata into the existing "model" field to maintain backend stability
     const compositeModel = `${brand} ${modelName} ${makeYear}`.trim();
 
     const payload = {
@@ -424,18 +439,24 @@ export default function VehicleOnboardingForm({
       city_name: cityName,
       model: compositeModel,
       received_allocated: receivedAllocated,
-      delivery_month: manufacturerMonth || undefined, // Mapped to delivery_month
-      registration_date: registrationDate || "1970-01-01", // Fallback for drafts
+      delivery_month: manufacturerMonth || undefined,
+      registration_date: registrationDate || "1970-01-01",
       rto_tax_validity: rtoTaxValidity || undefined,
       permit_validity: permitValidity || undefined,
       fitness_validity: fitnessValidity || "1970-01-01",
       pollution_validity: pollutionValidity || undefined,
-      insurance_validity: insuranceValidity || "1970-01-01",
+      
+      // Sending End Date as primary validity to maintain backend compatibility,
+      // but also sending the new specific fields for when the backend is updated.
+      insurance_validity: insuranceEndDate || "1970-01-01", 
+      insurance_broker: insuranceBroker.trim() || undefined,
+      insurance_underwriter: insuranceUnderwriter.trim() || undefined,
+      insurance_start_date: insuranceStartDate || undefined,
+
       authorization_certificate: authorizationCertificate.trim() || undefined,
-      insurance_mapping: insuranceMapping.trim() || undefined,
       kms_reading: kmsReading.trim() || "0",
       tracking_device_vendor: gpsVendor.trim() || undefined,
-      tracking_device_type: gpsId.trim() || undefined, // Mapped GPS ID here
+      tracking_device_type: gpsId.trim() || undefined, 
       cng_installed: cngInstalled,
       cng_plate: cngInstalled === "Yes" ? cngPlate.trim() : undefined,
       cng_installation_date: cngInstalled === "Yes" ? cngInstallationDate : undefined,
@@ -571,7 +592,6 @@ export default function VehicleOnboardingForm({
   return (
     <div className="min-h-screen flex flex-col bg-bg text-text">
       
-      {/* HEADER: Sticky Green Theme Fix */}
       <header className="sticky top-0 z-40 border-b border-border bg-white shadow-xs">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           
@@ -645,14 +665,12 @@ export default function VehicleOnboardingForm({
         </div>
       </header>
 
-      {/* MAIN CONTAINER */}
       <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         {/* TAB 1: FORM CHECK-IN */}
         {activeTab === "form" && (
           <div className="w-full flex flex-col gap-6">
             
-            {/* Green Brand Header Fix */}
             <div className="relative overflow-hidden rounded-2xl bg-primary p-6 text-slate-900 shadow-sm md:p-8">
               <div className="absolute inset-0 bg-radial-gradient from-white/20 to-transparent pointer-events-none" />
               
@@ -673,7 +691,6 @@ export default function VehicleOnboardingForm({
                   </p>
                 </div>
 
-                {/* Retrieve block */}
                 <div className="flex flex-col gap-2 items-start md:items-end">
                   <div className="flex gap-2 w-full max-w-xs">
                     <input
@@ -699,7 +716,7 @@ export default function VehicleOnboardingForm({
               
               <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                 
-                {/* Panel 1: Identity & Status (Req 18, 19, 20 & 24) */}
+                {/* Panel 1: Identity & Status */}
                 <div className="space-y-4">
                   <h3 className="font-sans text-xs font-bold text-primary mb-2 flex items-center gap-1.5 border-b border-slate-100 pb-2">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">1</span>
@@ -794,11 +811,11 @@ export default function VehicleOnboardingForm({
                   </div>
                 </div>
 
-                {/* Panel 2: Compliance & Validities */}
+                {/* Panel 2: Compliance & Validities (UPDATED: Precise Insurance Fields) */}
                 <div className="space-y-4">
                   <h3 className="font-sans text-xs font-bold text-primary mb-2 flex items-center gap-1.5 border-b border-slate-100 pb-2">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">2</span>
-                    Compliance & Validities
+                    Compliance & Insurance
                   </h3>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
@@ -807,6 +824,15 @@ export default function VehicleOnboardingForm({
                         type="date"
                         value={registrationDate}
                         onChange={(e) => setRegistrationDate(e.target.value)}
+                        className="w-full rounded-lg border border-border px-3 py-2 text-xs focus:border-primary focus:outline-hidden transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-text mb-1">Fitness Validity *</label>
+                      <input
+                        type="date"
+                        value={fitnessValidity}
+                        onChange={(e) => setFitnessValidity(e.target.value)}
                         className="w-full rounded-lg border border-border px-3 py-2 text-xs focus:border-primary focus:outline-hidden transition-colors"
                       />
                     </div>
@@ -828,51 +854,51 @@ export default function VehicleOnboardingForm({
                         className="w-full rounded-lg border border-border px-3 py-2 text-xs focus:border-primary focus:outline-hidden transition-colors"
                       />
                     </div>
-                    <div>
-                      <label className="block text-xs font-bold text-text mb-1">Fitness Validity *</label>
-                      <input
-                        type="date"
-                        value={fitnessValidity}
-                        onChange={(e) => setFitnessValidity(e.target.value)}
-                        className="w-full rounded-lg border border-border px-3 py-2 text-xs focus:border-primary focus:outline-hidden transition-colors"
-                      />
+                    <div className="col-span-1 sm:col-span-2 border-t border-slate-100 pt-2 mt-1">
+                      <label className="block text-[10px] font-bold text-primary mb-2 uppercase tracking-wide">Insurance Details</label>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-text mb-1">Pollution Validity</label>
-                      <input
-                        type="date"
-                        value={pollutionValidity}
-                        onChange={(e) => setPollutionValidity(e.target.value)}
-                        className="w-full rounded-lg border border-border px-3 py-2 text-xs focus:border-primary focus:outline-hidden transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-text mb-1">Insurance Validity *</label>
-                      <input
-                        type="date"
-                        value={insuranceValidity}
-                        onChange={(e) => setInsuranceValidity(e.target.value)}
-                        className="w-full rounded-lg border border-border px-3 py-2 text-xs focus:border-primary focus:outline-hidden transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-text mb-1">Authorization Certificate No</label>
+                      <label className="block text-xs font-bold text-text mb-1">Insurance Broker</label>
                       <input
                         type="text"
-                        value={authorizationCertificate}
-                        onChange={(e) => setAuthorizationCertificate(e.target.value)}
-                        placeholder="Cert details..."
+                        value={insuranceBroker}
+                        onChange={(e) => setInsuranceBroker(e.target.value)}
+                        placeholder="e.g. PolicyBazaar"
                         className="w-full rounded-lg border border-border px-3 py-2 text-xs focus:border-primary focus:outline-hidden transition-colors"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-text mb-1">Insurance Mapping Link</label>
+                      <label className="block text-xs font-bold text-text mb-1">Insurance Underwriter</label>
                       <input
                         type="text"
-                        value={insuranceMapping}
-                        onChange={(e) => setInsuranceMapping(e.target.value)}
-                        placeholder="Mapping details..."
+                        value={insuranceUnderwriter}
+                        onChange={(e) => setInsuranceUnderwriter(e.target.value)}
+                        placeholder="e.g. ICICI Lombard"
                         className="w-full rounded-lg border border-border px-3 py-2 text-xs focus:border-primary focus:outline-hidden transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-text mb-1 flex justify-between">
+                        <span>Coverage Start Date</span>
+                        {isScanning === 'insurance_document' && <span className="text-[9px] text-primary italic">Extracting...</span>}
+                      </label>
+                      <input
+                        type="date"
+                        value={insuranceStartDate}
+                        onChange={(e) => setInsuranceStartDate(e.target.value)}
+                        className={`w-full rounded-lg border px-3 py-2 text-xs focus:outline-hidden transition-colors ${isScanning === 'insurance_document' ? 'border-primary bg-primary/5 text-primary font-bold' : 'border-border'}`}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-text mb-1 flex justify-between">
+                        <span>Coverage End Date *</span>
+                        {isScanning === 'insurance_document' && <span className="text-[9px] text-primary italic">Extracting...</span>}
+                      </label>
+                      <input
+                        type="date"
+                        value={insuranceEndDate}
+                        onChange={(e) => setInsuranceEndDate(e.target.value)}
+                        className={`w-full rounded-lg border px-3 py-2 text-xs focus:outline-hidden transition-colors ${isScanning === 'insurance_document' ? 'border-primary bg-primary/5 text-primary font-bold' : 'border-border'}`}
                       />
                     </div>
                   </div>
@@ -880,7 +906,7 @@ export default function VehicleOnboardingForm({
 
               </div>
 
-              {/* Panel 3: Asset & Accessory Checklist (Req 21 & 23) */}
+              {/* Panel 3: Asset & Accessory Checklist */}
               <div className="space-y-4">
                   <h3 className="font-sans text-xs font-bold text-primary mb-2 flex items-center gap-1.5 border-b border-slate-100 pb-2 mt-2">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">3</span>
@@ -954,7 +980,6 @@ export default function VehicleOnboardingForm({
                   )}
                 </div>
 
-                {/* Sub Checklist grid */}
                 <div className="grid grid-cols-2 gap-4 pt-4 mt-2 sm:grid-cols-4 lg:grid-cols-8 border-t border-slate-50">
                   {[
                     { label: "Jack", state: jack, setter: setJack },
@@ -995,20 +1020,32 @@ export default function VehicleOnboardingForm({
                 </div>
               </div>
 
-              {/* Panel 4: Vehicle Documents Uploads */}
+              {/* Panel 4: Vehicle Documents Uploads (UPDATED: Insurance OCR Support) */}
               <div className="border-t border-border/60 pt-6 mt-4">
                 <h3 className="font-sans text-xs font-bold text-primary mb-2 flex items-center gap-1.5">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">4</span>
                   Vehicle Documents
                 </h3>
                 <p className="font-sans text-[11px] text-text-muted mb-4 max-w-xl">
-                  Upload PDF or Images for the required vehicle documents.
+                  Upload PDF or Images for the required vehicle documents. Insurance uploads will auto-extract coverage dates.
                 </p>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   {documentFields.map((field) => (
-                    <div key={field.key} className="flex flex-col gap-2.5 rounded-xl border-2 border-dashed border-border bg-slate-50/50 p-4 relative">
-                      <span className="font-sans text-[11px] font-semibold text-text-muted text-center">{field.label}</span>
+                    <div key={field.key} className={`flex flex-col gap-2.5 rounded-xl border-2 border-dashed border-border bg-slate-50/50 p-4 relative overflow-hidden`}>
+                      
+                      {/* OCR Scanning Overlay */}
+                      {isScanning === field.key && (
+                         <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center">
+                            <div className="flex items-center gap-1.5 text-xs text-primary font-bold animate-pulse">
+                               <RefreshCw className="w-4 h-4 animate-spin" /> Extracting Dates...
+                            </div>
+                         </div>
+                      )}
+
+                      <span className="font-sans text-[11px] font-semibold text-text-muted text-center flex items-center justify-center gap-1">
+                        {field.label} {field.key === "insurance_document" && <Scan className="w-3 h-3 text-primary" />}
+                      </span>
                       
                       {field.state ? (
                         <div className="relative flex flex-col items-center justify-center bg-slate-100 rounded-lg p-2 min-h-[100px]">
@@ -1170,7 +1207,7 @@ export default function VehicleOnboardingForm({
                 </div>
               </div>
 
-              {/* Form submit actions with Asynchronous Saves (Req 17) */}
+              {/* Form submit actions */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 border-t border-border/40 pt-6">
                 <div className="flex flex-col gap-1 max-w-sm">
                   <p className="text-[10px] font-bold text-red-500">* means mandatory</p>
@@ -1389,7 +1426,6 @@ export default function VehicleOnboardingForm({
 
       </main>
 
-      {/* Camera capture element */}
       {cameraActiveField && (
         <CameraCapture
           title={`Capture ${photoFields.find(f => f.key === cameraActiveField)?.label || "PDI"} Photo`}
@@ -1398,14 +1434,13 @@ export default function VehicleOnboardingForm({
         />
       )}
 
-      {/* Footer */}
       <footer className="bg-primary py-8 text-center text-xs font-bold text-slate-900 border-t border-primary-hover font-sans mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-3">
             <img 
               src="https://letzryd.com/replica-assets/letzryd-long-png-logo-Aq2o3DNOw1i2kBMB-7ab04eaa76.png" 
               alt="LetzRyd" 
-              className="h-6 w-auto object-contain filter brightness-0 invert opacity-80"
+              className="h-6 w-auto object-contain filter brightness-0 opacity-80"
               referrerPolicy="no-referrer"
             />
             <span className="text-slate-800">|</span>

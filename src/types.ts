@@ -1,6 +1,9 @@
 export type VisitorType = "Individual" | "Operator";
 export type OnboardingOutcome = "Onboarding Process Initiated" | "Successfully Onboarded" | "Follow Up Required" | "No Follow Up Required / Closed" | "Others" | "Joined" | "Pending" | "Not Interested" | "Onboarding process initiated" | "Follow up required" | "No follow up required / Closed";
 
+// LetzRyd RBAC Role Codes
+export type RoleCode = "SA" | "BH" | "CM" | "DM" | "OB" | "SP" | string;
+
 export interface WalkInRecord {
   id: number;
   visitor_type: VisitorType;
@@ -135,6 +138,7 @@ export interface User {
   role: string;
   executive_id: string;
   role_id?: number;
+  role_code?: RoleCode; // RBAC integration
   permissions?: string[];
 }
 
@@ -149,24 +153,34 @@ export const CITIES: CityOption[] = [
   { value: "Mumbai", text: "Mumbai" }
 ];
 
-export const MOCK_USERS: Record<string, { name: string; role: string; executive_id: string; password: string }> = {
+export const MOCK_USERS: Record<string, { name: string; role: string; executive_id: string; password: string; role_code: RoleCode }> = {
   dshiva: {
     name: "D Shiva",
-    role: "Operations Executive",
+    role: "On-boarding Executive",
     executive_id: "EX-4091",
-    password: "password"
+    password: "password",
+    role_code: "OB"
   },
   anurag: {
     name: "Anurag Prasad",
-    role: "Fleet Manager",
+    role: "Driver Manager",
     executive_id: "FM-1024",
-    password: "password"
+    password: "password",
+    role_code: "DM"
   },
   admin: {
     name: "Admin User",
-    role: "System Administrator",
+    role: "Super Admin",
     executive_id: "AD-0001",
-    password: "password"
+    password: "password",
+    role_code: "SA"
+  },
+  support: {
+    name: "Support Staff",
+    role: "Support Executive",
+    executive_id: "SP-1001",
+    password: "password",
+    role_code: "SP" // Read-only testing account
   }
 };
 

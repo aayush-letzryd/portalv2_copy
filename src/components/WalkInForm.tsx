@@ -27,7 +27,7 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-// MASKING FUNCTION (Req 9): Masks all but the last 4 digits of sensitive IDs
+// MASKING FUNCTION: Masks all but the last 4 digits of sensitive IDs
 const maskSensitiveID = (idString: string | null | undefined) => {
   if (!idString) return "—";
   const cleanStr = idString.replace(/\s/g, ''); // Remove spaces
@@ -40,7 +40,12 @@ export default function WalkInForm({
   onBackToSelector, 
   onLogout
 }: WalkInFormProps) {
-  const [activeTab, setActiveTab] = useState<"form" | "registry">("form");
+  
+  // RBAC Security Lock: Check if the user is a Support Executive (Read-Only)
+  const isReadOnly = user.role_code === "SP";
+  
+  // Default to registry if user is read-only
+  const [activeTab, setActiveTab] = useState<"form" | "registry">(isReadOnly ? "registry" : "form");
   
   // Header clock state
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString("en-IN", {
@@ -73,7 +78,8 @@ export default function WalkInForm({
   const [aadhaarNumber, setAadhaarNumber] = useState("");
   
   const [interestedPosition, setInterestedPosition] = useState<string>("Driver");
-  const [modeOfEnquiry, setModeOfEnquiry] = useState<string>("In-person Visit");
+  // Tracking Lead Source explicitly
+  const [leadSource, setLeadSource] = useState<string>("In-person Visit");
   
   const [referredByName, setReferredByName] = useState("");
   const [referredByPhone, setReferredByPhone] = useState("");
@@ -118,12 +124,11 @@ export default function WalkInForm({
     }
   }, [editingId, enquiryDate]);
 
-  // AUTO-FILL & DUPLICATE LOGIC (Req 2 & 11)
+  // AUTO-FILL & DUPLICATE LOGIC
   useEffect(() => {
     const checkExistingPhone = async () => {
       const cleanPhone = personNumber.replace(/\D/g, "");
-      // Only check when exactly 10 digits are typed and we are not currently editing an old record
-      if (cleanPhone.length === 10 && !editingId) {
+      if (cleanPhone.length === 10 && !editingId && !isReadOnly) {
         try {
           const token = localStorage.getItem("lr_token");
           const res = await fetch(`/api/walkins/search?q=${cleanPhone}`, {
@@ -132,16 +137,14 @@ export default function WalkInForm({
           const data = await res.json();
           
           if (data && data.length > 0) {
-            const match = data[0]; // Take the most recent match
+            const match = data[0]; 
             
-            // Pre-fill fields automatically
             setFirstName(match.first_name || match.person_name?.split(" ")[0] || "");
             setLastName(match.last_name || match.person_name?.split(" ").slice(1).join(" ") || "");
             if (match.dl_number) setDlNumber(match.dl_number);
             if (match.aadhaar_number) setAadhaarNumber(match.aadhaar_number);
             if (match.city) setCity(match.city);
             
-            // Duplicate Warning check
             if (match.joined_status === "Successfully Onboarded") {
               alert(`Already filled: A record for ${match.person_name || 'this candidate'} is already fully onboarded in the system.`);
             } else {
@@ -154,13 +157,12 @@ export default function WalkInForm({
       }
     };
     
-    // Slight debounce so it doesn't trigger on every single keystroke if they type fast
     const timeoutId = setTimeout(() => {
       checkExistingPhone();
     }, 400);
     
     return () => clearTimeout(timeoutId);
-  }, [personNumber, editingId]);
+  }, [personNumber, editingId, isReadOnly]);
 
   const fetchData = async (pageNum = 1) => {
     try {
@@ -207,7 +209,7 @@ export default function WalkInForm({
   }, [searchQuery, filterCity, filterType, filterStatus, filterTimePeriod, page]);
 
   useEffect(() => {
-    if (debouncedRetrieveQuery.trim().length > 1) {
+    if (debouncedRetrieveQuery.trim().length > 1 && !isReadOnly) {
       fetch(`/api/walkins/search?q=${encodeURIComponent(debouncedRetrieveQuery)}`, {
         headers: { "Authorization": `Bearer ${localStorage.getItem("lr_token")}` }
       })
@@ -217,9 +219,10 @@ export default function WalkInForm({
     } else {
       setRetrieveResults([]);
     }
-  }, [debouncedRetrieveQuery]);
+  }, [debouncedRetrieveQuery, isReadOnly]);
 
   const handleDeleteRecord = async (id: number) => {
+    if (isReadOnly) return;
     try {
       const res = await fetch(`/api/walkins/${id}`, {
         method: 'DELETE',
@@ -234,6 +237,7 @@ export default function WalkInForm({
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isReadOnly) return;
 
     let cleanPhone = "";
     if (visitingReason === "Onboarding" || personNumber) {
@@ -267,9 +271,9 @@ export default function WalkInForm({
       aadhaar_image: visitingReason === "Onboarding" ? (aadhaarImage || undefined) : undefined,
       dl_image: visitingReason === "Onboarding" ? (dlImage || undefined) : undefined,
       visiting_reason: visitingReason,
-      mode_of_enquiry: modeOfEnquiry,
-      referred_by_name: modeOfEnquiry === "Referral" ? (referredByName.trim() || undefined) : undefined,
-      referred_by_phone: modeOfEnquiry === "Referral" ? (referredByPhone.trim() || undefined) : undefined,
+      mode_of_enquiry: leadSource,
+      referred_by_name: leadSource === "Referral" ? (referredByName.trim() || undefined) : undefined,
+      referred_by_phone: leadSource === "Referral" ? (referredByPhone.trim() || undefined) : undefined,
       joined_status: joinedStatus,
       remarks: remarks.trim() || undefined
     };
@@ -314,7 +318,7 @@ export default function WalkInForm({
     setAadhaarImage(null);
     setDlImage(null);
     setInterestedPosition("Driver");
-    setModeOfEnquiry("In-person Visit");
+    setLeadSource("In-person Visit");
     setReferredByName("");
     setReferredByPhone("");
     setJoinedStatus("Onboarding Process Initiated");
@@ -322,6 +326,7 @@ export default function WalkInForm({
   };
 
   const fetchRecordDetailsForEdit = async (id: number) => {
+    if (isReadOnly) return;
     try {
       const token = localStorage.getItem("lr_token");
       const res = await fetch(`/api/walkins/${id}`, { headers: { "Authorization": `Bearer ${token}` }});
@@ -350,7 +355,7 @@ export default function WalkInForm({
     setAadhaarImage(record.aadhaar_image || null);
     setDlImage(record.dl_image || null);
     setVisitingReason(record.visiting_reason || "Onboarding");
-    setModeOfEnquiry(record.mode_of_enquiry || "In-person Visit");
+    setLeadSource(record.mode_of_enquiry || "In-person Visit");
     setReferredByName(record.referred_by_name || "");
     setReferredByPhone(record.referred_by_phone || "");
     setJoinedStatus(record.joined_status || "Onboarding Process Initiated");
@@ -394,7 +399,7 @@ export default function WalkInForm({
     const headers = [
       "Walk-in ID", "Enquiry Date", "Enquiry Time", "City Hub", "First Name", "Last Name",
       "Phone Number", "Driving License", "Aadhaar Number", "Interested Position", 
-      "Visiting Reason", "Mode of Enquiry", "Outcome Status", "Executive Name"
+      "Visiting Reason", "Lead Source", "Outcome Status", "Executive Name"
     ];
 
     const rows = records.map((r) => [
@@ -434,21 +439,25 @@ export default function WalkInForm({
               alt="LetzRyd" 
               className="h-7 w-auto object-contain cursor-pointer"
               onClick={onBackToSelector}
+              referrerPolicy="no-referrer"
             />
             <span className="hidden h-5 border-l border-border sm:inline-block" />
             <span className="hidden font-sans text-xs font-medium text-text-muted sm:inline-block">Walk-In Form</span>
           </div>
 
           <nav className="flex gap-2">
-            <button
-              onClick={() => setActiveTab("form")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all cursor-pointer ${ activeTab === "form" ? "bg-primary text-slate-900" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
-            >
-              <FileText className="h-4 w-4" /> Walk-In Form
-            </button>
+            {/* RBAC: Hide Walk-In Form tab if user is read-only */}
+            {!isReadOnly && (
+              <button
+                onClick={() => setActiveTab("form")}
+                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all cursor-pointer ${ activeTab === "form" ? "bg-primary text-slate-900 shadow-sm" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
+              >
+                <FileText className="h-4 w-4" /> Walk-In Form
+              </button>
+            )}
             <button
               onClick={() => setActiveTab("registry")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all cursor-pointer ${ activeTab === "registry" ? "bg-primary text-slate-900" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all cursor-pointer ${ activeTab === "registry" ? "bg-primary text-slate-900 shadow-sm" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
             >
               Walk-In Registry
             </button>
@@ -464,6 +473,7 @@ export default function WalkInForm({
               <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-slate-900">{initials}</div>
               <div className="flex flex-col">
                 <span className="font-sans text-xs font-semibold leading-none text-text">{user.name}</span>
+                {isReadOnly && <span className="font-mono text-[9px] text-red-500 mt-0.5 leading-none font-bold">Read Only</span>}
               </div>
             </div>
             <span className="h-5 border-l border-border" />
@@ -476,17 +486,17 @@ export default function WalkInForm({
       <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         {/* TAB 1: FORM */}
-        {activeTab === "form" && (
+        {activeTab === "form" && !isReadOnly && (
           <div className="mx-auto max-w-5xl flex flex-col gap-6">
             
-            <div className="relative overflow-visible rounded-2xl bg-primary p-6 text-slate-900 shadow-sm md:p-8">
-              <div className="absolute inset-0 bg-radial-gradient from-white/20 to-transparent pointer-events-none rounded-2xl" />
+            <div className="relative overflow-hidden rounded-2xl bg-primary p-6 text-slate-900 shadow-sm md:p-8">
+              <div className="absolute inset-0 bg-radial-gradient from-white/20 to-transparent pointer-events-none" />
               <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <span className="rounded-md bg-white/40 px-2 py-0.5 text-[9px] font-bold tracking-widest text-slate-900">LetzRyd Desk</span>
                   </div>
-                  <h1 className="font-sans text-2xl font-bold">{editingId ? `Edit Walk-in #${editingId}` : "Walk-In Form"}</h1>
+                  <h1 className="font-sans text-2xl font-bold tracking-tight">{editingId ? `Edit Walk-in #${editingId}` : "Walk-In Form"}</h1>
                 </div>
 
                 <div className="relative w-full max-w-sm">
@@ -509,7 +519,7 @@ export default function WalkInForm({
                           key={r.id}
                           type="button"
                           onMouseDown={() => fetchRecordDetailsForEdit(r.id)}
-                          className="flex flex-col items-start px-4 py-3 border-b border-border hover:bg-green-50 transition-colors text-left"
+                          className="flex flex-col items-start px-4 py-3 border-b border-border hover:bg-green-50 transition-colors text-left cursor-pointer"
                         >
                           <div className="flex justify-between w-full">
                             <span className="font-bold text-sm text-slate-900">#{r.id} - {r.first_name} {r.last_name}</span>
@@ -570,7 +580,7 @@ export default function WalkInForm({
                     <h3 className="font-sans text-xs font-bold text-primary">Candidate Information</h3>
                   </div>
                   
-                  {/* PHONE MOVED TO THE TOP FOR AUTO-FILL (Req 10) */}
+                  {/* PHONE MOVED TO THE TOP FOR AUTO-FILL */}
                   <div className="flex flex-col gap-1.5">
                     <label className="font-sans text-xs font-semibold text-text-muted flex justify-between">
                       <span>Phone Number *</span>
@@ -672,12 +682,14 @@ export default function WalkInForm({
                           <option value="Enquiry">Enquiry</option>
                         </select>
                       </div>
+                      
                       <div className="flex flex-col gap-1.5">
-                        <label className="font-sans text-xs font-semibold text-text-muted">Mode of Enquiry</label>
+                        <label className="font-sans text-xs font-semibold text-text-muted">Lead Source *</label>
                         <select 
-                          value={modeOfEnquiry} 
+                          required
+                          value={leadSource} 
                           onChange={(e) => {
-                            setModeOfEnquiry(e.target.value);
+                            setLeadSource(e.target.value);
                             if (e.target.value !== "Referral") {
                               setReferredByName("");
                               setReferredByPhone("");
@@ -692,7 +704,7 @@ export default function WalkInForm({
                       </div>
                     </div>
 
-                    {modeOfEnquiry === "Referral" && (
+                    {leadSource === "Referral" && (
                       <div className="grid grid-cols-2 gap-4">
                         <div className="flex flex-col gap-1.5">
                           <label className="font-sans text-xs font-semibold text-text-muted">Referred By (Name) *</label>
@@ -828,7 +840,10 @@ export default function WalkInForm({
                 </div>
                 <div className="flex gap-2">
                   <button onClick={handleExportCSV} className="flex h-10 items-center justify-center gap-1.5 rounded-lg border border-border bg-white hover:bg-slate-50 px-4 font-sans text-xs font-semibold text-text-muted transition-colors cursor-pointer shadow-2xs"><Download className="h-4 w-4" /> Export CSV</button>
-                  <button onClick={() => { resetForm(); setActiveTab("form"); }} className="flex h-10 items-center justify-center gap-1.5 rounded-lg bg-primary hover:bg-primary-hover px-4 font-sans text-xs font-semibold text-slate-900 transition-colors cursor-pointer shadow-xs"><Plus className="h-4 w-4" /> Add Walk-In</button>
+                  {/* RBAC: Hide "Add Walk-In" button if user is read-only */}
+                  {!isReadOnly && (
+                    <button onClick={() => { resetForm(); setActiveTab("form"); }} className="flex h-10 items-center justify-center gap-1.5 rounded-lg bg-primary hover:bg-primary-hover px-4 font-sans text-xs font-semibold text-slate-900 transition-colors cursor-pointer shadow-xs"><Plus className="h-4 w-4" /> Add Walk-In</button>
+                  )}
                 </div>
               </div>
 
@@ -880,10 +895,15 @@ export default function WalkInForm({
                             </td>
                             <td className="px-6 py-4"><span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${statusColor}`}>{r.joined_status}</span></td>
                             <td className="px-6 py-4 text-center">
-                              <div className="inline-flex gap-2">
-                                <button type="button" onClick={() => fetchRecordDetailsForEdit(r.id)} className="rounded-lg p-1.5 border border-border bg-white text-text-muted hover:text-primary hover:bg-slate-50 transition-all cursor-pointer"><Edit className="h-3.5 w-3.5" /></button>
-                                <button type="button" onClick={() => { if (window.confirm('Delete this record?')) handleDeleteRecord(r.id); }} className="rounded-lg p-1.5 border border-border bg-white text-text-muted hover:text-rose-500 hover:bg-rose-50 border-rose-200 transition-all cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></button>
-                              </div>
+                              {/* RBAC: Hide Action buttons if user is read-only */}
+                              {!isReadOnly ? (
+                                <div className="inline-flex gap-2">
+                                  <button type="button" onClick={() => fetchRecordDetailsForEdit(r.id)} className="rounded-lg p-1.5 border border-border bg-white text-text-muted hover:text-primary hover:bg-slate-50 transition-all cursor-pointer"><Edit className="h-3.5 w-3.5" /></button>
+                                  <button type="button" onClick={() => { if (window.confirm('Delete this record?')) handleDeleteRecord(r.id); }} className="rounded-lg p-1.5 border border-border bg-white text-text-muted hover:text-rose-500 hover:bg-rose-50 border-rose-200 transition-all cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></button>
+                                </div>
+                              ) : (
+                                <span className="text-[10px] text-slate-400 italic font-semibold">View Only</span>
+                              )}
                             </td>
                           </tr>
                         );
@@ -919,8 +939,17 @@ export default function WalkInForm({
 
       <footer className="bg-primary py-8 text-center text-xs font-bold text-slate-900 border-t border-primary-hover font-sans mt-auto">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <span>Walk-In Operations Registry</span>
-          <span>LetzRyd © 2026</span>
+          <div className="flex items-center gap-3">
+            <img 
+              src="https://letzryd.com/replica-assets/letzryd-long-png-logo-Aq2o3DNOw1i2kBMB-7ab04eaa76.png" 
+              alt="LetzRyd" 
+              className="h-6 w-auto object-contain filter brightness-0 opacity-80"
+              referrerPolicy="no-referrer"
+            />
+            <span className="text-slate-800">|</span>
+            <span className="font-semibold text-slate-800">Walk-In Operations Registry</span>
+          </div>
+          <span>LetzRyd © Copyright 2026 | All Rights Reserved</span>
         </div>
       </footer>
     </div>

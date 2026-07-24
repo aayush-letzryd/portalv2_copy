@@ -45,35 +45,38 @@ export default function Login({ onLoginSuccess }: LoginProps) {
       <div className="flex w-full max-w-4xl overflow-hidden rounded-2xl border border-border bg-white shadow-md md:aspect-16/10">
         
         {/* Left Side: Solid Brand Area */}
-        <div className="hidden w-1/2 flex-col justify-between bg-primary p-12 text-white md:flex">
-          <div className="flex flex-col gap-6">
-            {/* Logo properly scaled - no weird stretching */}
+        <div className="relative hidden w-1/2 flex-col justify-between bg-primary p-12 md:flex overflow-hidden">
+          {/* Subtle radial gradient for depth */}
+          <div className="absolute inset-0 bg-radial-gradient from-white/20 to-transparent pointer-events-none" />
+          
+          <div className="relative z-10 flex flex-col gap-6">
+            {/* Logo properly scaled - turned to dark slate/black */}
             <div className="w-48 h-auto flex items-center">
               <img 
                 src="https://letzryd.com/replica-assets/letzryd-long-png-logo-Aq2o3DNOw1i2kBMB-7ab04eaa76.png" 
                 alt="LetzRyd logo" 
-                className="max-h-12 w-auto object-contain filter brightness-0 invert"
+                className="max-h-12 w-auto object-contain filter brightness-0 opacity-90"
                 referrerPolicy="no-referrer"
               />
             </div>
             
             <div className="mt-8 flex flex-col gap-3">
-              <h2 className="font-sans text-2xl font-bold tracking-tight text-white leading-tight">
+              <h2 className="font-sans text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
                 Operations Portal
               </h2>
-              <p className="font-sans text-sm text-white/70 leading-relaxed max-w-sm">
+              <p className="font-sans text-sm font-bold text-slate-800 leading-relaxed max-w-sm">
                 Secure operations hub for on-ground driver check-ins, fleet registries, and partner query processing.
               </p>
             </div>
           </div>
           
-          <div className="font-sans text-xs text-white/40">
+          <div className="relative z-10 font-sans text-xs font-extrabold tracking-wide text-slate-900">
             LetzRyd Fleet Operations Co.
           </div>
         </div>
 
         {/* Right Side: Clean Centered Login Form */}
-        <div className="flex w-full flex-col justify-center px-8 py-12 md:w-1/2 md:p-16">
+        <div className="flex w-full flex-col justify-center px-8 py-12 md:w-1/2 md:p-16 relative z-10">
           <div className="w-full max-w-md mx-auto flex flex-col">
             
             {/* Header / Logo for mobile */}
@@ -134,7 +137,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors p-1 rounded-sm"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors p-1 rounded-sm cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -150,11 +153,11 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="mt-2 flex h-11 items-center justify-center gap-2 rounded-lg bg-primary font-sans text-sm font-semibold text-white shadow-sm hover:bg-primary-hover active:opacity-90 disabled:opacity-75 transition-all cursor-pointer"
+                className="mt-2 flex h-11 items-center justify-center gap-2 rounded-lg bg-primary font-sans text-sm font-semibold text-slate-900 shadow-sm hover:bg-primary-hover active:opacity-90 disabled:opacity-75 transition-all cursor-pointer"
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin text-white" />
+                    <Loader2 className="h-4 w-4 animate-spin text-slate-900" />
                     Signing in...
                   </>
                 ) : (
