@@ -37,7 +37,16 @@ const CARDS = [
 export default function FormSelector({ user, onSelectForm, onLogout }: FormSelectorProps) {
   const displayName = user.name || user.username || "User";
   const initials = displayName.split(" ").map((w) => w[0]).join("").substring(0, 2).toUpperCase();
-  const currentRoleCode = user.role_code || "OB"; // Fallback to OB if legacy user
+  let currentRoleCode = user.role_code;
+  if (!currentRoleCode) {
+    const roleStr = (user.role || "").toLowerCase();
+    if (roleStr.includes("admin")) currentRoleCode = "SA"; // Super Admin
+    else if (roleStr.includes("business head")) currentRoleCode = "BH";
+    else if (roleStr.includes("city manager")) currentRoleCode = "CM";
+    else if (roleStr.includes("driver manager")) currentRoleCode = "DM";
+    else if (roleStr.includes("support")) currentRoleCode = "SP";
+    else currentRoleCode = "OB"; // Default Onboarding Exec
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-bg text-text">

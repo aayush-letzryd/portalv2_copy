@@ -49,16 +49,13 @@ def get_user_for_log(request: Request) -> str:
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    # Run the blocking DB call in a thread pool so it does not block the event loop
     user_info = await run_in_threadpool(get_user_for_log, request)
     error_traceback = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
     
-    # Generate a guaranteed unique Diagnostic ID using UUID + Timestamp
     timestamp = datetime.utcnow().isoformat() + "Z"
     unique_suffix = uuid.uuid4().hex[:8]
     diagnostic_id = f"ERR-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}-{unique_suffix}"
     
-    # Structured JSON log format automatically parsed by Google Cloud Logging
     log_entry = {
         "severity": "ERROR",
         "message": f"Production Crash on {request.method} {request.url.path}: {str(exc)}",
@@ -73,7 +70,6 @@ async def global_exception_handler(request: Request, exc: Exception):
         "traceback": error_traceback
     }
     
-    # Print as JSON string - GCP Logging reads stdout JSON objects and auto-indexes all fields
     print(json.dumps(log_entry))
     
     return JSONResponse(
@@ -81,7 +77,6 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": f"Internal server error. Diagnostic ID: {diagnostic_id}"}
     )
 
-# Load local .env file if it exists
 if os.path.exists(".env"):
     with open(".env") as f:
         for line in f:
@@ -192,7 +187,7 @@ def startup_event():
             );
         """)
         for col in [
-            "aadhaar_number VARCHAR(20)",
+            "aadhaar_number VARCHAR(50)",
             "aadhaar_image  TEXT",
             "dl_image       TEXT",
             "created_at     TIMESTAMP DEFAULT NOW()",
@@ -282,7 +277,7 @@ def startup_event():
             );
         """)
 
-        # Add columns if migrating an existing table
+        # ADDED LETZRYD REQUIREMENTS MIGRATIONS
         for col in [
             "vendor_type VARCHAR(50)", 
             "driver_id VARCHAR(50)", 
@@ -293,8 +288,13 @@ def startup_event():
             "custom_rental_plan BOOLEAN DEFAULT FALSE",
             "cancelled_cheque_photo TEXT",
             "signature_photo TEXT",
-            "account_name VARCHAR(255)",     # <--- ADD THIS
-            "account_type VARCHAR(50)"       # <--- ADD THIS
+            "account_name VARCHAR(255)",
+            "account_type VARCHAR(50)",
+            "candidate_role VARCHAR(50)",
+            "rental_model VARCHAR(100)",
+            "security_deposit VARCHAR(50)",
+            "letzown_cheques VARCHAR(50)",
+            "is_spring_verified BOOLEAN DEFAULT FALSE"
         ]:
             cur.execute(f"ALTER TABLE copy_form_onboarding ADD COLUMN IF NOT EXISTS {col};")
 
@@ -330,7 +330,6 @@ def startup_event():
             );
         """)
 
-        # Add operating_place & vendor & aadhaar photo fields gracefully
         cur.execute("ALTER TABLE copy_form_onboarding ADD COLUMN IF NOT EXISTS operating_place VARCHAR(255);")
         cur.execute("ALTER TABLE copy_walkins ADD COLUMN IF NOT EXISTS operating_place VARCHAR(255);")
         cur.execute("ALTER TABLE copy_form_onboarding ADD COLUMN IF NOT EXISTS vendor_name VARCHAR(255);")
@@ -370,7 +369,6 @@ def startup_event():
             );
         """)
         
-        # Run migrations for copy_partner_adjustment table columns
         for col in [
             "driver_id VARCHAR(50)",
             "vehicle_number VARCHAR(100)",
@@ -383,7 +381,6 @@ def startup_event():
             "adjustment_level VARCHAR(50)",
             "adjustment_nature VARCHAR(50)",
             "time_duration VARCHAR(50)",
-            # NEW LETZRYD DOCUMENT FIELDS
             "hisaab_number VARCHAR(255)",
             "contested_line_items TEXT",
             "severity_level VARCHAR(50)",
@@ -393,31 +390,6 @@ def startup_event():
             "sent_for_approval VARCHAR(10)"
         ]:
             cur.execute(f"ALTER TABLE copy_partner_adjustment ADD COLUMN IF NOT EXISTS {col};")
-        cur.execute("SELECT COUNT(*) FROM copy_partner_adjustment;")
-        if cur.fetchone()[0] == 0:
-            adj_sql = """
-                INSERT INTO copy_partner_adjustment (
-                    partner_name, partner_code, driver_id, partner_number, vehicle_number, city_name, 
-                    partner_type, adjustment_type, adjustment_date, enter_amount, 
-                    remittance_towards, adjustment_related_to, remarks, first_level_approval_by, 
-                    finance_team_status, finance_team_remarks, final_level_approval_by, status
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
-            """
-            adj_records = [
-                ("Vijay Mallya", "P-1001", "1", "9000000001", "TS09 EA 1111", "Hyderabad", "Individual", "Credit", "2026-06-25", "5000", "Rent Deposit refund", "Rentals", "Refunding security deposit", "Finance Desk", "Approved", "Verified", "Ops Manager", "Completed"),
-                ("Sachin Tendulkar", "P-1002", "2", "9000000002", "MH01 AB 2222", "Mumbai", "Fleet", "Debit", "2026-06-26", "2500", "Vehicle Damage", "Maintenance", "Charging for side mirror repair", "Finance Desk", "Approved", "Charged", "Ops Manager", "Completed"),
-                ("Rahul Dravid", "P-1003", None, "9000000003", None, "Bangalore", "Rental", "Waiver", "2026-06-27", "1000", "Late fee waiver", "Penalty", "Waived late fee due to health issue", "Finance Desk", "Approved", "Waived", "Ops Manager", "Completed"),
-                ("Sourav Ganguly", "P-1004", "3", "9000000004", "WB02 CD 4444", "Chennai", "Individual", "Credit", "2026-06-27", "1500", "Referral bonus", "Referral", "Successful onboarding referral", "Finance Desk", "Approved", "Credited", "Ops Manager", "Completed"),
-                ("MS Dhoni", "P-1005", "4", "9000000005", "JH01 EF 5555", "Chennai", "Individual", "Debit", "2026-06-28", "800", "Challan reimbursement deduction", "Challan", "Speeding ticket penalty offset", "Finance Desk", "Approved", "Deducted", "Ops Manager", "Completed"),
-                ("Virat Kohli", "P-1006", "5", "9000000006", "DL01 GH 6666", "Delhi", "Fleet", "Credit", "2026-06-29", "12000", "Incentive bonus", "Incentives", "Completed 150 rides milestone", "Finance Desk", "Approved", "Milestone reached", "Ops Manager", "Completed"),
-                ("Rohit Sharma", "P-1007", "6", "9000000007", "MH02 IJ 7777", "Mumbai", "Individual", "Debit", "2026-06-29", "450", "Toll charges adjustment", "Tolls", "Sea link toll duplicate entry", "Finance Desk", "Approved", "Adjusted", "Ops Manager", "Completed"),
-                ("Jasprit Bumrah", "P-1008", "7", "9000000008", "GJ01 KL 8888", "Hyderabad", "Rental", "Waiver", "2026-06-30", "600", "Device deposit discount", "Deposit", "Waiving device deposit partially", "Finance Desk", "Approved", "Discounted", "Ops Manager", "Completed"),
-                ("Hardik Pandya", "P-1009", "8", "9000000009", "GJ03 MN 9999", "Bangalore", "Fleet", "Credit", "2026-06-30", "4500", "Battery swap compensation", "Fuel", "Electric swap cost offset", "Finance Desk", "Approved", "Compensated", "Ops Manager", "Completed"),
-                ("KL Rahul", "P-1010", None, "9000000010", None, "Bangalore", "Rental", "Debit", "2026-06-30", "1500", "Excess mileage fee", "Rental Fee", "150km beyond weekly limit", "Finance Desk", "Approved", "Charged excess", "Ops Manager", "Completed")
-            ]
-            for r in adj_records:
-                cur.execute(adj_sql, r)
-            print("[OK] Partner adjustments seeded")
 
         # ── copy_vehicle_allocation ───────────────────────────
         cur.execute("""
@@ -442,7 +414,6 @@ def startup_event():
             );
         """)
         
-        # Run migrations for copy_vehicle_allocation table columns
         for col in [
             "driver_plan VARCHAR(100)",
             "type_of_plan VARCHAR(100)",
@@ -453,31 +424,6 @@ def startup_event():
             "dropoff_photo TEXT"
         ]:
             cur.execute(f"ALTER TABLE copy_vehicle_allocation ADD COLUMN IF NOT EXISTS {col};")
-
-        cur.execute("SELECT COUNT(*) FROM copy_vehicle_allocation;")
-        if cur.fetchone()[0] == 0:
-            alloc_sql = """
-                INSERT INTO copy_vehicle_allocation (
-                    allocation_date, allocation_type, city_name, driver_id, driver_name, 
-                    driver_phone, driver_plan, type_of_plan, car_model, vehicle_number, 
-                    old_vehicle_number, dropoff_odometer, dropoff_remarks
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
-            """
-            alloc_records = [
-                ("2026-06-25", "New Allocation", "Hyderabad", "D-5001", "Amit Kumar", "9848022338", "Subscription", "Bronze", "Tata Nexon EV", "TS09 EA 4444", None, None, None),
-                ("2026-06-26", "Car Swap", "Mumbai", "D-5002", "Rajesh Patel", "9820098200", "Lease", "Silver", "MG ZS EV", "MH01 AB 5555", "MH01 AB 2222", "45000", "Returned with clean battery state"),
-                ("2026-06-27", "Reallocation", "Bangalore", "D-5003", "Karthik Raja", "9900990099", "Lease", "Gold", "Hyundai Kona", "KA03 CD 6666", "KA03 CD 1111", "62000", "Scratches on rear left bumper"),
-                ("2026-06-27", "New Allocation", "Chennai", "D-5004", "Senthil Kumar", "9444094440", "Subscription", "Bronze", "BYD Atto 3", "TN07 EF 7777", None, None, None),
-                ("2026-06-28", "Car Swap", "Delhi", "D-5005", "Harpreet Singh", "9810098100", "Subscription", "Silver", "Tata Tigor EV", "DL01 GH 8888", "DL01 GH 3333", "28000", "No issues reported on swap"),
-                ("2026-06-29", "New Allocation", "Hyderabad", "D-5006", "Vikram Reddy", "9000190001", "Lease", "Gold", "Tata Nexon EV", "TS09 EA 9999", None, None, None),
-                ("2026-06-29", "Reallocation", "Mumbai", "D-5007", "Sunil Gavaskar", "9821098210", "Lease", "Silver", "MG ZS EV", "MH02 IJ 1234", "MH02 IJ 7777", "18000", "Dropoff clean"),
-                ("2026-06-30", "New Allocation", "Bangalore", "D-5008", "Anil Kumble", "9845098450", "Subscription", "Bronze", "Hyundai Kona", "KA03 CD 5555", None, None, None),
-                ("2026-06-30", "Car Swap", "Hyderabad", "D-5009", "Suresh Raina", "9989099890", "Subscription", "Gold", "BYD Atto 3", "TS09 EA 6666", "TS09 EA 1111", "34500", "Minor dent on front door"),
-                ("2026-06-30", "New Allocation", "Delhi", "D-5010", "Kapil Dev", "9811098110", "Lease", "Gold", "Tata Tigor EV", "DL02 IJ 7777", None, None, None)
-            ]
-            for r in alloc_records:
-                cur.execute(alloc_sql, r)
-            print("[OK] Vehicle allocations seeded")
 
         # ── copy_partner_expenses ───────────────────────────
         cur.execute("""
@@ -495,7 +441,6 @@ def startup_event():
             );
         """)
         
-        # Run migrations for copy_partner_expenses table columns
         for col in [
             "expense_date VARCHAR(50)",
             "driver_name VARCHAR(255)",
@@ -507,102 +452,23 @@ def startup_event():
         ]:
             cur.execute(f"ALTER TABLE copy_partner_expenses ADD COLUMN IF NOT EXISTS {col};")
 
-        cur.execute("SELECT COUNT(*) FROM copy_partner_expenses;")
-        if cur.fetchone()[0] == 0:
-            exp_sql = """
-                INSERT INTO copy_partner_expenses (
-                    expense_date, driver_name, phone_number, vehicle_number, 
-                    expenses_type, amount_paid, reference_photo
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s);
-            """
-            exp_records = [
-                ("2026-06-25", "Amit Kumar", "9848022338", "TS09 EA 4444", "CNG", "1200", None),
-                ("2026-06-26", "Rajesh Patel", "9820098200", "MH01 AB 5555", "Toll", "350", None),
-                ("2026-06-27", "Karthik Raja", "9900990099", "KA03 CD 6666", "OLA - CL Balance", "850", None),
-                ("2026-06-27", "Senthil Kumar", "9444094440", "TN07 EF 7777", "Paid to Company", "5000", None),
-                ("2026-06-28", "Harpreet Singh", "9810098100", "DL01 GH 8888", "CNG", "950", None),
-                ("2026-06-29", "Vikram Reddy", "9000190001", "TS09 EA 9999", "Toll", "120", None),
-                ("2026-06-29", "Sunil Gavaskar", "9821098210", "MH02 IJ 1234", "Paid to Company", "4500", None),
-                ("2026-06-30", "Anil Kumble", "9845098450", "KA03 CD 5555", "CNG", "1100", None),
-                ("2026-06-30", "Suresh Raina", "9989099890", "TS09 EA 6666", "Toll", "280", None),
-                ("2026-06-30", "Kapil Dev", "9811098110", "DL02 IJ 7777", "OLA - CL Balance", "600", None)
-            ]
-            for r in exp_records:
-                cur.execute(exp_sql, r)
-            print("[OK] Partner expenses seeded")
 
-
-        # Seed walk-ins if empty
-        cur.execute("SELECT COUNT(*) FROM copy_walkins;")
-        if cur.fetchone()[0] == 0:
-
-            # Seed sample Operator and Drivers
-            cur.execute("""
-                INSERT INTO copy_form_onboarding (
-                    driver_name, phone_number, dob, city, operating_place, 
-                    present_address, permanent_address, emergency_name, emergency_phone, 
-                    dl_number, pan_number, aadhaar_number, pan_aadhaar_linked, 
-                    vendor_name, vendor_id, father_name, vendor_type, custom_rent_amount
-                ) VALUES ('Ganesh Fleet Travels', '9876541230', '1985-01-01', 'Hyderabad', 'Banjara Hills',
-                          '123 Street, Hyderabad', '123 Street, Hyderabad', 'N/A', '0000000000',
-                          'N/A', 'PANOP7788P', '987654321098', 'Yes', 'Ganesh Fleet Travels', 'OP-7788', 'N/A', 'Operator', '1000') RETURNING id;
-            """)
-            op_id = cur.fetchone()[0]
-
-            # Seed drivers under OP-7788
-            cur.execute("""
-                INSERT INTO copy_form_onboarding (
-                    driver_name, phone_number, dl_number, custom_rent_amount, driver_id,
-                    vendor_name, vendor_id, vendor_type,
-                    whatsapp_number, dob, city, present_address, permanent_address, 
-                    emergency_name, emergency_phone, pan_number, aadhaar_number, father_name
-                ) VALUES ('Suresh Kumar', '9900112233', 'TS0920200012345', '850', 'DR-9001',
-                          'Ganesh Fleet Travels', 'OP-7788', 'Operator',
-                          '9900112233', '1992-05-15', 'Hyderabad', '123 Street, Hyderabad', '123 Street, Hyderabad',
-                          'Ramesh Kumar', '9876543210', 'ABCDE9876A', '987654321098', 'Ramesh Kumar');
-            """)
-            
-            cur.execute("""
-                INSERT INTO copy_form_onboarding (
-                    driver_name, phone_number, dl_number, custom_rent_amount, driver_id,
-                    vendor_name, vendor_id, vendor_type,
-                    whatsapp_number, dob, city, present_address, permanent_address, 
-                    emergency_name, emergency_phone, pan_number, aadhaar_number, father_name
-                ) VALUES ('Mahesh Babu', '9900112244', 'TS0920200012346', '900', 'DR-9002',
-                          'Ganesh Fleet Travels', 'OP-7788', 'Operator',
-                          '9900112244', '1994-08-22', 'Hyderabad', '123 Street, Hyderabad', '123 Street, Hyderabad',
-                          'Satish Babu', '9876543211', 'ABCDE9876B', '987654321099', 'Satish Babu');
-            """)
-
-            cur.execute("SELECT id, name FROM copy_cities ORDER BY id;")
-            city_map = {n: i for i, n in cur.fetchall()}
-            
-            w_sql = """
-                INSERT INTO copy_walkins (visitor_type, event_date, city, person_name, person_number, dl_number, visiting_reason, joined_status, executive_name, executive_id)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id;
-            """
-            cur.execute(w_sql, ("Operator", "2026-06-24", "Mumbai", "Deepak Mehta", "9800155667", None, "Enquiry", "No Follow Up Required / Closed", "Neha Sharma", 18))
-            cur.execute(w_sql, ("Individual", "2026-06-25", "Bangalore", "Ravi Shankar", "9100044556", "KA03 20210056789", "Onboarding", "Follow Up Required", "Sandeep", 7))
-            cur.execute(w_sql, ("Individual", "2026-06-26", "Hyderabad", "Ajay Deshmukh", "9988833221", "TS02 20200765432", "Support", "Successfully Onboarded", "SHAIK ABDULLA", 5))
-            cur.execute(w_sql, ("Operator", "2026-06-26", "Hyderabad", "Kavitha Nair", "9012345678", None, "Enquiry", "Successfully Onboarded", "Ayush Mahendru", 13))
-
-        # Clean seed 10 onboarding records if empty or < 5
         cur.execute("SELECT COUNT(*) FROM copy_form_onboarding;")
         if cur.fetchone()[0] < 5:
             cur.execute("DELETE FROM copy_walkin_form_links;")
             cur.execute("DELETE FROM copy_form_onboarding;")
             
             onboarding_records = [
-                ("Kavitha Nair", "9012345678", "1992-05-15", "Hyderabad", "Banjara Hills", "123 Street, Hyderabad", "123 Street, Hyderabad", "Rahul Nair", "9876543210", "TS0620181234567", "ABCDE1234F", "123456789012", "Yes", "FastFleet Logistics", "V-9901", "Gopal Nair"),
-                ("Ravi Shankar", "9100044556", "1994-08-22", "Bangalore", "Indiranagar", "456 Avenue, Bangalore", "456 Avenue, Bangalore", "Saraswathi", "9900088220", "KA0320210056789", "BCDEF2345G", "234567890123", "Yes", "FastFleet Logistics", "V-9901", "Shiva Shankar"),
-                ("Ajay Deshmukh", "9988833221", "1990-12-05", "Hyderabad", "Gachibowli", "789 Lane, Hyderabad", "789 Lane, Hyderabad", "Seema Deshmukh", "9988833200", "TS0220200765432", "CDEFG3456H", "345678901234", "Yes", "Self-Employed", "", "Anand Deshmukh"),
-                ("Deepak Mehta", "9800155667", "1988-03-30", "Mumbai", "Bandra", "101 Sea Road, Mumbai", "101 Sea Road, Mumbai", "Karan Mehta", "9800155660", "MH0120100098765", "DEFGH4567I", "456789012345", "Yes", "Alpha Cabs", "V-8802", "Suresh Mehta"),
-                ("Amit Patel", "9876543210", "1991-07-14", "Mumbai", "Andheri", "202 Park Plaza, Mumbai", "202 Park Plaza, Mumbai", "Jaya Patel", "9876543200", "MH0220150012345", "EFGHI5678J", "567890123456", "No", "Alpha Cabs", "V-8802", "Dinesh Patel"),
-                ("Priya Sharma", "9911223344", "1995-11-20", "Hyderabad", "Begumpet", "505 Metro Heights, Hyderabad", "505 Metro Heights, Hyderabad", "Vijay Sharma", "9911223340", "TS0920190012345", "FGHIJ6789K", "678901234567", "Yes", "Self-Employed", "", "Rajendra Sharma"),
-                ("Rajesh Kumar", "9811223344", "1989-02-18", "Bangalore", "Koramangala", "303 Block B, Bangalore", "303 Block B, Bangalore", "Sunita Kumar", "9811223340", "KA0120180098765", "GHIJK7890L", "789012345678", "Yes", "FastFleet Logistics", "V-9901", "Ramesh Kumar"),
-                ("Sunita Rao", "9711223344", "1993-06-25", "Hyderabad", "Madhapur", "404 Cyber Towers, Hyderabad", "404 Cyber Towers, Hyderabad", "Krishna Rao", "9711223340", "TS0520211234567", "HIJKL8901M", "890123456789", "No", "Self-Employed", "", "Hanumantha Rao"),
-                ("Vinod Khanna", "9611223344", "1992-09-02", "Mumbai", "Thane", "707 West End, Mumbai", "707 West End, Mumbai", "Asha Khanna", "9611223340", "MH0420160054321", "IJKLM9012N", "901234567890", "Yes", "Alpha Cabs", "V-8802", "Prem Khanna"),
-                ("Meera Sen", "9511223344", "1994-04-10", "Bangalore", "Whitefield", "808 Silicon Valley, Bangalore", "808 Silicon Valley, Bangalore", "Anoop Sen", "9511223340", "KA0420220011223", "JKLMN0123O", "012345678901", "Yes", "Direct Partner", "", "Bimal Sen")
+                ("Kavitha Nair", "9012345678", "1992-05-15", "Hyderabad", "Banjara Hills", "123 Street, Hyderabad", "123 Street, Hyderabad", "Rahul Nair", "9876543210", "TS0620181234567", "ABCDE1234F", "[Aadhaar Redacted]", "Yes", "FastFleet Logistics", "V-9901", "Gopal Nair"),
+                ("Ravi Shankar", "9100044556", "1994-08-22", "Bangalore", "Indiranagar", "456 Avenue, Bangalore", "456 Avenue, Bangalore", "Saraswathi", "9900088220", "KA0320210056789", "BCDEF2345G", "[Aadhaar Redacted]", "Yes", "FastFleet Logistics", "V-9901", "Shiva Shankar"),
+                ("Ajay Deshmukh", "9988833221", "1990-12-05", "Hyderabad", "Gachibowli", "789 Lane, Hyderabad", "789 Lane, Hyderabad", "Seema Deshmukh", "9988833200", "TS0220200765432", "CDEFG3456H", "[Aadhaar Redacted]", "Yes", "Self-Employed", "", "Anand Deshmukh"),
+                ("Deepak Mehta", "9800155667", "1988-03-30", "Mumbai", "Bandra", "101 Sea Road, Mumbai", "101 Sea Road, Mumbai", "Karan Mehta", "9800155660", "MH0120100098765", "DEFGH4567I", "[Aadhaar Redacted]", "Yes", "Alpha Cabs", "V-8802", "Suresh Mehta"),
+                ("Amit Patel", "9876543210", "1991-07-14", "Mumbai", "Andheri", "202 Park Plaza, Mumbai", "202 Park Plaza, Mumbai", "Jaya Patel", "9876543200", "MH0220150012345", "EFGHI5678J", "[Aadhaar Redacted]", "No", "Alpha Cabs", "V-8802", "Dinesh Patel"),
+                ("Priya Sharma", "9911223344", "1995-11-20", "Hyderabad", "Begumpet", "505 Metro Heights, Hyderabad", "505 Metro Heights, Hyderabad", "Vijay Sharma", "9911223340", "TS0920190012345", "FGHIJ6789K", "[Aadhaar Redacted]", "Yes", "Self-Employed", "", "Rajendra Sharma"),
+                ("Rajesh Kumar", "9811223344", "1989-02-18", "Bangalore", "Koramangala", "303 Block B, Bangalore", "303 Block B, Bangalore", "Sunita Kumar", "9811223340", "KA0120180098765", "GHIJK7890L", "[Aadhaar Redacted]", "Yes", "FastFleet Logistics", "V-9901", "Ramesh Kumar"),
+                ("Sunita Rao", "9711223344", "1993-06-25", "Hyderabad", "Madhapur", "404 Cyber Towers, Hyderabad", "404 Cyber Towers, Hyderabad", "Krishna Rao", "9711223340", "TS0520211234567", "HIJKL8901M", "[Aadhaar Redacted]", "No", "Self-Employed", "", "Hanumantha Rao"),
+                ("Vinod Khanna", "9611223344", "1992-09-02", "Mumbai", "Thane", "707 West End, Mumbai", "707 West End, Mumbai", "Asha Khanna", "9611223340", "MH0420160054321", "IJKLM9012N", "[Aadhaar Redacted]", "Yes", "Alpha Cabs", "V-8802", "Prem Khanna"),
+                ("Meera Sen", "9511223344", "1994-04-10", "Bangalore", "Whitefield", "808 Silicon Valley, Bangalore", "808 Silicon Valley, Bangalore", "Anoop Sen", "9511223340", "KA0420220011223", "JKLMN0123O", "[Aadhaar Redacted]", "Yes", "Direct Partner", "", "Bimal Sen")
             ]
             
             for item in onboarding_records:
@@ -610,106 +476,33 @@ def startup_event():
                     INSERT INTO copy_form_onboarding (
                         driver_name, phone_number, dob, city, operating_place, 
                         present_address, permanent_address, emergency_name, emergency_phone, 
-                        dl_number, pan_number, aadhaar_number, pan_aadhaar_linked, vendor_name, vendor_id, father_name, vendor_type
-                    ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'Individual') RETURNING id;
+                        dl_number, pan_number, aadhaar_number, pan_aadhaar_linked, vendor_name, vendor_id, father_name, vendor_type, candidate_role
+                    ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'Individual','Driver') RETURNING id;
                 """, item)
                 onb_id = cur.fetchone()[0]
-                
-                # Link this onboarding record to a walkin if the name matches
-                cur.execute("SELECT id FROM copy_walkins WHERE LOWER(person_name) = LOWER(%s) LIMIT 1;", (item[0],))
-                walkin_row = cur.fetchone()
-                if walkin_row:
-                    walkin_id = walkin_row[0]
-                    cur.execute("INSERT INTO copy_walkin_form_links (walkin_id, onboarding_id) VALUES (%s, %s);", (walkin_id, onb_id))
-                    cur.execute("UPDATE copy_walkins SET joined_status = 'Onboarded' WHERE id = %s;", (walkin_id,))
 
-            # Seed sample Operator and Drivers
             cur.execute("""
                 INSERT INTO copy_form_onboarding (
                     driver_name, phone_number, dob, city, operating_place, 
                     present_address, permanent_address, emergency_name, emergency_phone, 
                     dl_number, pan_number, aadhaar_number, pan_aadhaar_linked, 
-                    vendor_name, vendor_id, father_name, vendor_type, custom_rent_amount
+                    vendor_name, vendor_id, father_name, vendor_type, candidate_role, custom_rent_amount
                 ) VALUES ('Ganesh Fleet Travels', '9876541230', '1985-01-01', 'Hyderabad', 'Banjara Hills',
                           '123 Street, Hyderabad', '123 Street, Hyderabad', 'N/A', '0000000000',
-                          'N/A', 'PANOP7788P', '987654321098', 'Yes', 'Ganesh Fleet Travels', 'OP-7788', 'N/A', 'Operator', '1000') RETURNING id;
+                          'N/A', 'PANOP7788P', '[Aadhaar Redacted]', 'Yes', 'Ganesh Fleet Travels', 'OP-7788', 'N/A', 'Operator', 'Operator', '1000') RETURNING id;
             """)
-            op_id = cur.fetchone()[0]
 
-            # Seed drivers under OP-7788
             cur.execute("""
                 INSERT INTO copy_form_onboarding (
                     driver_name, phone_number, dl_number, custom_rent_amount, driver_id,
-                    vendor_name, vendor_id, vendor_type,
+                    vendor_name, vendor_id, vendor_type, candidate_role,
                     whatsapp_number, dob, city, present_address, permanent_address, 
                     emergency_name, emergency_phone, pan_number, aadhaar_number, father_name
                 ) VALUES ('Suresh Kumar', '9900112233', 'TS0920200012345', '850', 'DR-9001',
-                          'Ganesh Fleet Travels', 'OP-7788', 'Operator',
+                          'Ganesh Fleet Travels', 'OP-7788', 'Operator', 'Driver',
                           '9900112233', '1992-05-15', 'Hyderabad', '123 Street, Hyderabad', '123 Street, Hyderabad',
-                          'Ramesh Kumar', '9876543210', 'ABCDE9876A', '987654321098', 'Ramesh Kumar');
+                          'Ramesh Kumar', '9876543210', 'ABCDE9876A', '[Aadhaar Redacted]', 'Ramesh Kumar');
             """)
-            
-            cur.execute("""
-                INSERT INTO copy_form_onboarding (
-                    driver_name, phone_number, dl_number, custom_rent_amount, driver_id,
-                    vendor_name, vendor_id, vendor_type,
-                    whatsapp_number, dob, city, present_address, permanent_address, 
-                    emergency_name, emergency_phone, pan_number, aadhaar_number, father_name
-                ) VALUES ('Mahesh Babu', '9900112244', 'TS0920200012346', '900', 'DR-9002',
-                          'Ganesh Fleet Travels', 'OP-7788', 'Operator',
-                          '9900112244', '1994-08-22', 'Hyderabad', '123 Street, Hyderabad', '123 Street, Hyderabad',
-                          'Satish Babu', '9876543211', 'ABCDE9876B', '987654321099', 'Satish Babu');
-            """)
-
-            cur.execute("SELECT id, name FROM copy_cities ORDER BY id;")
-            city_map = {n: i for i, n in cur.fetchall()}
-
-            cur.execute("SELECT id, name FROM copy_users ORDER BY id;")
-            user_map = {n: i for i, n in cur.fetchall()}
-
-            hyd = str(city_map.get("Hyderabad", 1))
-            blr = str(city_map.get("Bangalore", 2))
-            mum = str(city_map.get("Mumbai", 3))
-            chn = str(city_map.get("Chennai", 4))
-            del_ = str(city_map.get("Delhi", 5))
-
-            shiva  = user_map.get("D Shiva", 1)
-            arshad = user_map.get("Arshad Khan", 2)
-            priya  = user_map.get("Priya Sharma", 3)
-            rohan  = user_map.get("Rohan Verma", 4)
-            sneha  = user_map.get("Sneha Reddy", 5)
-
-            records = [
-                ("Driver",  "2026-06-10", hyd,  shiva,  "K Ramesh Kumar",   "9848022338", "1234 5678 9012", "TS09 20210045612", "Onboarding",  "Successfully Onboarded",         "Completed documentation. Verified Aadhaar and DL. Assigned Citroen EC3."),
-                ("Driver",  "2026-06-11", blr,  arshad, "Sandeep Hegde",    "9900088221", "2345 6789 0123", "KA03 20198894101", "Onboarding",  "Successfully Onboarded",         "WagonR onboarding done. App installed and first ride completed."),
-                ("Partner", "2026-06-12", mum,  priya,  "Milind Salunkhe",  "9820044556", None, None, "Enquiry",     "Follow Up Required",        "Interested in fleet model (5 cars). Revenue sharing terms requested."),
-                ("Driver",  "2026-06-13", hyd,  shiva,  "Mohammad Fareed",  "9000123456", "4567 8901 2345", "TS11 20220938112", "Support",     "Successfully Onboarded",         "App login issue resolved. Password reset done."),
-                ("Driver",  "2026-06-14", hyd,  rohan,  "Anil Konda",       "8886655443", "5678 9012 3456", "TS08 20183384910", "Onboarding",  "No Follow Up Required / Closed", "Left due to minimum daily drive hour requirement."),
-                ("Partner", "2026-06-15", blr,  priya,  "Rajesh Patel",     "9876543210", None, None, "Enquiry",     "Successfully Onboarded",         "Fleet partner confirmed. 3 vehicles registered and active."),
-                ("Driver",  "2026-06-17", hyd,  arshad, "Suresh Kumar",     "9123456789", "7890 1234 5678", "TS05 20211234567", "Onboarding",  "Follow Up Required",        "Background check in progress. Documents under review."),
-                ("Driver",  "2026-06-19", del_, sneha,  "Vikram Singh",     "9888877766", "8901 2345 6789", "DL01 20178901234", "Onboarding",  "Successfully Onboarded",         "Delhi onboarding complete. Dzire assigned."),
-                ("Partner", "2026-06-21", hyd,  priya,  "Anita Reddy",      "9911122233", None, None, "Enquiry",     "Follow Up Required",        "Follow-up call scheduled for next week."),
-                ("Driver",  "2026-06-22", hyd,  shiva,  "Bhaskar Rao",      "9090908080", "0123 4567 8901", "TS07 20220123456", "Support",     "Successfully Onboarded",         "Payment settlement resolved. All dues cleared."),
-                ("Driver",  "2026-06-23", chn,  sneha,  "Pawan Krishnan",   "9777711122", "1122 3344 5566", "TN22 20191234567", "Onboarding",  "Successfully Onboarded",         "Chennai pilot batch. Hyundai Xcent assigned."),
-                ("Partner", "2026-06-24", mum,  rohan,  "Deepak Mehta",     "9800155667", None, None, "Enquiry",     "No Follow Up Required / Closed", "Concerned about lock-in period. Did not proceed."),
-                ("Driver",  "2026-06-25", blr,  arshad, "Ravi Shankar",     "9100044556", "3344 5566 7788", "KA05 20210056789", "Onboarding",  "Follow Up Required",        "Documents submitted. Waiting for police verification."),
-                ("Driver",  "2026-06-26", hyd,  shiva,  "Ajay Deshmukh",    "9988833221", "5566 7788 9900", "TS02 20200765432", "Support",     "Successfully Onboarded",         "Rider rating issue investigated and resolved."),
-                ("Partner", "2026-06-26", hyd,  priya,  "Kavitha Nair",     "9012345678", None, None, "Enquiry",     "Successfully Onboarded",         "Signed partner agreement. 2 vehicles onboarded."),
-                ("Driver",  "2026-07-02", hyd,  shiva,  "Rahul Dravid",     "9000011111", "9012 3456 7890", "TS09 20210045612", "Onboarding",  "Onboarding Process Initiated", "Follow up next week"),
-                ("Partner", "2026-07-05", blr,  arshad, "MS Dhoni",         "9000022222", None,             None,               "Enquiry",     "Follow Up Required",         "Wants to know about fleet terms"),
-                ("Operator","2026-07-07", mum,  priya,  "Virat Kohli",      "9000033333", None,             None,               "Enquiry",     "No Follow Up Required / Closed", "Not interested in terms"),
-                ("Driver",  "2026-07-08", chn,  sneha,  "Rohit Sharma",     "9000044444", "2345 6789 0123", "TN22 20191234567", "Onboarding",  "Successfully Onboarded", "Assigned vehicle"),
-
-            ]
-
-            cur.executemany("""
-                INSERT INTO copy_walkins
-                  (visitor_type, event_date, city, executive_id, person_name,
-                   person_number, aadhaar_number, dl_number, visiting_reason,
-                   joined_status, remarks)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
-            """, records)
-            print(f"[OK] Walk-in records seeded ({len(records)} records)")
 
         # ── roles and permissions ────────────────────────
         cur.execute("""
@@ -749,7 +542,6 @@ def startup_event():
         cur.execute("ALTER TABLE copy_app_users ADD COLUMN IF NOT EXISTS role_id INTEGER REFERENCES app_roles(id);")
         cur.execute("ALTER TABLE copy_app_users ADD COLUMN IF NOT EXISTS employee_id VARCHAR(100);")
         cur.execute("ALTER TABLE copy_app_users ADD COLUMN IF NOT EXISTS email VARCHAR(255);")
-        cur.execute("UPDATE copy_app_users SET raw_password = 'letzryd123' WHERE raw_password IS NULL;")
         
         cur.execute("""
             CREATE TABLE IF NOT EXISTS copy_app_sessions (
@@ -758,37 +550,6 @@ def startup_event():
                 created_at   TIMESTAMP DEFAULT NOW()
             );
         """)
-
-        # Seed roles
-        cur.execute("SELECT COUNT(*) FROM app_roles;")
-        if cur.fetchone()[0] == 0:
-            cur.execute("INSERT INTO app_roles (name, description) VALUES ('Admin', 'Full Access'), ('Viewer', 'Read Only') RETURNING id;")
-            admin_role_id = cur.fetchone()[0]
-        else:
-            cur.execute("SELECT id FROM app_roles WHERE name = 'Admin';")
-            r = cur.fetchone()
-            admin_role_id = r[0] if r else None
-
-        # Seed login accounts — only if copy_app_users is empty
-        cur.execute("SELECT COUNT(*) FROM copy_app_users;")
-        if cur.fetchone()[0] == 0:
-            cur.execute("SELECT id, name FROM copy_users ORDER BY id;")
-            exec_rows = cur.fetchall()
-            exec_map = {name: uid for uid, name in exec_rows}
-
-            default_password_hash = pwd_context.hash("letzryd123")
-            login_accounts = [
-                ("dshiva",       default_password_hash, exec_map.get("D Shiva"), 'letzryd123', admin_role_id),
-                ("arshadkhan",   default_password_hash, exec_map.get("Arshad Khan"), 'letzryd123', admin_role_id),
-                ("priyasharma",  default_password_hash, exec_map.get("Priya Sharma"), 'letzryd123', admin_role_id),
-                ("rohanverma",   default_password_hash, exec_map.get("Rohan Verma"), 'letzryd123', admin_role_id),
-                ("snehareddy",   default_password_hash, exec_map.get("Sneha Reddy"), 'letzryd123', admin_role_id),
-            ]
-            cur.executemany(
-                "INSERT INTO copy_app_users (username, password_hash, executive_id, raw_password, role_id) VALUES (%s,%s,%s,%s,%s);",
-                login_accounts
-            )
-            print("[OK] Login accounts seeded (password: letzryd123)")
 
         # ── copy_vehicle_models ─────────────────────────────────
         cur.execute("""
@@ -802,70 +563,9 @@ def startup_event():
                 created_at TIMESTAMP DEFAULT NOW()
             );
         """)
-        
-        # Seed vehicle models if table is empty
-        cur.execute("SELECT COUNT(*) FROM copy_vehicle_models;")
-        if cur.fetchone()[0] == 0:
-            models_to_seed = [
-                ("Maruti Suzuki", "WagonR", "VXI", "CNG", 2023),
-                ("Maruti Suzuki", "Ertiga", "ZXI", "CNG", 2022),
-                ("Hyundai", "Aura", "S", "CNG", 2023),
-                ("Tata", "Tigor", "XM", "EV", 2024),
-                ("Tata", "Nexon", "XZ+", "EV", 2023),
-                ("Hyundai", "Grand i10", "Sportz", "Petrol", 2022)
-            ]
-            cur.executemany(
-                "INSERT INTO copy_vehicle_models (brand, model_name, variant, fuel_type, make_year) VALUES (%s,%s,%s,%s,%s);",
-                models_to_seed
-            )
-            print("[OK] Vehicle models seeded")
-
-        # ── copy_operating_cities ───────────────────────────────
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS copy_operating_cities (
-                id         SERIAL PRIMARY KEY,
-                name       VARCHAR(255) UNIQUE NOT NULL,
-                state      VARCHAR(255) NOT NULL,
-                status     VARCHAR(50) DEFAULT 'Active',
-                created_at TIMESTAMP DEFAULT NOW()
-            );
-        """)
-
-        # Seed copy_cities if table is empty
-        cur.execute("SELECT COUNT(*) FROM copy_operating_cities;")
-        if cur.fetchone()[0] == 0:
-            cities_to_seed = [
-                ("Hyderabad", "Telangana", "Active"),
-                ("Bangalore", "Karnataka", "Active"),
-                ("Mumbai", "Maharashtra", "Active")
-            ]
-            cur.executemany(
-                "INSERT INTO copy_operating_cities (name, state, status) VALUES (%s,%s,%s);",
-                cities_to_seed
-            )
-            print("[OK] Operating copy_cities seeded")
-
-        # ── copy_tickets ───────────────────────────────────────
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS copy_tickets (
-                id SERIAL PRIMARY KEY,
-                title VARCHAR(255) NOT NULL,
-                description TEXT NOT NULL,
-                source VARCHAR(50),
-                status VARCHAR(50) DEFAULT 'Open',
-                created_by_name VARCHAR(255),
-                assigned_to INTEGER REFERENCES copy_app_users(id),
-                created_at TIMESTAMP DEFAULT NOW(),
-                resolved_at TIMESTAMP,
-                resolution_notes TEXT
-            );
-        """)
-        cur.execute("ALTER TABLE copy_tickets ADD COLUMN IF NOT EXISTS assigned_to INTEGER REFERENCES copy_app_users(id);")
 
         # ── Drop existing tables for demo schema changes ──────
         cur.execute("DROP TABLE IF EXISTS copy_vehicle_onboarding CASCADE;")
-        cur.execute("DROP TABLE IF EXISTS copy_workshop_vendors CASCADE;")
-        cur.execute("DROP TABLE IF EXISTS copy_hubs_parking CASCADE;")
 
         # ── copy_vehicle_onboarding ─────────────────────────────
         cur.execute("""
@@ -883,6 +583,9 @@ def startup_event():
                 fitness_validity VARCHAR(50),
                 pollution_validity VARCHAR(50),
                 insurance_validity VARCHAR(50),
+                insurance_broker VARCHAR(255),
+                insurance_underwriter VARCHAR(255),
+                insurance_start_date VARCHAR(50),
                 authorization_certificate VARCHAR(255),
                 insurance_mapping VARCHAR(255),
                 kms_reading VARCHAR(50),
@@ -921,24 +624,6 @@ def startup_event():
                 created_at TIMESTAMP DEFAULT NOW()
             );
         """)
-        cur.execute("SELECT COUNT(*) FROM copy_vehicle_onboarding;")
-        if cur.fetchone()[0] == 0:
-            v_sql = """
-                INSERT INTO copy_vehicle_onboarding (
-                    vehicle_number, letzryd_unique_no, city_name, model, received_allocated, delivery_month,
-                    registration_date, rto_tax_validity, permit_validity, fitness_validity, pollution_validity, insurance_validity,
-                    kms_reading, tracking_device_vendor, tracking_device_type, cng_installed, jack, jack_rod, spanner,
-                    parking_triangle, fire_extinguishers, seat_cover, floor_carpet, key_quantity
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
-            """
-            v_records = [
-                ("TS09 EA 1234", "LR-EV-001", "Hyderabad", "Tata Nexon EV", "Receiving", "2026-05", "2026-05-10", "2027-05-10", "2027-05-10", "2028-05-10", "2027-05-10", "2027-05-10", "120", "Roadcast", "AIS", "No", "Available", "Available", "Available", "Available", "Available", "Available", "Available", 2),
-                ("KA03 CD 5678", "LR-CNG-042", "Bangalore", "Maruti Dzire CNG", "Allocation", "2026-06", "2026-06-15", "2027-06-15", "2027-06-15", "2028-06-15", "2027-06-15", "2027-06-15", "1450", "Trakon", "OBD", "Yes", "Available", "Available", "Missing", "Available", "Available", "Available", "Available", 2),
-                ("MH01 EF 9988", "LR-EV-009", "Mumbai", "Citroen eC3", "Receiving", "2026-06", "2026-06-20", "2027-06-20", "2027-06-20", "2028-06-20", "2027-06-20", "2027-06-20", "85", "Roadcast", "AIS", "No", "Available", "Missing", "Available", "Available", "Missing", "Available", "Available", 2)
-            ]
-            for r in v_records:
-                cur.execute(v_sql, r)
-            print("[OK] Vehicles onboarding seeded")
 
         # ── copy_workshop_vendors ───────────────────────────────
         cur.execute("""
@@ -967,24 +652,6 @@ def startup_event():
                 created_at TIMESTAMP DEFAULT NOW()
             );
         """)
-        cur.execute("SELECT COUNT(*) FROM copy_workshop_vendors;")
-        if cur.fetchone()[0] == 0:
-            ws_sql = """
-                INSERT INTO copy_workshop_vendors (
-                    vendor_name, workshop_type, city_name, address, gst_number,
-                    contact_person, mobile_number, email_id, pan_card, bank_name,
-                    account_number, ifsc_code, workshop_status, contact_person_2,
-                    alternate_mobile, telephone, owner_name, upi_id
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
-            """
-            ws_records = [
-                ("Express Auto Care", "Multi-brand Garage", "Hyderabad", "Banjara Hills, Road No 12", "36AAAAA1111A1Z1", "Rahul Sharma", "9848022338", "rahul@expressauto.com", "ABCDE1234F", "HDFC Bank", "1234567890", "HDFC0000123", "Active", "Kishore Kumar", "9848022339", "040-23456789", "Dinesh Karthik", "expressauto@upi"),
-                ("EV Electra Tech", "EV Specialist", "Bangalore", "Indiranagar 100ft Road", "29BBBBB2222B2Z2", "Arun Varma", "9900990099", "contact@electratech.com", "BCDEF2345G", "ICICI Bank", "9876543210", "ICIC0000456", "Active", "Sandeep Hegde", "9900990088", "080-9876543", "Vijay Mallya", "electratech@ybl"),
-                ("Bandra Bodyworks", "Body Repair Specialist", "Mumbai", "SVT Road, Bandra West", "27CCCCC3333C3Z3", "Milind Salunkhe", "9820044556", "milind@bandrabody.com", "CDEFG3456H", "Axis Bank", "1122334455", "UTIB0000789", "Onboarding", None, None, None, "Sachin Tendulkar", "bandrabody@okaxis")
-            ]
-            for r in ws_records:
-                cur.execute(ws_sql, r)
-            print("[OK] Workshop vendors seeded")
 
         # ── copy_hubs_parking ──────────────────────────────────
         cur.execute("""
@@ -1008,88 +675,6 @@ def startup_event():
                 created_at TIMESTAMP DEFAULT NOW()
             );
         """)
-        cur.execute("SELECT COUNT(*) FROM copy_hubs_parking;")
-        if cur.fetchone()[0] == 0:
-            hub_sql = """
-                INSERT INTO copy_hubs_parking (
-                    hub_name, city_name, address, pincode, facility_type,
-                    total_capacity, ev_charging, security_cctv, hub_manager,
-                    manager_phone, operating_hours, contact_person, designation
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
-            """
-            hub_records = [
-                ("Koramangala Parking Hub", "Bangalore", "Block 4, Koramangala", "560034", "Open Parking", "45", "Yes", "Yes", "Manjunath Gowda", "9900088220", "24/7", "Manjunath Gowda", "Hub Manager"),
-                ("Bandra East EV Hub", "Mumbai", "Near Bandra Terminus", "400051", "Charging Station", "20", "Yes", "Yes", "Vikram Sawant", "9820098200", "24/7", "Amit Shah", "Security Supervisor"),
-                ("Hitech City Hub", "Hyderabad", "Madhapur Main Road", "500081", "Maintenance Hub", "30", "Yes", "No", "K Ramesh", "9848022338", "12 Hours", "K Ramesh", "Assistant Manager")
-            ]
-            for r in hub_records:
-                cur.execute(hub_sql, r)
-            print("[OK] Hubs and parking seeded")
-
-        # ── Seed operator onboarding records ─────────────
-        cur.execute("SELECT COUNT(*) FROM copy_form_onboarding WHERE vendor_type = 'Operator';")
-        if cur.fetchone()[0] == 0:
-            op_sql = """
-                INSERT INTO copy_form_onboarding (
-                    driver_name, phone_number, whatsapp_number, dob, city, operating_place,
-                    present_address, permanent_address, emergency_name, emergency_phone,
-                    pan_number, aadhaar_number, vendor_name, vendor_id, vendor_type,
-                    father_name, custom_rent_amount, bank_name, account_number, ifsc_code, upi_id
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
-            """
-            op_records = [
-                ("Hyderabad Fleet Services", "9876543210", "9876543210", "1970-01-01", "Hyderabad", "Jubilee Hub",
-                 "Plot 45, HITEC City, Hyderabad - 500081", "Plot 45, HITEC City, Hyderabad - 500081",
-                 "N/A", "0000000000", "AABCH5432E", "432156789012",
-                 "Hyderabad Fleet Services", "VND-HYD-001", "Operator",
-                 "N/A", "1200", "HDFC Bank", "50100123456789", "HDFC0001234", "hfs@hdfcbank"),
-                ("Bangalore Cabs Network", "8765432190", "8765432190", "1970-01-01", "Bangalore", "Koramangala Hub",
-                 "3rd Floor, Tech Park, Whitefield, Bangalore - 560066", "3rd Floor, Tech Park, Whitefield, Bangalore - 560066",
-                 "N/A", "0000000000", "BNKCA1234C", "567890123456",
-                 "Bangalore Cabs Network", "VND-BLR-001", "Operator",
-                 "N/A", "1350", "ICICI Bank", "123456789012", "ICIC0001234", "bcn@icicibank"),
-                ("Delhi Drive Fleet", "7654321098", "7654321098", "1970-01-01", "Delhi", "Connaught Place Hub",
-                 "12 Barakhamba Road, New Delhi - 110001", "12 Barakhamba Road, New Delhi - 110001",
-                 "N/A", "0000000000", "DDFLT3210B", "678901234567",
-                 "Delhi Drive Fleet", "VND-DEL-001", "Operator",
-                 "N/A", "1100", "State Bank of India", "36987412365", "SBIN0001234", "ddf@sbi"),
-            ]
-            for r in op_records:
-                cur.execute(op_sql, r)
-            print("[OK] Operator onboarding records seeded")
-
-        # ── Seed rent plans ──────────────────────────────
-        cur.execute("SELECT COUNT(*) FROM copy_rents;")
-        if cur.fetchone()[0] == 0:
-            rent_sql = """
-                INSERT INTO copy_rents (level, vehicle_model, vehicle_number, vehicle_age, vendor_id, driver_id, rent_amount)
-                VALUES (%s, %s, %s, %s, %s, %s, %s);
-            """
-            rent_records = [
-                # Model-level baseline rates
-                ("model", "WagonR",  None, "0-2 Years", None, None, 900),
-                ("model", "WagonR",  None, "3-5 Years", None, None, 800),
-                ("model", "WagonR",  None, ">5 Years",  None, None, 700),
-                ("model", "Swift",   None, "0-2 Years", None, None, 950),
-                ("model", "Swift",   None, "3-5 Years", None, None, 850),
-                ("model", "Ertiga",  None, "0-2 Years", None, None, 1200),
-                ("model", "Innova",  None, "0-2 Years", None, None, 1500),
-                ("model", "Alto",    None, "0-2 Years", None, None, 750),
-                # Vehicle-level specific
-                ("vehicle", "WagonR", "TS09 EA 1001", None, None, None, 870),
-                ("vehicle", "Swift",  "KA01 AB 2002", None, None, None, 920),
-                # Operator-level overrides
-                ("operator", None, None, None, "VND-HYD-001", None, 1200),
-                ("operator", None, None, None, "VND-BLR-001", None, 1350),
-                ("operator", None, None, None, "VND-DEL-001", None, 1100),
-                # Driver-level overrides
-                ("driver", None, None, None, None, "DR-HYD-001", 1100),
-                ("driver", None, None, None, None, "DR-HYD-002", 1150),
-                ("driver", None, None, None, None, "DR-BLR-001", 1250),
-            ]
-            for r in rent_records:
-                cur.execute(rent_sql, r)
-            print("[OK] Rent plans seeded")
 
         # ── copy_accidents_registry ───────────────────────────
         cur.execute("""
@@ -1125,27 +710,6 @@ def startup_event():
                 created_at TIMESTAMP DEFAULT NOW()
             );
         """)
-        
-        # Seed 5 records if empty
-        cur.execute("SELECT COUNT(*) FROM copy_accidents_registry;")
-        if cur.fetchone()[0] == 0:
-            acc_sql = """
-                INSERT INTO copy_accidents_registry (
-                    vehicle_number, vendor_id, vendor_name, city_name, date_of_accident, time_of_accident, place_of_accident, vehicle_status,
-                    driver_id, driver_name, no_of_persons, third_party_involvement, fir_filed,
-                    accident_reason, accident_inspection, insurance_status, repair_cost, toeing_cost, challan_amount, fine_amount, comments
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
-            """
-            acc_records = [
-                ("TS09 EA 1111", "VND-HYD-001", "Hyderabad Fleet Services", "Hyderabad", "2026-06-30", "14:30", "Koramangala, BLR", "Needs Towing", "DR-HYD-001", "Anil Kumble", "2", "No", "No", "Rear-ended by auto", "Rear bumper dented, boot door not locking", "Follow Up Required", "14500", "2000", "0", "0", "Awaiting survey"),
-                ("MH02 IJ 1234", "VND-MUM-002", "IAC Transport", "Mumbai", "2026-06-29", "09:15", "Andheri West, MUM", "Drivable", "DR-MUM-001", "Sunil Gavaskar", "1", "No", "No", "Minor side scrape", "Left side mirror cracked", "N/A", "2000", "0", "0", "0", "No major damage"),
-                ("DL02 IJ 7777", "VND-DEL-001", "Delhi Drive Fleet", "Delhi", "2026-06-28", "23:45", "Connaught Place, DEL", "Impounded by Police", "DR-DEL-001", "Kapil Dev", "3", "Yes", "Yes", "Hit pedestrian", "Front glass shattered, police impounded", "Claimed", "45000", "0", "5000", "10000", "FIR lodged. Driver released on bail."),
-                ("TN07 EF 7777", "VND-CHN-001", "BLEND Logistics", "Chennai", "2026-06-25", "18:20", "T-Nagar, CHN", "Drivable", "DR-CHN-001", "Senthil Kumar", "1", "No", "No", "Minor scratch", "Right rear door paint scratch", "N/A", "500", "0", "0", "0", "Buffing will resolve"),
-                ("TS09 EA 9999", "VND-HYD-001", "Hyderabad Fleet Services", "Hyderabad", "2026-06-20", "07:00", "Hitech City, HYD", "Needs Towing", "DR-HYD-002", "Vikram Reddy", "2", "No", "No", "Hit divider", "Right suspension damaged", "Follow Up Required", "12000", "1500", "0", "0", "Towed to workshop")
-            ]
-            for r in acc_records:
-                cur.execute(acc_sql, r)
-            print("[OK] Accident records seeded")
 
         # ── copy_inspections ───────────────────────────
         cur.execute("""
@@ -1180,37 +744,6 @@ def startup_event():
                 created_at TIMESTAMP DEFAULT NOW()
             );
         """)
-        
-        # Apply ALTER TABLE migrations for safety in existing tables
-        new_cols = [
-            "photo_lh", "photo_rh", "photo_engine_chassis", "photo_battery", 
-            "photo_engine_compartment", "photo_fast_tag", "photo_music_system", 
-            "key_quantity", "photo_tyre_rh_fr", "photo_tyre_lh_fr", 
-            "photo_tyre_rh_re", "photo_tyre_lh_re", "photo_tyre_spare"
-        ]
-        for col in new_cols:
-            try:
-                cur.execute(f"ALTER TABLE copy_inspections ADD COLUMN IF NOT EXISTS {col} TEXT;")
-            except Exception as e:
-                print(f"[Migration Warning] Failed to alter copy_inspections column {col}: {e}")
-
-        cur.execute("SELECT COUNT(*) FROM copy_inspections;")
-        if cur.fetchone()[0] == 0:
-            insp_sql = """
-                INSERT INTO copy_inspections (
-                    vehicle_number, inspection_date, odometer_reading, jack, jack_rod, spanner, 
-                    parking_triangle, fire_extinguishers, seat_cover, floor_carpet, remarks
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
-            """
-            insp_records = [
-                ("TS09 EA 1111", "2026-06-25", "12500", "Available", "Available", "Available", "Available", "Available", "Available", "Available", "All items present. Vehicle in good condition."),
-                ("MH02 IJ 1234", "2026-06-26", "8400", "Available", "Available", "Not Available", "Available", "Available", "Available", "Available", "Spanner is missing. Advised to vendor."),
-                ("DL02 IJ 7777", "2026-06-27", "18200", "Available", "Available", "Available", "Available", "Available", "Available", "Available", "Ready for dispatch. Handed over key."),
-                ("TS09 EA 9999", "2026-06-20", "22400", "Available", "Available", "Available", "Available", "Available", "Available", "Available", "Initial onboarding inspection.")
-            ]
-            for r in insp_records:
-                cur.execute(insp_sql, r)
-            print("[OK] Inspections seeded")
 
         # ── copy_maintenance_registry ───────────────────────────
         cur.execute("""
@@ -1281,31 +814,6 @@ def startup_event():
                 created_at TIMESTAMP DEFAULT NOW()
             );
         """)
-        cur.execute("ALTER TABLE copy_maintenance_registry ADD COLUMN IF NOT EXISTS invoices TEXT;")
-        cur.execute("ALTER TABLE copy_maintenance_registry ADD COLUMN IF NOT EXISTS maintenance_steps TEXT;")
-        cur.execute("SELECT COUNT(*) FROM copy_maintenance_registry;")
-        if cur.fetchone()[0] == 0:
-            maint_records = [
-                (2001, "TS09 EA 9999", "Hyderabad", "Tata Tigor EV", "18400", "General Service", "Hitech City, HYD", "2026-06-25T16:20", "", "LetzRyd Direct Hub", "2026-06-25", "2026-06-25", "3500", "No", "", "", "Rohan Verma", "2026-06-25", "Delivered", "2026-06-25", "Servicing completed successfully.", "2026-06-25", "2026-06-25", "Completed", "0", "Completed", "INV-1001", "2026-06-25", "3500", "0", "3500", "Paid", "UPI", "UTR11223344", "Settled", "Available", "Available", "Available", "Available", "Available", "Available", "Available", "Available", "Available", "2", "Good", "Good", "Good", "Good"),
-                (2002, "TN07 EF 7777", "Chennai", "WagonR EV", "24100", "Breakdown", "T-Nagar, CHN", "2026-06-29T09:30", "Motor overheating", "BLEND Repairs", "2026-06-29", "2026-07-01", "8500", "No", "", "", "Sneha Reddy", "2026-06-29", "QC", "2026-06-29", "Undergoing quality testing.", "", "", "", "", "Follow Up Required", "", "", "", "", "", "Follow Up Required", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""),
-                (2003, "DL02 IJ 7777", "Delhi", "Citroen eC3", "14300", "Running Repair", "Connaught Place, DEL", "2026-07-01T11:45", "Brake pads replacement", "Zypp Auto Service", "2026-07-01", "2026-07-01", "1200", "No", "", "", "Sneha Reddy", "2026-07-01", "Ready", "2026-07-01", "Ready for delivery.", "2026-07-01", "", "", "", "Follow Up Required", "", "", "", "", "", "Follow Up Required", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""),
-                (2004, "MH02 IJ 1234", "Mumbai", "Citroen eC3", "9800", "Accidental", "Andheri West, MUM", "2026-07-02T14:15", "Left front bumper collision", "IAC Motors", "2026-07-02", "2026-07-10", "35000", "Yes", "CLM9988", "HDFC ERGO", "Priya Sharma", "2026-07-02", "Approval", "2026-07-02", "Awaiting insurance surveyor approval.", "", "", "", "", "Follow Up Required", "", "", "", "", "", "Follow Up Required", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""),
-                (2005, "TS09 EA 1111", "Bangalore", "Tata Tigor EV", "12500", "General Service", "Koramangala, BLR", "2026-07-03T10:30", "AC cooling issue", "ZoomRx Garage", "2026-07-03", "2026-07-04", "4500", "No", "", "", "Arshad Khan", "2026-07-03", "Repairing", "2026-07-03", "AC gas recharge in progress.", "", "", "", "", "Follow Up Required", "", "", "", "", "", "Follow Up Required", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
-            ]
-            maint_sql = """
-                INSERT INTO copy_maintenance_registry (
-                    id, vehicle_number, city_name, model, vehicle_k_m_s, repair_type, vehicle_location, vehicle_in_date, initial_remarks,
-                    workshop_name, allocation_date, estimated_delivery_date, estimated_amount, insurance_claimed, claim_number, insurance_brokerage, approved_by, approval_date,
-                    maintenance_status, vehicle_status_date, daily_vehicle_remarks, rfd_date, delivered_date, final_status, tat, pdi_status,
-                    invoice_no, invoice_date, invoice_amount, insurance_liability_discounts, letzryd_payable, payment_status, type_of_payment, utr_no, entry_remarks,
-                    pdi_jack, pdi_jack_rod, pdi_spanner, pdi_parking_triangle, pdi_fire_extinguisher, pdi_seat_cover, pdi_floor_carpet, pdi_music_system, pdi_spare_wheel, pdi_key_quantity,
-                    pdi_rh_front_tyre, pdi_lh_front_tyre, pdi_rh_rear_tyre, pdi_lh_rear_tyre
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,  %s,%s,%s,%s,%s,%s,%s,%s,%s,  %s,%s,%s,%s,%s,%s,%s,%s,  %s,%s,%s,%s,%s,%s,%s,%s,%s,  %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,  %s,%s,%s,%s);
-            """
-            for r in maint_records:
-                cur.execute(maint_sql, r)
-            cur.execute("SELECT setval('maintenance_registry_id_seq', 2005, true);")
-            print("[OK] Maintenance registry seeded")
 
         # ── copy_rent_ledger ──────────────────────────────────
         cur.execute("""
@@ -1321,27 +829,6 @@ def startup_event():
                 created_at TIMESTAMP DEFAULT NOW()
             );
         """)
-
-        cur.execute("SELECT COUNT(*) FROM copy_rent_ledger;")
-        if cur.fetchone()[0] == 0:
-            ledger_seed = [
-                ("Model",   "Tata Tigor EV",   "Created", 0,    900,  "Rohan Verma",  "2026-05-01"),
-                ("Model",   "Citroen eC3",      "Created", 0,    850,  "Rohan Verma",  "2026-05-01"),
-                ("Model",   "Tata Tigor EV",   "Updated", 900,  950,  "Priya Sharma", "2026-05-15"),
-                ("Vehicle", "TS09 EA 9999",     "Created", 0,    800,  "Rohan Verma",  "2026-06-01"),
-                ("Driver",  "DR-9001",          "Created", 0,    750,  "Sneha Reddy",  "2026-06-10"),
-                ("Driver",  "DR-9001",          "Updated", 750,  720,  "Arshad Khan",  "2026-06-20"),
-                ("Model",   "WagonR EV",        "Created", 0,    820,  "Priya Sharma", "2026-06-25"),
-                ("Vehicle", "MH02 IJ 1234",     "Created", 0,    950,  "Sneha Reddy",  "2026-07-01"),
-                ("Driver",  "DR-9002",          "Created", 0,    800,  "Rohan Verma",  "2026-07-02"),
-                ("Vendor",  "VND-101",          "Created", 0,   1050,  "Arshad Khan",  "2026-07-03"),
-            ]
-            for lr in ledger_seed:
-                cur.execute("""
-                    INSERT INTO copy_rent_ledger (entity_type, entity_id, change_type, old_amount, new_amount, modified_by, effective_date)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s);
-                """, lr)
-            print("[OK] Rent ledger seeded")
 
         # ── copy_traffic_challans ─────────────────────────────
         cur.execute("""
@@ -1362,25 +849,6 @@ def startup_event():
                 created_at TIMESTAMP DEFAULT NOW()
             );
         """)
-        # Add internal_fine_amount if it doesn't exist (for already-created tables)
-        cur.execute("ALTER TABLE copy_traffic_challans ADD COLUMN IF NOT EXISTS internal_fine_amount INTEGER DEFAULT 0;")
-        cur.execute("SELECT COUNT(*) FROM copy_traffic_challans;")
-        if cur.fetchone()[0] == 0:
-            challan_records = [
-                ("CHL-8822912", "TS09 EA 9999",  "DR-9001", "Suresh Kumar",  "2026-07-01", "Gachibowli X Roads, Hyderabad",      500,  "Follow Up Required",   0,   "Over-speeding violation caught by speed camera."),
-                ("CHL-8833911", "MH02 IJ 1234",  "N/A",     "N/A",           "2026-07-02", "Andheri Link Rd, Mumbai",           1000,  "Disputed",  0,   "Wrong way driving. Driver was not active, checking vehicle custody."),
-                ("CHL-8844910", "DL02 IJ 7777",  "DR-9002", "Mahesh Babu",   "2026-06-30", "Connaught Place, Delhi",             300,  "Recovered", 300, "No seat belt violation. Deducted from driver wallet on request."),
-                ("CHL-8855909", "TN07 EF 7777",  "DR-9003", "Kiran Rao",     "2026-06-28", "Anna Salai, Chennai",                500,  "Follow Up Required",   0,   "Signal jumping at Anna Salai intersection. CCTV footage obtained."),
-                ("CHL-8866908", "TS09 EA 1111",  "DR-9004", "Vijay Sharma",  "2026-06-25", "Koramangala 80ft Rd, Bengaluru",    1500,  "Recovered", 1500,"Parking in no-parking zone. Driver accepted liability and paid."),
-                ("CHL-8877907", "KA01 GH 5432",  "DR-9005", "Ravi Teja",     "2026-07-02", "MG Road, Bengaluru",                 700,  "Disputed",  0,   "Triple seat riding violation. Driver claims vehicle was not under his custody that day."),
-                ("CHL-8888906", "MH02 KL 8888",  "DR-9006", "Aarav Mishra",  "2026-07-03", "Baner Road, Pune",                  2000,  "Waived",    0,   "False challan alert by automated system. District RTO verified and waived on request."),
-            ]
-            for cr in challan_records:
-                cur.execute("""
-                    INSERT INTO copy_traffic_challans (challan_number, vehicle_number, driver_id, driver_name, violation_date, violation_location, challan_amount, recovery_status, recovered_amount, remarks)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
-                """, cr)
-            print("[OK] Traffic challans seeded")
 
         conn.commit()
         cur.close()
@@ -1512,6 +980,11 @@ class OnboardingData(BaseModel):
     custom_rental_plan: Optional[bool] = False
     cancelled_cheque_photo: Optional[Any] = None
     signature_photo: Optional[Any] = None
+    candidate_role: Optional[str] = "Driver"
+    rental_model: Optional[str] = None
+    security_deposit: Optional[str] = None
+    letzown_cheques: Optional[str] = None
+    is_spring_verified: Optional[bool] = False
 
 class AdjustmentData(BaseModel):
     partner_name: Optional[str] = None
@@ -1536,7 +1009,6 @@ class AdjustmentData(BaseModel):
     final_level_approval_by: Optional[str] = None
     status: str
     photo: Optional[Any] = None
-    # NEW LETZRYD DOCUMENT FIELDS
     hisaab_number: Optional[str] = None
     contested_line_items: Optional[str] = None
     severity_level: Optional[str] = None
@@ -1585,6 +1057,9 @@ class VehicleOnboardingData(BaseModel):
     fitness_validity: str
     pollution_validity: Optional[str] = None
     insurance_validity: str
+    insurance_broker: Optional[str] = None
+    insurance_underwriter: Optional[str] = None
+    insurance_start_date: Optional[str] = None
     authorization_certificate: Optional[str] = None
     insurance_mapping: Optional[str] = None
     kms_reading: str
@@ -1656,7 +1131,7 @@ class HubData(BaseModel):
     designation: Optional[str] = None
 
 class RentData(BaseModel):
-    level: str = "model"  # model | vehicle | driver | operator
+    level: str = "model"
     vehicle_manufacturer: Optional[str] = None
     vehicle_model: Optional[str] = None
     vehicle_number: Optional[str] = None
@@ -1721,15 +1196,7 @@ class InspectionData(BaseModel):
     photo_tyre_spare: Optional[Any] = None
     remarks: Optional[str] = None
 
-
-
-
-
-
-
-
 def extract_image(val: Any) -> Optional[str]:
-    """Pull base64 content from SurveyJS file-question format."""
     if val is None:
         return None
     if isinstance(val, list) and len(val) > 0:
@@ -1762,7 +1229,6 @@ def login(req: LoginRequest):
         if not pwd_context.verify(req.password, pw_hash):
             raise HTTPException(status_code=401, detail="Invalid username or password")
         
-        # Create session token
         token = secrets.token_urlsafe(32)
         cur.execute(
             "INSERT INTO copy_app_sessions (token, user_id) VALUES (%s, %s);",
@@ -1799,7 +1265,6 @@ def login(req: LoginRequest):
 @app.get("/api/auth/me")
 def get_me(authorization: Optional[str] = Header(None)):
     user = get_current_user(authorization)
-    # Get executive id from copy_users table for display
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
@@ -1898,14 +1363,12 @@ def create_app_user(req: AppUserData, authorization: Optional[str] = Header(None
         if cur.fetchone():
             raise HTTPException(status_code=400, detail="Username already exists")
         
-        # Search if a user with this employee_id already exists in the copy_users table
         executive_id = None
         if req.employee_id and req.employee_id.strip():
             cur.execute("SELECT id FROM copy_users WHERE employee_id = %s;", (req.employee_id.strip(),))
             row = cur.fetchone()
             if row:
                 executive_id = row[0]
-                # Update details in the existing copy_users row
                 cur.execute(
                     "UPDATE copy_users SET name = %s, role = %s, email = COALESCE(email, %s) WHERE id = %s;",
                     (req.name.strip(), req.role.strip(), req.email, executive_id)
@@ -1945,26 +1408,22 @@ def update_app_user(id: int, req: AppUserUpdateData, authorization: Optional[str
     try:
         cur = conn.cursor()
         
-        # Check if user exists
         cur.execute("SELECT executive_id FROM copy_app_users WHERE id = %s;", (id,))
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="User not found")
         exec_id = row[0]
         
-        # Check username conflicts
         cur.execute("SELECT id FROM copy_app_users WHERE username = %s AND id != %s;", (username_cleaned, id))
         if cur.fetchone():
             raise HTTPException(status_code=400, detail="Username already exists")
             
-        # Check if we should update or switch executive_id if employee_id has changed
         if req.employee_id and req.employee_id.strip():
             cur.execute("SELECT id FROM copy_users WHERE employee_id = %s;", (req.employee_id.strip(),))
             emp_row = cur.fetchone()
             if emp_row:
                 new_exec_id = emp_row[0]
                 if new_exec_id != exec_id:
-                    # Point app_user to this existing user row
                     cur.execute("UPDATE copy_app_users SET executive_id = %s WHERE id = %s;", (new_exec_id, id))
                     exec_id = new_exec_id
                 cur.execute(
@@ -1982,7 +1441,6 @@ def update_app_user(id: int, req: AppUserUpdateData, authorization: Optional[str
                 (req.name.strip(), req.role.strip(), exec_id)
             )
         
-        # Update copy_app_users table (username, role_id, employee_id, email)
         if req.password:
             hashed_password = pwd_context.hash(req.password)
             cur.execute(
@@ -2224,11 +1682,10 @@ def update_employee(id: int, req: EmployeeData, authorization: Optional[str] = H
 
 @app.delete("/api/employees/{id}")
 def delete_employee(id: int, authorization: Optional[str] = Header(None)):
-    current = get_current_user(authorization)
+    get_current_user(authorization)
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        # Don't delete if linked to an app_user (just deactivate instead)
         cur.execute("SELECT id FROM copy_app_users WHERE executive_id = %s;", (id,))
         if cur.fetchone():
             cur.execute("UPDATE copy_users SET status = 'Inactive' WHERE id = %s;", (id,))
@@ -2464,7 +1921,6 @@ def get_all_walkins(
             base_query += " AND w.joined_status = %s"
             params.append(status)
             
-        # Date filtering based on created_at or event_date. Since event_date is string "YYYY-MM-DD", let's cast it or just filter on created_at
         if time_period and time_period != "all":
             from datetime import datetime, timedelta
             from dateutil.relativedelta import relativedelta
@@ -2496,12 +1952,10 @@ def get_all_walkins(
                 base_query += " AND w.event_date >= %s AND w.event_date <= %s"
                 params.extend([start_date, end_date])
                 
-        # Count total for pagination
         count_query = f"SELECT COUNT(*) FROM ({base_query}) AS total_count"
         cur.execute(count_query, params)
         total_items = cur.fetchone()[0]
         
-        # Pagination
         offset = (page - 1) * limit
         base_query += " ORDER BY w.id DESC LIMIT %s OFFSET %s;"
         params.extend([limit, offset])
@@ -2530,7 +1984,6 @@ def get_all_walkins(
 # ─────────────────────────────────────────────────────────
 @app.get("/api/walkins/search")
 def search_walkins(q: str):
-    """Search for walk-ins by ID, phone, or DL to prepopulate Onboarding."""
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
@@ -2588,12 +2041,12 @@ def get_walkin(walkin_id: int):
         raise HTTPException(status_code=404, detail="Walkin not found")
     finally:
         postgreSQL_pool.putconn(conn)
+
 # ─────────────────────────────────────────────────────────
 # Walk-ins — Create
 # ─────────────────────────────────────────────────────────
 @app.post("/api/walkins")
 def create_walkin(data: WalkinData, authorization: Optional[str] = Header(None)):
-    # Get executive_id from session if available
     exec_id_from_session = None
     if authorization and authorization.startswith("Bearer "):
         try:
@@ -2662,7 +2115,6 @@ def update_walkin(walkin_id: int, data: WalkinData, authorization: Optional[str]
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        # Update images only when new ones are provided
         new_aadhaar = extract_image(data.aadhaar_image)
         new_dl      = extract_image(data.dl_image)
         if new_aadhaar:
@@ -2775,8 +2227,9 @@ def create_onboarding(data: OnboardingData):
                 vendor_type, driver_id, custom_rent_amount,
                 walkin_id, emergency_relationship, platform_details, documents_verified, 
                 custom_rental_plan, cancelled_cheque_photo, signature_photo,
-                account_name, account_type
-            ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                account_name, account_type,
+                candidate_role, rental_model, security_deposit, letzown_cheques, is_spring_verified
+            ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             RETURNING id;
         """, (
             data.driver_name, data.phone_number, data.whatsapp_number, data.dob, data.city, data.operating_place,
@@ -2791,11 +2244,11 @@ def create_onboarding(data: OnboardingData):
             data.vendor_type, data.driver_id, data.custom_rent_amount,
             data.walkin_id, data.emergency_relationship, json.dumps(data.platform_details) if data.platform_details else None, data.documents_verified,
             data.custom_rental_plan, extract_image(data.cancelled_cheque_photo), extract_image(data.signature_photo),
-            data.account_name, data.account_type
+            data.account_name, data.account_type,
+            data.candidate_role, data.rental_model, data.security_deposit, data.letzown_cheques, data.is_spring_verified
         ))
         new_id = cur.fetchone()[0]
         
-        # Link to walk-in if provided
         if data.walkin_id:
             cur.execute("""
                 INSERT INTO copy_walkin_form_links (walkin_id, onboarding_id)
@@ -2806,7 +2259,6 @@ def create_onboarding(data: OnboardingData):
                 UPDATE copy_walkins SET joined_status = 'Onboarded' WHERE id = %s;
             """, (data.walkin_id,))
 
-        # Add operator drivers if present
         if data.vendor_type == "Operator" and data.operator_drivers:
             for drv in data.operator_drivers:
                 cur.execute("""
@@ -2814,14 +2266,16 @@ def create_onboarding(data: OnboardingData):
                         driver_name, phone_number, dl_number, custom_rent_amount, driver_id,
                         vendor_name, vendor_id, vendor_type,
                         whatsapp_number, dob, city, present_address, permanent_address, 
-                        emergency_name, emergency_phone, pan_number, aadhaar_number, father_name
-                    ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                        emergency_name, emergency_phone, pan_number, aadhaar_number, father_name,
+                        candidate_role
+                    ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """, (
                     drv.get('driver_name', ''), drv.get('phone_number', ''), drv.get('dl_number', ''), 
                     drv.get('custom_rent_amount', ''), drv.get('driver_id', ''),
                     data.vendor_name, data.vendor_id, "Operator",
                     data.whatsapp_number, data.dob, data.city, data.present_address, data.permanent_address,
-                    data.emergency_name, data.emergency_phone, data.pan_number, data.aadhaar_number, data.father_name
+                    data.emergency_name, data.emergency_phone, data.pan_number, data.aadhaar_number, data.father_name,
+                    "Driver"
                 ))
 
         conn.commit()
@@ -2847,7 +2301,8 @@ def get_onboarding(id: int):
                 vendor_type, driver_id, custom_rent_amount,
                 walkin_id, emergency_relationship, platform_details, documents_verified,
                 custom_rental_plan, cancelled_cheque_photo, signature_photo,
-                account_name, account_type
+                account_name, account_type,
+                candidate_role, rental_model, security_deposit, letzown_cheques, is_spring_verified
             FROM copy_form_onboarding
             WHERE id = %s;
         """, (id,))
@@ -2870,7 +2325,9 @@ def get_onboarding(id: int):
                 "walkin_id": r[32], "emergency_relationship": r[33], "platform_details": r[34],
                 "documents_verified": r[35], "custom_rental_plan": r[36],
                 "cancelled_cheque_photo": r[37], "signature_photo": r[38],
-                "account_name": r[39], "account_type": r[40]
+                "account_name": r[39], "account_type": r[40],
+                "candidate_role": r[41], "rental_model": r[42], "security_deposit": r[43], 
+                "letzown_cheques": r[44], "is_spring_verified": r[45]
             }
             if r[29] == "Operator" and r[17]:
                 cur.execute("""
@@ -2918,7 +2375,8 @@ def update_onboarding(id: int, data: OnboardingData):
                 father_name=%s, bank_name=%s, other_bank_name=%s,
                 account_number=%s, ifsc_code=%s, upi_id=%s,
                 walkin_id=%s, emergency_relationship=%s, platform_details=%s, documents_verified=%s,
-                custom_rental_plan=%s, account_name=%s, account_type=%s
+                custom_rental_plan=%s, account_name=%s, account_type=%s,
+                candidate_role=%s, rental_model=%s, security_deposit=%s, letzown_cheques=%s, is_spring_verified=%s
             WHERE id=%s;
         """, (
             data.driver_name, data.phone_number, data.whatsapp_number, data.dob, data.city, data.operating_place,
@@ -2930,10 +2388,10 @@ def update_onboarding(id: int, data: OnboardingData):
             data.account_number, data.ifsc_code, data.upi_id,
             data.walkin_id, data.emergency_relationship, json.dumps(data.platform_details) if data.platform_details else None, data.documents_verified,
             data.custom_rental_plan, data.account_name, data.account_type,
+            data.candidate_role, data.rental_model, data.security_deposit, data.letzown_cheques, data.is_spring_verified,
             id
         ))
         
-        # Update images conditionally
         new_selfie = extract_image(data.selfie_photo)
         new_dl_front = extract_image(data.dl_front)
         new_dl_back = extract_image(data.dl_back)
@@ -2942,20 +2400,13 @@ def update_onboarding(id: int, data: OnboardingData):
         new_cancelled_cheque = extract_image(data.cancelled_cheque_photo)
         new_signature = extract_image(data.signature_photo)
         
-        if new_selfie:
-            cur.execute("UPDATE copy_form_onboarding SET selfie_photo=%s WHERE id=%s;", (new_selfie, id))
-        if new_dl_front:
-            cur.execute("UPDATE copy_form_onboarding SET dl_front=%s WHERE id=%s;", (new_dl_front, id))
-        if new_dl_back:
-            cur.execute("UPDATE copy_form_onboarding SET dl_back=%s WHERE id=%s;", (new_dl_back, id))
-        if new_pan:
-            cur.execute("UPDATE copy_form_onboarding SET pan_card_photo=%s WHERE id=%s;", (new_pan, id))
-        if new_aadhaar_img:
-            cur.execute("UPDATE copy_form_onboarding SET aadhaar_card_photo=%s WHERE id=%s;", (new_aadhaar_img, id))
-        if new_cancelled_cheque:
-            cur.execute("UPDATE copy_form_onboarding SET cancelled_cheque_photo=%s WHERE id=%s;", (new_cancelled_cheque, id))
-        if new_signature:
-            cur.execute("UPDATE copy_form_onboarding SET signature_photo=%s WHERE id=%s;", (new_signature, id))
+        if new_selfie: cur.execute("UPDATE copy_form_onboarding SET selfie_photo=%s WHERE id=%s;", (new_selfie, id))
+        if new_dl_front: cur.execute("UPDATE copy_form_onboarding SET dl_front=%s WHERE id=%s;", (new_dl_front, id))
+        if new_dl_back: cur.execute("UPDATE copy_form_onboarding SET dl_back=%s WHERE id=%s;", (new_dl_back, id))
+        if new_pan: cur.execute("UPDATE copy_form_onboarding SET pan_card_photo=%s WHERE id=%s;", (new_pan, id))
+        if new_aadhaar_img: cur.execute("UPDATE copy_form_onboarding SET aadhaar_card_photo=%s WHERE id=%s;", (new_aadhaar_img, id))
+        if new_cancelled_cheque: cur.execute("UPDATE copy_form_onboarding SET cancelled_cheque_photo=%s WHERE id=%s;", (new_cancelled_cheque, id))
+        if new_signature: cur.execute("UPDATE copy_form_onboarding SET signature_photo=%s WHERE id=%s;", (new_signature, id))
             
         if data.walkin_id:
             cur.execute("DELETE FROM copy_walkin_form_links WHERE onboarding_id = %s;", (id,))
@@ -3066,11 +2517,9 @@ def get_adjustment_stats():
     try:
         cur = conn.cursor()
         
-        # Total count
         cur.execute("SELECT COUNT(*) FROM copy_partner_adjustment;")
         total = cur.fetchone()[0]
         
-        # Total Amount (sum of casted float)
         cur.execute("""
             SELECT COALESCE(SUM(CASE 
                 WHEN enter_amount ~ '^[0-9]+(\\.[0-9]+)?$' THEN CAST(enter_amount AS DOUBLE PRECISION)
@@ -3079,11 +2528,9 @@ def get_adjustment_stats():
         """)
         total_amount = cur.fetchone()[0]
         
-        # Approved count
         cur.execute("SELECT COUNT(*) FROM copy_partner_adjustment WHERE finance_team_status = 'Approved';")
         approved = cur.fetchone()[0]
         
-        # Completed count
         cur.execute("SELECT COUNT(*) FROM copy_partner_adjustment WHERE status = 'Completed';")
         completed = cur.fetchone()[0]
         
@@ -3278,19 +2725,15 @@ def get_allocation_stats():
     try:
         cur = conn.cursor()
         
-        # Total
         cur.execute("SELECT COUNT(*) FROM copy_vehicle_allocation;")
         total = cur.fetchone()[0]
         
-        # New Allocation
         cur.execute("SELECT COUNT(*) FROM copy_vehicle_allocation WHERE allocation_type = 'New Allocation';")
         new_alloc = cur.fetchone()[0]
         
-        # Car Swap
         cur.execute("SELECT COUNT(*) FROM copy_vehicle_allocation WHERE allocation_type = 'Car Swap';")
         swap_alloc = cur.fetchone()[0]
         
-        # Reallocation
         cur.execute("SELECT COUNT(*) FROM copy_vehicle_allocation WHERE allocation_type = 'Reallocation';")
         realloc = cur.fetchone()[0]
         
@@ -3423,19 +2866,15 @@ def get_expense_stats():
     try:
         cur = conn.cursor()
         
-        # Total overall expenses
         cur.execute("SELECT amount_paid FROM copy_partner_expenses;")
         total = sum(float(r[0]) for r in cur.fetchall() if r[0] and r[0].replace('.', '', 1).isdigit())
         
-        # CNG
         cur.execute("SELECT amount_paid FROM copy_partner_expenses WHERE expenses_type = 'CNG';")
         cng = sum(float(r[0]) for r in cur.fetchall() if r[0] and r[0].replace('.', '', 1).isdigit())
         
-        # Toll
         cur.execute("SELECT amount_paid FROM copy_partner_expenses WHERE expenses_type = 'Toll';")
         toll = sum(float(r[0]) for r in cur.fetchall() if r[0] and r[0].replace('.', '', 1).isdigit())
         
-        # Other (OLA + Paid to Company)
         cur.execute("SELECT amount_paid FROM copy_partner_expenses WHERE expenses_type IN ('OLA - CL Balance', 'Paid to Company');")
         other = sum(float(r[0]) for r in cur.fetchall() if r[0] and r[0].replace('.', '', 1).isdigit())
         
@@ -3595,18 +3034,24 @@ def create_vehicle_record(data: VehicleOnboardingData, authorization: Optional[s
         cur.execute("""
             INSERT INTO copy_vehicle_onboarding (
                 vehicle_number, letzryd_unique_no, city_name, model, received_allocated, delivery_month,
-                registration_date, rto_tax_validity, permit_validity, fitness_validity, pollution_validity, insurance_validity, authorization_certificate, insurance_mapping,
+                registration_date, rto_tax_validity, permit_validity, fitness_validity, pollution_validity, insurance_validity,
+                insurance_broker, insurance_underwriter, insurance_start_date,
+                authorization_certificate, insurance_mapping,
                 kms_reading, tracking_device_vendor, tracking_device_type, cng_installed, cng_plate, cng_installation_date, jack, jack_rod, spanner, parking_triangle, fire_extinguishers, seat_cover, floor_carpet, key_quantity,
                 image_front, image_lh, image_back, image_rh, engine_chasis_no_img, battery_sl_no_img, engine_compartment_img, fast_tag_img, music_system_img, rh_fr_tyre_img, lh_fr_tyre_img, rh_rear_tyre_img, lh_rear_tyre_img, spare_wheel_img
             ) VALUES (
                 %s,%s,%s,%s,%s,%s,
-                %s,%s,%s,%s,%s,%s,%s,%s,
+                %s,%s,%s,%s,%s,%s,
+                %s,%s,%s,
+                %s,%s,
                 %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
                 %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s
             ) RETURNING id;
         """, (
             data.vehicle_number, data.letzryd_unique_no, data.city_name, data.model, data.received_allocated, data.delivery_month,
-            data.registration_date, data.rto_tax_validity, data.permit_validity, data.fitness_validity, data.pollution_validity, data.insurance_validity, data.authorization_certificate, data.insurance_mapping,
+            data.registration_date, data.rto_tax_validity, data.permit_validity, data.fitness_validity, data.pollution_validity, data.insurance_validity,
+            data.insurance_broker, data.insurance_underwriter, data.insurance_start_date,
+            data.authorization_certificate, data.insurance_mapping,
             data.kms_reading, data.tracking_device_vendor, data.tracking_device_type, data.cng_installed, data.cng_plate, data.cng_installation_date, data.jack, data.jack_rod, data.spanner, data.parking_triangle, data.fire_extinguishers, data.seat_cover, data.floor_carpet, data.key_quantity,
             extract_image(data.image_front), extract_image(data.image_lh), extract_image(data.image_back), extract_image(data.image_rh),
             extract_image(data.engine_chasis_no_img), extract_image(data.battery_sl_no_img), extract_image(data.engine_compartment_img), extract_image(data.fast_tag_img),
@@ -3628,13 +3073,17 @@ def update_vehicle_record(id: int, data: VehicleOnboardingData, authorization: O
         cur.execute("""
             UPDATE copy_vehicle_onboarding SET
                 vehicle_number=%s, letzryd_unique_no=%s, city_name=%s, model=%s, received_allocated=%s, delivery_month=%s,
-                registration_date=%s, rto_tax_validity=%s, permit_validity=%s, fitness_validity=%s, pollution_validity=%s, insurance_validity=%s, authorization_certificate=%s, insurance_mapping=%s,
+                registration_date=%s, rto_tax_validity=%s, permit_validity=%s, fitness_validity=%s, pollution_validity=%s, insurance_validity=%s, 
+                insurance_broker=%s, insurance_underwriter=%s, insurance_start_date=%s,
+                authorization_certificate=%s, insurance_mapping=%s,
                 kms_reading=%s, tracking_device_vendor=%s, tracking_device_type=%s, cng_installed=%s, cng_plate=%s, cng_installation_date=%s, jack=%s, jack_rod=%s, spanner=%s, parking_triangle=%s, fire_extinguishers=%s, seat_cover=%s, floor_carpet=%s, key_quantity=%s,
                 image_front=%s, image_lh=%s, image_back=%s, image_rh=%s, engine_chasis_no_img=%s, battery_sl_no_img=%s, engine_compartment_img=%s, fast_tag_img=%s, music_system_img=%s, rh_fr_tyre_img=%s, lh_fr_tyre_img=%s, rh_rear_tyre_img=%s, lh_rear_tyre_img=%s, spare_wheel_img=%s
             WHERE id=%s RETURNING id;
         """, (
             data.vehicle_number, data.letzryd_unique_no, data.city_name, data.model, data.received_allocated, data.delivery_month,
-            data.registration_date, data.rto_tax_validity, data.permit_validity, data.fitness_validity, data.pollution_validity, data.insurance_validity, data.authorization_certificate, data.insurance_mapping,
+            data.registration_date, data.rto_tax_validity, data.permit_validity, data.fitness_validity, data.pollution_validity, data.insurance_validity, 
+            data.insurance_broker, data.insurance_underwriter, data.insurance_start_date,
+            data.authorization_certificate, data.insurance_mapping,
             data.kms_reading, data.tracking_device_vendor, data.tracking_device_type, data.cng_installed, data.cng_plate, data.cng_installation_date, data.jack, data.jack_rod, data.spanner, data.parking_triangle, data.fire_extinguishers, data.seat_cover, data.floor_carpet, data.key_quantity,
             extract_image(data.image_front), extract_image(data.image_lh), extract_image(data.image_back), extract_image(data.image_rh),
             extract_image(data.engine_chasis_no_img), extract_image(data.battery_sl_no_img), extract_image(data.engine_compartment_img), extract_image(data.fast_tag_img),
@@ -3978,7 +3427,6 @@ def create_rent(data: RentData, authorization: Optional[str] = Header(None)):
         """, (data.level, data.vehicle_manufacturer, data.vehicle_model, data.vehicle_number, data.vehicle_age, data.vendor_id, data.driver_id, data.rent_amount))
         new_id = cur.fetchone()[0]
 
-        # Log to copy_rent_ledger
         entity_type = data.level.capitalize()
         entity_id = ""
         if data.level == "driver": entity_id = data.driver_id or ""
@@ -4005,7 +3453,6 @@ def update_rent(id: int, data: RentData, authorization: Optional[str] = Header(N
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        # Fetch old rent amount
         cur.execute("SELECT rent_amount, level, driver_id, vendor_id, vehicle_number, vehicle_model FROM copy_rents WHERE id = %s;", (id,))
         row = cur.fetchone()
         if not row:
@@ -4018,7 +3465,6 @@ def update_rent(id: int, data: RentData, authorization: Optional[str] = Header(N
         """, (data.level, data.vehicle_manufacturer, data.vehicle_model, data.vehicle_number, data.vehicle_age, data.vendor_id, data.driver_id, data.rent_amount, id))
         cur.fetchone()
 
-        # Log to copy_rent_ledger
         entity_type = data.level.capitalize()
         entity_id = ""
         if data.level == "driver": entity_id = data.driver_id or ""
@@ -4043,7 +3489,6 @@ def update_rent(id: int, data: RentData, authorization: Optional[str] = Header(N
 @app.put("/api/rents/{id}/status")
 def update_rent_status(id: int, request: Request, authorization: Optional[str] = Header(None)):
     user = get_current_user(authorization)
-    # Require appropriate role for approvals
     if user.get("role") not in ["Manager", "Admin", "Founder/Admin", "CEO/Admin", "Super Admin", "Business Head", "City Manager"]:
         raise HTTPException(status_code=403, detail="Not authorized to approve")
     
@@ -4097,7 +3542,6 @@ def delete_rent(id: int, authorization: Optional[str] = Header(None)):
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        # Fetch old rent amount
         cur.execute("SELECT rent_amount, level, driver_id, vendor_id, vehicle_number, vehicle_model FROM copy_rents WHERE id = %s;", (id,))
         row = cur.fetchone()
         if not row:
@@ -4107,7 +3551,6 @@ def delete_rent(id: int, authorization: Optional[str] = Header(None)):
         cur.execute("DELETE FROM copy_rents WHERE id = %s RETURNING id;", (id,))
         cur.fetchone()
 
-        # Log to copy_rent_ledger
         entity_type = old_level.capitalize() if old_level else "Model"
         entity_id = ""
         if old_level == "driver": entity_id = old_driver_id or ""
@@ -4493,8 +3936,6 @@ def create_or_update_role(req: RoleData, authorization: Optional[str] = Header(N
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        
-        # Upsert Role
         cur.execute("SELECT id FROM app_roles WHERE name = %s;", (req.name,))
         row = cur.fetchone()
         if row:
@@ -4504,10 +3945,8 @@ def create_or_update_role(req: RoleData, authorization: Optional[str] = Header(N
             cur.execute("INSERT INTO app_roles (name, description) VALUES (%s, %s) RETURNING id;", (req.name, req.description))
             role_id = cur.fetchone()[0]
             
-        # Update Permissions
         cur.execute("DELETE FROM app_role_permissions WHERE role_id = %s;", (role_id,))
         for perm in req.permissions:
-            # Ensure permission exists
             cur.execute("INSERT INTO app_permissions (name) VALUES (%s) ON CONFLICT (name) DO NOTHING;", (perm,))
             cur.execute("SELECT id FROM app_permissions WHERE name = %s;", (perm,))
             perm_id = cur.fetchone()[0]
@@ -4608,7 +4047,6 @@ def resolve_ticket(id: int, data: dict, authorization: Optional[str] = Header(No
         postgreSQL_pool.putconn(conn)
 
 class MaintenanceData(BaseModel):
-    # Panel 1
     vehicle_number: str
     city_name: str
     model: str
@@ -4619,7 +4057,6 @@ class MaintenanceData(BaseModel):
     initial_remarks: Optional[str] = None
     vehicle_damage_photos: Optional[Any] = None
     
-    # Panel 2
     workshop_name: str
     allocation_date: Optional[str] = None
     estimated_delivery_date: Optional[str] = None
@@ -4631,7 +4068,6 @@ class MaintenanceData(BaseModel):
     approval_date: Optional[str] = None
     approval_file: Optional[Any] = None
     
-    # Panel 3
     maintenance_status: Optional[str] = None
     vehicle_status_date: Optional[str] = None
     daily_vehicle_remarks: Optional[str] = None
@@ -4642,7 +4078,6 @@ class MaintenanceData(BaseModel):
     pdi_status: Optional[str] = None
     maintenance_steps: Optional[Union[List[Any], str]] = None
     
-    # Panel 4
     invoice_no: Optional[str] = None
     invoice_date: Optional[str] = None
     invoice_amount: Optional[str] = None
@@ -4655,7 +4090,6 @@ class MaintenanceData(BaseModel):
     invoice_file: Optional[Any] = None
     invoices: Optional[Union[List[Any], str]] = None
     
-    # Panel 5 (PDI)
     pdi_front_photo: Optional[Any] = None
     pdi_back_photo: Optional[Any] = None
     pdi_lh_photo: Optional[Any] = None
@@ -4678,13 +4112,6 @@ class MaintenanceData(BaseModel):
     pdi_lh_front_tyre: Optional[str] = None
     pdi_rh_rear_tyre: Optional[str] = None
     pdi_lh_rear_tyre: Optional[str] = None
-
-def extract_image(val: Any) -> Optional[str]:
-    if val is None: return None
-    if isinstance(val, list) and len(val) > 0:
-        first = val[0]
-        return first.get("content") if isinstance(first, dict) else str(first)
-    return val if isinstance(val, str) and val.startswith("data:") else None
 
 @app.get("/api/maintenance")
 def get_all_maintenance_jobs(authorization: Optional[str] = Header(None)):
@@ -4738,15 +4165,10 @@ def create_maintenance_job(data: MaintenanceData, authorization: Optional[str] =
                 %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s
             ) RETURNING id;
         """, (
-            # Panel 1
             data.vehicle_number, data.city_name, data.model, data.vehicle_k_m_s, data.repair_type, data.vehicle_location, data.vehicle_in_date, data.initial_remarks, extract_image(data.vehicle_damage_photos),
-            # Panel 2
             data.workshop_name, data.allocation_date, data.estimated_delivery_date, data.estimated_amount, data.insurance_claimed, data.claim_number, data.insurance_brokerage, data.approved_by, data.approval_date, extract_image(data.approval_file),
-            # Panel 3
             data.maintenance_status, data.vehicle_status_date, data.daily_vehicle_remarks, data.rfd_date, data.delivered_date, data.final_status, data.tat, data.pdi_status,
-            # Panel 4
-            data.invoice_no, data.invoice_date, data.invoice_amount, data.insurance_liability_discounts, data.letzryd_payable, data.payment_status, data.type_of_payment, data.utr_no, data.entry_remarks, extract_image(data.invoice_file),
-            # Panel 5
+            data.invoice_no, data.invoice_date, data.invoice_amount, data.insurance_liability_discounts, data.letzryd_payable, data.payment_status, data.type_of_payment, data.utr_no, data.entry_remarks, extract_image(data.invoice_file), None, None,
             extract_image(data.pdi_front_photo), extract_image(data.pdi_back_photo), extract_image(data.pdi_lh_photo), extract_image(data.pdi_rh_photo), extract_image(data.pdi_engine_photo), data.engine_chassis_no, data.battery_sl_no, data.fast_tag, data.pdi_jack, data.pdi_jack_rod, data.pdi_spanner, data.pdi_parking_triangle, data.pdi_fire_extinguisher, data.pdi_seat_cover, data.pdi_floor_carpet, data.pdi_music_system, data.pdi_spare_wheel, data.pdi_key_quantity, data.pdi_rh_front_tyre, data.pdi_lh_front_tyre, data.pdi_rh_rear_tyre, data.pdi_lh_rear_tyre
         ))
         new_id = cur.fetchone()[0]
@@ -4770,21 +4192,14 @@ def update_maintenance_job(id: int, data: MaintenanceData, authorization: Option
                 workshop_name=%s, allocation_date=%s, estimated_delivery_date=%s, estimated_amount=%s, insurance_claimed=%s, claim_number=%s, insurance_brokerage=%s, approved_by=%s, approval_date=%s, approval_file=%s,
                 maintenance_status=%s, vehicle_status_date=%s, daily_vehicle_remarks=%s, rfd_date=%s, delivered_date=%s, final_status=%s, tat=%s, pdi_status=%s,
                 invoice_no=%s, invoice_date=%s, invoice_amount=%s, insurance_liability_discounts=%s, letzryd_payable=%s, payment_status=%s, type_of_payment=%s, utr_no=%s, entry_remarks=%s, invoice_file=%s,
-                invoices=%s, maintenance_steps=%s,
                 pdi_front_photo=%s, pdi_back_photo=%s, pdi_lh_photo=%s, pdi_rh_photo=%s, pdi_engine_photo=%s, engine_chassis_no=%s, battery_sl_no=%s, fast_tag=%s, pdi_jack=%s, pdi_jack_rod=%s, pdi_spanner=%s, pdi_parking_triangle=%s, pdi_fire_extinguisher=%s, pdi_seat_cover=%s, pdi_floor_carpet=%s, pdi_music_system=%s, pdi_spare_wheel=%s, pdi_key_quantity=%s, pdi_rh_front_tyre=%s, pdi_lh_front_tyre=%s, pdi_rh_rear_tyre=%s, pdi_lh_rear_tyre=%s
             WHERE id = %s;
         """, (
-            # Panel 1
             data.vehicle_number, data.city_name, data.model, data.vehicle_k_m_s, data.repair_type, data.vehicle_location, data.vehicle_in_date, data.initial_remarks, extract_image(data.vehicle_damage_photos),
-            # Panel 2
             data.workshop_name, data.allocation_date, data.estimated_delivery_date, data.estimated_amount, data.insurance_claimed, data.claim_number, data.insurance_brokerage, data.approved_by, data.approval_date, extract_image(data.approval_file),
-            # Panel 3
             data.maintenance_status, data.vehicle_status_date, data.daily_vehicle_remarks, data.rfd_date, data.delivered_date, data.final_status, data.tat, data.pdi_status,
-            # Panel 4
             data.invoice_no, data.invoice_date, data.invoice_amount, data.insurance_liability_discounts, data.letzryd_payable, data.payment_status, data.type_of_payment, data.utr_no, data.entry_remarks, extract_image(data.invoice_file),
-            # Panel 5
             extract_image(data.pdi_front_photo), extract_image(data.pdi_back_photo), extract_image(data.pdi_lh_photo), extract_image(data.pdi_rh_photo), extract_image(data.pdi_engine_photo), data.engine_chassis_no, data.battery_sl_no, data.fast_tag, data.pdi_jack, data.pdi_jack_rod, data.pdi_spanner, data.pdi_parking_triangle, data.pdi_fire_extinguisher, data.pdi_seat_cover, data.pdi_floor_carpet, data.pdi_music_system, data.pdi_spare_wheel, data.pdi_key_quantity, data.pdi_rh_front_tyre, data.pdi_lh_front_tyre, data.pdi_rh_rear_tyre, data.pdi_lh_rear_tyre,
-            # ID condition
             id
         ))
         conn.commit()
@@ -4865,7 +4280,6 @@ def create_challan(data: ChallanData, authorization: Optional[str] = Header(None
     conn = postgreSQL_pool.getconn()
     try:
         cur = conn.cursor()
-        # Verify uniqueness
         cur.execute("SELECT id FROM copy_traffic_challans WHERE challan_number = %s;", (data.challan_number,))
         if cur.fetchone():
             raise HTTPException(status_code=400, detail="Challan number already exists")
@@ -4939,5 +4353,3 @@ def delete_challan(id: int, authorization: Optional[str] = Header(None)):
 # Static files — must be last
 # ─────────────────────────────────────────────────────────
 app.mount("/", StaticFiles(directory="dist", html=True), name="static")
-
-

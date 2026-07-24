@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { 
   Truck, Calendar, MapPin, User, Phone, FileText, CheckCircle, 
   Clock, ArrowLeft, Download, Search, Trash2, Edit, Camera, 
-  Upload, X, RefreshCw, Plus, ChevronLeft, Database, Info, AlertTriangle, ShieldCheck, Scan
+  Upload, X, RefreshCw, Plus, ChevronLeft, Database, Info, AlertTriangle, ShieldCheck, Scan, ScanLine
 } from "lucide-react";
 import { VehicleRecord, User as UserSession, CITIES } from "../types";
 import CameraCapture from "./CameraCapture";
@@ -116,8 +116,8 @@ export default function VehicleOnboardingForm({
 
   // Registry Search & Filter State
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterCity, setFilterCity] = useState("all");
-  const [filterType, setFilterType] = useState("all");
+  const [filterCity, setFilterCity] = useState("All Cities");
+  const [filterType, setFilterType] = useState("All Statuses");
   
   // Top header quick search
   const [retrieveIdInput, setRetrieveIdInput] = useState("");
@@ -130,6 +130,7 @@ export default function VehicleOnboardingForm({
     cng_count: 0
   });
 
+  const isReadOnly = user.role_code === "SP";
   const displayName = user.name || user.username || "User";
   const initials = displayName.split(" ").map((w) => w[0]).join("").substring(0, 2).toUpperCase();
 
@@ -151,10 +152,12 @@ export default function VehicleOnboardingForm({
   const fetchRecords = async () => {
     try {
       const token = localStorage.getItem("lr_token");
-      const queryParams = newSearchParams();
+      const queryParams = new URLSearchParams();
       if (searchQuery) queryParams.append("search", searchQuery);
-      if (filterCity !== "all") queryParams.append("city", filterCity);
-      if (filterType !== "all") queryParams.append("type", filterType);
+      
+      // FIXED FILTER BUG: Map "All Cities" and "All Statuses" back to "all" for the backend
+      if (filterCity !== "All Cities") queryParams.append("city", filterCity);
+      if (filterType !== "All Statuses") queryParams.append("type", filterType);
 
       const res = await fetch(`/api/vehicle?${queryParams.toString()}`, {
         headers: { "Authorization": `Bearer ${token}` }
@@ -618,13 +621,15 @@ export default function VehicleOnboardingForm({
           </div>
 
           <nav className="flex gap-2">
-            <button
-              onClick={() => setActiveTab("form")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "form" ? "bg-primary text-slate-900 shadow-sm" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
-            >
-              <FileText className="h-4 w-4" />
-              Onboarding Form
-            </button>
+            {!isReadOnly && (
+              <button
+                onClick={() => setActiveTab("form")}
+                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "form" ? "bg-primary text-slate-900 shadow-sm" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
+              >
+                <FileText className="h-4 w-4" />
+                Onboarding Form
+              </button>
+            )}
             <button
               onClick={() => setActiveTab("registry")}
               className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide transition-all cursor-pointer ${ activeTab === "registry" ? "bg-primary text-slate-900 shadow-sm" : "text-text-muted hover:bg-slate-100 hover:text-primary" }`}
@@ -1044,7 +1049,7 @@ export default function VehicleOnboardingForm({
                       )}
 
                       <span className="font-sans text-[11px] font-semibold text-text-muted text-center flex items-center justify-center gap-1">
-                        {field.label} {field.key === "insurance_document" && <Scan className="w-3 h-3 text-primary" />}
+                        {field.label} {field.key === "insurance_document" && <ScanLine className="w-3 h-3 text-primary" title="OCR Active" />}
                       </span>
                       
                       {field.state ? (
@@ -1116,7 +1121,7 @@ export default function VehicleOnboardingForm({
                     return (
                       <div key={field.key} className="flex flex-col gap-2.5 rounded-xl border-2 border-dashed border-border bg-slate-50/50 p-4 relative">
                         <span className="font-sans text-[11px] font-semibold text-text-muted text-center flex items-center justify-center gap-1">
-                          {field.label} {isOcrField && <Scan className="w-3 h-3 text-primary" />}
+                          {field.label} {isOcrField && <ScanLine className="w-3 h-3 text-primary" title="OCR Active" />}
                         </span>
                         
                         {field.state ? (
@@ -1310,7 +1315,7 @@ export default function VehicleOnboardingForm({
                   onChange={(e) => setFilterCity(e.target.value)}
                   className="rounded-lg border border-border bg-white px-3 py-1.5 font-sans text-xs font-semibold text-text-muted focus:border-primary focus:outline-hidden cursor-pointer"
                 >
-                  <option value="all">All Cities</option>
+                  <option value="All Cities">All Cities</option>
                   <option value="Hyderabad">Hyderabad</option>
                   <option value="Bangalore">Bangalore</option>
                   <option value="Mumbai">Mumbai</option>
@@ -1323,7 +1328,7 @@ export default function VehicleOnboardingForm({
                   onChange={(e) => setFilterType(e.target.value)}
                   className="rounded-lg border border-border bg-white px-3 py-1.5 font-sans text-xs font-semibold text-text-muted focus:border-primary focus:outline-hidden cursor-pointer"
                 >
-                  <option value="all">All Statuses</option>
+                  <option value="All Statuses">All Statuses</option>
                   <option value="Receiving">Receiving</option>
                   <option value="Allocation">Allocation</option>
                   <option value="Ready for Delivery">Ready for Delivery</option>
@@ -1401,12 +1406,14 @@ export default function VehicleOnboardingForm({
                                 <button
                                   onClick={() => loadRecordForEdit(record.id)}
                                   className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-white text-text-muted hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                                  title="Edit Record"
                                 >
                                   <Edit className="h-3.5 w-3.5" />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteRecord(record.id)}
                                   className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-white text-text-muted hover:border-red-200 hover:text-red-600 transition-colors cursor-pointer"
+                                  title="Delete Record"
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </button>
